@@ -1,0 +1,49 @@
+{
+  "name": "Minimal Modern",
+  "slug": "minimal-modern",
+  "version": "1.0.0",
+  "author": "Ibnu Batuthah",
+  "description": "Tema modern minimalis dengan fokus pada konten dan pengalaman pengguna yang bersih",
+  "thumbnail": "/themes/minimal-modern/preview.jpg",
+  "defaultSections": ["hero", "about", "visimisi", "programs", "team", "contact", "footer"],
+  "availableSections": [
+    { "key": "hero", "name": "Hero Section", "icon": "image", "description": "Banner utama dengan headline dan CTA" },
+    { "key": "about", "name": "About Section", "icon": "info", "description": "Tentang organisasi" },
+    { "key": "visimisi", "name": "Visi Misi", "icon": "target", "description": "Visi dan misi organisasi" },
+    { "key": "programs", "name": "Programs Section", "icon": "folder", "description": "Program kerja kegiatan" },
+    { "key": "team", "name": "Team Section", "icon": "users", "description": "Struktur organisasi/team" },
+    { "key": "events", "name": "Events Section", "icon": "calendar", "description": "Agenda dan event" },
+    { "key": "contact", "name": "Contact Section", "icon": "mail", "description": "Form kontak dan info" },
+    { "key": "stats", "name": "Stats Section", "icon": "chart", "description": "Counter animasi statistik" },
+    { "key": "gallery", "name": "Gallery Section", "icon": "image", "description": "Galeri foto" },
+    { "key": "faq", "name": "FAQ Section", "icon": "help", "description": "Frequently Asked Questions" },
+    { "key": "cta", "name": "CTA Section", "icon": "megaphone", "description": "Call to action banner" },
+    { "key": "partners", "name": "Partners Section", "icon": "handshake", "description": "Logo mitra/sponsor" },
+    { "key": "documents", "name": "Documents Section", "icon": "file", "description": "Download dokumen resmi" },
+    { "key": "newsletter", "name": "Newsletter Section", "icon": "mail", "description": "Form langganan email" },
+    { "key": "footer", "name": "Footer", "icon": "layout", "description": "Footer website" }
+  ],
+  "config": {
+    "primaryColor": "#6366f1",
+    "secondaryColor": "#8b5cf6",
+    "accentColor": "#ec4899",
+    "backgroundColor": "#ffffff",
+    "textColor": "#1f2937",
+    "fontFamily": "Inter",
+    "borderRadius": "0.5rem"
+  },
+  "layouts": {
+    "default": {
+      "containerWidth": "max-w-7xl",
+      "spacing": "py-16"
+    },
+    "compact": {
+      "containerWidth": "max-w-5xl",
+      "spacing": "py-8"
+    },
+    "wide": {
+      "containerWidth": "max-w-none",
+      "spacing": "py-12"
+    }
+  }
+}

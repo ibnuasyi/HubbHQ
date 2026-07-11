@@ -1,0 +1,881 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== CORE MODELS ====================
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  name           String?
+  nickname       String?  // Nama panggilan
+  fullName       String?  // Nama panjang
+  birthPlace     String?  // Tempat lahir
+  birthDate      DateTime? // Tanggal lahir
+  address        String?  // Alamat
+  phone          String?
+  avatar         String?  // Foto profil
+  signature      String?  // TTD digital
+  isActive       Boolean  @default(true)
+  emailVerified  DateTime?
+
+  // Password security
+  mustChangePassword Boolean @default(false)  // Force password change on next login
+  passwordChangedAt  DateTime?                // Track when password was last changed
+
+  // Soft delete support
+  deletedAt    DateTime?  // Soft delete timestamp
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  roleId         String?
+  role           Role?    @relation(fields: [roleId], references: [id])
+  wilayahId      String?
+  wilayah        Wilayah? @relation(fields: [wilayahId], references: [id])
+  jabatanId      String?
+  jabatan        Jabatan? @relation(fields: [jabatanId], references: [id])
+
+  // Divisi membership
+  divisiMembers  DivisiMember[]
+
+  // Program Kerja
+  prokerPIC      ProgramKerja[] @relation("ProkerPIC")
+  prokerCreated  ProgramKerja[] @relation("ProkerCreator")
+
+  // Checkpoints
+  checkpoints    Checkpoint[]
+
+  // Keuangan
+  kasPayments    KasPayment[]
+  transactions   Transaction[]
+
+  // Surat
+  suratRequested Surat[] @relation("SuratRequester")
+  suratApproved Surat[] @relation("SuratApprover")
+
+  // Proposal Dana
+  proposalDana     ProposalDana[]
+  reviewedProposals ProposalDana[] @relation("ProposalReviewer")
+
+  // Kalender
+  calendarEvents CalendarEvent[]
+
+  // Notification
+  notifications  Notification[]
+
+  // Auth
+  accounts       Account[]
+  sessions       Session[]
+
+  // Audit logs
+  auditLogs      AuditLog[]
+
+  // Uploaded media files
+  uploadedMedia  MediaFile[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token     String? @db.Text
+  expires_at       Int?
+  token_type       String?
+  scope            String?
+  id_token         String? @db.Text
+  session_state    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ==================== ROLE & PERMISSION ====================
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // admin, bendahara, sekretaris, ketua, anggota, dll
+  displayName String   // Nama tampilan
+  description String?
+  color       String   @default("#6366f1") // Warna untuk UI
+  permissions Permission[]
+  users       User[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id     String @id @default(cuid())
+  name   String @unique // articles.create, articles.edit, dll
+  label  String // Label untuk display
+  group  String // Kategori: members, divisi, proker, keuangan, surat, dll
+  roles  Role[]
+
+  @@map("permissions")
+}
+
+// ==================== WILAYAH ====================
+
+model Wilayah {
+  id        String   @id @default(cuid())
+  name      String   // Pusat, Korwil Jawa Barat, dll
+  shortName String?  // PB, KWB, dll
+  parentId  String?
+  parent    Wilayah? @relation("WilayahHierarchy", fields: [parentId], references: [id])
+  children  Wilayah[] @relation("WilayahHierarchy")
+  level     Int      @default(0) // 0 = Pusat, 1 = Korwil, 2 = Korcam, dll
+  isActive  Boolean  @default(true)
+  users     User[]
+  divisi    Divisi[] // Relasi ke divisi
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("wilayah")
+}
+
+// ==================== JABATAN ====================
+
+model Jabatan {
+  id          String   @id @default(cuid())
+  name        String   @unique // Ketua Umum, Wakil Ketua, Sekretaris Jenderal, dll
+  shortName   String?  // Ketum, Waketum, Sekjen, dll
+  level       Int      @default(0) // Level untuk sorting (semakin kecil semakin tinggi)
+  isActive    Boolean  @default(true)
+  users       User[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("jabatan")
+}
+
+// ==================== DIVISI ====================
+
+model Divisi {
+  id          String   @id @default(cuid())
+  name        String   @unique // nama divisi
+  shortName   String?  // singkatan
+  description String?  @db.Text
+  color       String   @default("#6366f1")
+  logo        String?  // URL logo divisi
+  wilayahId   String?
+  wilayah     Wilayah? @relation(fields: [wilayahId], references: [id])
+  isActive    Boolean  @default(true)
+  deletedAt   DateTime? // Soft delete timestamp
+
+  members     DivisiMember[]
+  programKerja ProgramKerja[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("divisi")
+}
+
+model DivisiMember {
+  id        String   @id @default(cuid())
+  userId    String
+  divisiId  String
+  position  String?  // Ketua Divisi, Staff, dll
+  isActive  Boolean  @default(true)
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  divisi    Divisi   @relation(fields: [divisiId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, divisiId])
+  @@map("divisi_members")
+}
+
+// ==================== PROGRAM KERJA ====================
+
+model ProgramKerja {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  divisiId    String
+  divisi      Divisi   @relation(fields: [divisiId], references: [id], onDelete: Cascade)
+
+  // PIC (Person In Charge)
+  picId       String?
+  pic         User?    @relation("ProkerPIC", fields: [picId], references: [id])
+
+  creatorId   String
+  creator     User     @relation("ProkerCreator", fields: [creatorId], references: [id])
+
+  status      ProkerStatus @default(DRAFT)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  checkpoints Checkpoint[]
+  proposals   ProposalDana[]
+  calendarEvents CalendarEvent[]
+
+  @@map("program_kerja")
+}
+
+enum ProkerStatus {
+  DRAFT
+  ON_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Checkpoint {
+  id              String   @id @default(cuid())
+  programKerjaId  String
+  programKerja    ProgramKerja @relation(fields: [programKerjaId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?  @db.Text
+  isCompleted     Boolean  @default(false)
+  completedAt     DateTime?
+  completedById   String?
+  completedBy     User?    @relation(fields: [completedById], references: [id])
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("checkpoints")
+}
+
+// ==================== PROPOSAL DANA ====================
+
+model ProposalDana {
+  id          String   @id @default(cuid())
+  programKerjaId String?
+  programKerja ProgramKerja? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+
+  title       String
+  description String?  @db.Text
+  amount      Decimal  @db.Decimal(15, 2)
+  status      ProposalStatus @default(PENDING)
+
+  requesterId String
+  requester   User     @relation(fields: [requesterId], references: [id])
+
+  reviewedById String?
+  reviewedBy  User?    @relation("ProposalReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  reviewedNote String?  @db.Text
+
+  // File
+  proposalFile   String?  // File proposal upload
+  revisionFile    String?  // File revisian
+  revisionNote    String?  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("proposal_dana")
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+  REVISED
+}
+
+// ==================== KEUANGAN ====================
+
+model Transaction {
+  id          String   @id @default(cuid())
+  type        TransactionType
+  category    String   // kas_anggota, sumbangan, bisnis, operasional, dll
+  amount      Decimal  @db.Decimal(15, 2)
+  description String?  @db.Text
+  date        DateTime @default(now())
+
+  // Bukti transfer
+  receipt     String?  // URL file receipt
+  receiptType String?  // image/jpeg, application/pdf
+
+  // Untuk pemasukan dari kas anggota
+  kasPaymentId String? @unique
+  kasPayment   KasPayment? @relation(fields: [kasPaymentId], references: [id])
+
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+
+  status      TransactionStatus @default(PENDING)
+
+  // Optimistic Concurrency Control
+  version     Int      @default(1)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model KasPayment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month       Int      // 1-12
+  year        Int
+  amount      Decimal  @db.Decimal(15, 2)
+  proof       String?  // URL bukti transfer
+  proofType   String?  // image/jpeg, application/pdf
+  notes       String?  @db.Text
+  status      KasStatus @default(PENDING)
+
+  transaction Transaction?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, month, year])
+  @@map("kas_payments")
+}
+
+enum KasStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ==================== KALENDER ====================
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  startDate   DateTime
+  endDate     DateTime?
+  allDay      Boolean  @default(true)
+  location    String?
+
+  // Dari proker atau manual
+  programKerjaId String?
+  programKerja   ProgramKerja? @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+
+  creatorId   String
+  creator     User     @relation(fields: [creatorId], references: [id])
+
+  color       String   @default("#6366f1")
+  isPublic    Boolean  @default(true) // Visible di public website
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("calendar_events")
+}
+
+// ==================== SURAT ====================
+
+model Surat {
+  id              String   @id @default(cuid())
+  type            SuratType
+  letterNumber    String?  // Nomor surat
+  subject         String
+  content         String?  @db.Text
+
+  // Metadata
+  requesterId     String?
+  requester       User?    @relation("SuratRequester", fields: [requesterId], references: [id])
+
+  approverId      String?
+  approver        User?    @relation("SuratApprover", fields: [approverId], references: [id])
+  approvedAt      DateTime?
+
+  status          SuratStatus @default(DRAFT)
+
+  // Files
+  fileUrl         String?  // File surat yang sudah digenerate
+  attachments     String?  // JSON array of attachment URLs
+
+  // Untuk surat masuk
+  sender          String?  // Pengirim surat masuk
+  senderContact   String?  // Kontak pengirim
+  receivedDate    DateTime?
+
+  // Form data (JSON dari form dinamis)
+  formData        Json?
+
+  // Jenis surat
+  jenisSuratId    String?
+  jenisSurat      JenisSurat? @relation(fields: [jenisSuratId], references: [id])
+
+  // QR Code
+  qrCodeUrl       String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("surat")
+}
+
+enum SuratType {
+  MASUK
+  KELUAR
+}
+
+enum SuratStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+model JenisSurat {
+  id            String   @id @default(cuid())
+  name          String   // Surat Keterangan, Surat Undangan, dll
+  code          String   @unique // SK, SU, SD, dll
+  templateUrl   String?  // Template file
+  formSchema    Json?    // JSON Schema untuk form
+  autoNumber    Boolean  @default(true)
+  numberPrefix  String?  // Prefix nomor surat
+  numberFormat  String?  // Format nomor: {prefix}/{month}/{year}/{number}
+
+  isActive      Boolean  @default(true)
+  surat         Surat[]
+  templates     SuratTemplate[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("jenis_surat")
+}
+
+model SuratTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  fileUrl     String
+  jenisSuratId String?
+  jenisSurat  JenisSurat? @relation(fields: [jenisSuratId], references: [id], onDelete: SetNull)
+
+  uploadedById String?
+  uploadedAt   DateTime @default(now())
+
+  isActive    Boolean  @default(true)
+
+  @@map("surat_templates")
+}
+
+// ==================== NOTIFIKASI ====================
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String   @db.Text
+  type        NotificationType @default(INFO)
+  link        String?  // Link untuk navigasi
+  isRead      Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+// ==================== LIBRARY ====================
+
+model LibraryBook {
+  id          String   @id @default(cuid())
+  title       String
+  author      String?
+  description String?  @db.Text
+  coverUrl    String?
+  fileUrl     String   // URL ke file PDF/EPUB
+  fileType    String   // application/pdf, application/epub+zip
+  fileSize    Int?     // Size in bytes
+  category    String?  // Kategori buku
+  tags        String?  // Tags (comma-separated)
+
+  uploadedById String?
+  uploadedAt   DateTime @default(now())
+
+  viewCount   Int      @default(0)
+  downloadCount Int    @default(0)
+
+  isActive    Boolean  @default(true)
+
+  @@map("library_books")
+}
+
+// ==================== WEBSITE CONFIG ====================
+
+model WebsiteConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json     // Flexible value storage
+  description String?
+  category    String   @default("general") // general, appearance, social, contact
+  isPublic    Boolean  @default(false)    // Can be accessed without auth
+
+  updatedAt   DateTime @updatedAt
+
+  @@map("website_config")
+}
+
+// ==================== ORGANIZATIONAL CHART ====================
+
+model OrganizationalChart {
+  id          String   @id @default(cuid())
+  title       String
+  level       Int      @default(0)
+  userId      String?
+  position    String?  // Nama posisi
+  parentId    String?
+  parent      OrganizationalChart? @relation("ChartHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    OrganizationalChart[] @relation("ChartHierarchy")
+
+  wilayahId   String?
+  divisiId    String?
+
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("organizational_chart")
+}
+
+// ==================== DOCUMENT (HUKUM) ====================
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // AD/ART, SK, dll
+  description String?  @db.Text
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+
+  uploadedById String?
+  uploadedAt   DateTime @default(now())
+
+  isPublic    Boolean  @default(true)
+  isActive    Boolean  @default(true)
+
+  @@map("documents")
+}
+
+// ==================== WEBSITE BUILDER (CMS) ====================
+
+// Theme yang terinstal
+model Theme {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  version     String   @default("1.0.0")
+  description String?
+  author      String?
+  thumbnail   String?
+  config      Json     // sections definition, layouts
+  css         String?
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pages       Page[]
+
+  @@map("themes")
+}
+
+// Page (halaman publik)
+model Page {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?
+  type        String   @default("page") // page, home, contact
+  themeId     String?
+  theme       Theme?   @relation(fields: [themeId], references: [id])
+  isPublished Boolean  @default(false)
+  seoTitle    String?
+  seoDesc     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections    PageSection[]
+
+  @@map("pages")
+}
+
+// Section dalam page + konfigurasinya
+model PageSection {
+  id          String   @id @default(cuid())
+  pageId      String
+  page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  sectionKey  String   // identifier section (hero, about, dll)
+  title       String?
+  config      Json     // section-specific config
+  content     String?  @db.LongText // HTML/markdown content for rich text
+  order       Int      @default(0)
+  isEnabled   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([pageId, order])
+  @@map("page_sections")
+}
+
+// ==================== WEBSITE CMS CONTENT (POST) ====================
+
+// Status workflow untuk konten CMS
+// DRAFT -> REVIEW -> PUBLISHED
+// atau DRAFT -> REVIEW -> REVISION -> REVIEW -> PUBLISHED
+// atau PUBLISHED -> ARCHIVED -> PUBLISHED
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  color       String?  @default("#6366f1")
+  icon        String?  // Emoji atau icon name
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Post {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.LongText
+  excerpt     String?
+
+  // Featured image dengan media management
+  featuredImage String?
+  featuredImageId String?  // Reference ke MediaFile
+  featuredAlt     String?  // Alt text untuk accessibility
+
+  category    String?
+  tags        String?
+
+  // Workflow Status
+  status      PostStatus @default(DRAFT)
+
+  // Timestamps
+  publishedAt DateTime?
+
+  // Author
+  authorId    String?
+  authorName  String?  // Untuk guest authors
+
+  // Review workflow
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote  String?  @db.Text // Catatan dari reviewer
+
+  // SEO
+  seoTitle    String?
+  seoDesc     String?
+
+  // Visibility
+  isFeatured  Boolean  @default(false)  // Tampilkan di homepage
+  isSticky    Boolean  @default(false)   // Sticky di top
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("posts")
+}
+
+enum PostStatus {
+  DRAFT       // Masih diedit, belum dikirim review
+  REVIEW      // Sedang menunggu review
+  REVISION    // Dikembalikan untuk direvisi
+  PUBLISHED   // Sudah dipublish
+  ARCHIVED    // Diarsipkan, tidak terlihat publik
+}
+
+model Gallery {
+  id          String   @id @default(cuid())
+  title       String
+  album       String?
+  imageUrl    String
+  caption     String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@map("galleries")
+}
+
+model Faq {
+  id          String   @id @default(cuid())
+  question    String
+  answer      String   @db.LongText
+  category    String?
+  order       Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("faqs")
+}
+
+// ==================== NEWSLETTER ====================
+
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  isActive    Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+  ipAddress   String?
+
+  @@map("newsletter_subscribers")
+}
+
+// ==================== WEBSITE MENU ====================
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  label       String   // Label yang ditampilkan
+  href        String   // URL/path
+  icon        String?  // Icon (emoji atau lucide icon name)
+  order       Int      @default(0) // Urutan di menu
+  parentId    String?  // Untuk submenu
+  parent      MenuItem? @relation("MenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    MenuItem[] @relation("MenuHierarchy")
+  isActive    Boolean  @default(true)
+  isExternal  Boolean  @default(false) // Buka di tab baru
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([parentId, order])
+  @@map("menu_items")
+}
+
+// ==================== AUDIT LOG ====================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String   // CREATE, UPDATE, DELETE, VIEW, LOGIN, LOGOUT, dll
+  entity      String   // USER, SURAT, TRANSACTION, dll
+  entityId    String?
+  details     Json?    // Detail perubahan (old/new values)
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+  @@index([action, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ==================== MEDIA FILES ====================
+
+model MediaFile {
+  id           String   @id @default(cuid())
+  filename     String   // Generated filename
+  originalName String   // Original uploaded name
+  mimeType     String   // MIME type
+  size         Int      // Size in bytes
+  url          String   // URL/path to file
+  folder       String?  // Optional folder grouping
+
+  // Access control
+  isPublic     Boolean  @default(false)  // Can be accessed without auth
+
+  metadata     Json?    // Additional metadata (dimensions, duration, etc.)
+
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([folder])
+  @@index([mimeType])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@index([isPublic])
+  @@map("media_files")
+}
+
+// ==================== JOB QUEUE ====================
+
+model QueueJob {
+  id           String   @id // Custom ID format: job_timestamp_random
+  name         String   // Job type: email, export, sync, etc.
+  data         Json     // Job payload
+  status       String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, RETRY
+  priority     String   @default("NORMAL") // LOW, NORMAL, HIGH, CRITICAL
+  attempts     Int      @default(0)
+  maxAttempts Int      @default(3)
+  error       String?  // Last error message
+  result      Json?    // Job result on completion
+  scheduledFor DateTime? // Optional scheduled time
+
+  completedAt DateTime?
+  failedAt    DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, scheduledFor])
+  @@index([name, status])
+  @@map("queue_jobs")
+}

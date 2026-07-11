@@ -1,0 +1,91 @@
+# docker-compose.yml
+# HubbHQ - Sistem Informasi Organisasi Modern
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: hubbhq-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mysql://${DB_USER:-hubbhq_user}:${DB_PASSWORD:-change_me}@mysql:3306/${DB_NAME:-hubbhq}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    env_file:
+      - .env.production
+    volumes:
+      - app-uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - hubbhq-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Security: Run as non-root user
+    user: "node"
+
+  mysql:
+    image: mysql:8.0
+    container_name: hubbhq-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME:-hubbhq}
+      - MYSQL_USER=${DB_USER:-hubbhq_user}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-change_me}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # - ./prisma/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - hubbhq-network
+    # Security: Explicitly set character set
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  nginx:
+    image: nginx:alpine
+    container_name: hubbhq-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      # - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - hubbhq-network
+    # Security: Run as non-root
+    user: nginx
+
+volumes:
+  mysql-data:
+    driver: local
+  app-uploads:
+    driver: local
+
+networks:
+  hubbhq-network:
+    driver: bridge

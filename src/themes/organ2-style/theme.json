@@ -1,0 +1,48 @@
+{
+  "name": "Organ2 Style",
+  "slug": "organ2-style",
+  "version": "1.0.0",
+  "author": "Ibnu Batuthah",
+  "description": "Tema bergaya Organ2 - Desain formal untuk organisasi pergerakan dengan layout yang bersih dan profesional",
+  "thumbnail": "/themes/organ2-style/preview.jpg",
+  "defaultSections": ["hero", "about", "visimisi", "programs", "stats", "team", "cta", "footer"],
+  "availableSections": [
+    { "key": "hero", "name": "Hero Section", "icon": "image", "description": "Banner utama dengan headline dan CTA" },
+    { "key": "about", "name": "About Section", "icon": "info", "description": "Tentang organisasi" },
+    { "key": "visimisi", "name": "Visi Misi", "icon": "target", "description": "Visi dan misi organisasi" },
+    { "key": "programs", "name": "Programs Section", "icon": "folder", "description": "Program kerja kegiatan" },
+    { "key": "stats", "name": "Stats Section", "icon": "chart", "description": "Counter animasi statistik" },
+    { "key": "team", "name": "Team Section", "icon": "users", "description": "Struktur organisasi/team" },
+    { "key": "contact", "name": "Contact Section", "icon": "mail", "description": "Form kontak dan info" },
+    { "key": "events", "name": "Events Section", "icon": "calendar", "description": "Agenda dan event" },
+    { "key": "gallery", "name": "Gallery Section", "icon": "image", "description": "Galeri foto" },
+    { "key": "cta", "name": "CTA Section", "icon": "megaphone", "description": "Call to action banner" },
+    { "key": "footer", "name": "Footer", "icon": "layout", "description": "Footer website" }
+  ],
+  "config": {
+    "primaryColor": "#16a34a",
+    "secondaryColor": "#15803d",
+    "accentColor": "#f59e0b",
+    "backgroundColor": "#ffffff",
+    "backgroundSecondary": "#f8fafc",
+    "textColor": "#1e293b",
+    "textMuted": "#64748b",
+    "borderColor": "#e2e8f0",
+    "fontFamily": "Plus Jakarta Sans",
+    "borderRadius": "0.75rem"
+  },
+  "layouts": {
+    "default": {
+      "containerWidth": "max-w-7xl",
+      "spacing": "py-20"
+    },
+    "compact": {
+      "containerWidth": "max-w-5xl",
+      "spacing": "py-12"
+    },
+    "wide": {
+      "containerWidth": "max-w-none px-6",
+      "spacing": "py-16"
+    }
+  }
+}

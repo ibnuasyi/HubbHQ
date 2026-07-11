@@ -1,0 +1,108 @@
+export const dynamic = 'force-dynamic';
+
+import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+import { requireAdmin } from '@/lib/api-auth'
+
+const prisma = new PrismaClient()
+
+// GET /api/pages/[slug] - Get single page (public)
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const { slug } = await params
+
+    const page = await prisma.page.findUnique({
+      where: { slug },
+      include: {
+        theme: true,
+        sections: {
+          where: { isEnabled: true },
+          orderBy: { order: 'asc' }
+        }
+      }
+    })
+
+    if (!page) {
+      return NextResponse.json(
+        { error: 'Page not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(page)
+  } catch (error) {
+    console.error('Error fetching page:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch page' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/pages/[slug] - Update page (admin only)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    // Require admin authentication
+    const { authorized, response } = await requireAdmin(request)
+    if (!authorized) return response!
+
+    const { slug } = await params
+    const body = await request.json()
+
+    // Sanitize slug if provided
+    if (body.slug) {
+      body.slug = body.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+    }
+
+    const page = await prisma.page.update({
+      where: { slug },
+      data: body,
+      include: {
+        theme: true,
+        sections: {
+          orderBy: { order: 'asc' }
+        }
+      }
+    })
+
+    return NextResponse.json(page)
+  } catch (error) {
+    console.error('Error updating page:', error)
+    return NextResponse.json(
+      { error: 'Failed to update page' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/pages/[slug] - Delete page (admin only)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  try {
+    // Require admin authentication
+    const { authorized, response } = await requireAdmin(request)
+    if (!authorized) return response!
+
+    const { slug } = await params
+
+    await prisma.page.delete({
+      where: { slug }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting page:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete page' },
+      { status: 500 }
+    )
+  }
+}

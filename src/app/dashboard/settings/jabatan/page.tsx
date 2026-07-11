@@ -1,0 +1,407 @@
+'use client'
+
+import * as React from 'react'
+import {
+  Plus,
+  Loader2,
+  UserCircle,
+  Edit,
+  Trash2,
+  Lock,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+
+interface CurrentUser {
+  id: string
+  name: string
+  email: string
+  role: { name: string }
+}
+
+interface Jabatan {
+  id: string
+  name: string
+  shortName: string | null
+  level: number
+  isActive: boolean
+}
+
+export default function JabatanPage() {
+  const [jabatan, setJabatan] = React.useState<Jabatan[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [showAdd, setShowAdd] = React.useState(false)
+  const [showEdit, setShowEdit] = React.useState(false)
+  const [selectedJabatan, setSelectedJabatan] = React.useState<Jabatan | null>(null)
+  const [saving, setSaving] = React.useState(false)
+  const [currentUser, setCurrentUser] = React.useState<CurrentUser | null>(null)
+
+  // Form state
+  const [formName, setFormName] = React.useState('')
+  const [formShortName, setFormShortName] = React.useState('')
+  const [formLevel, setFormLevel] = React.useState('0')
+  const [formIsActive, setFormIsActive] = React.useState(true)
+
+  const fetchJabatan = React.useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/jabatan')
+      const data = await res.json()
+      if (data.data) {
+        setJabatan(data.data)
+      }
+    } catch (error) {
+      console.error('Error fetching jabatan:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    fetchJabatan()
+    // Fetch current user
+    fetch('/api/auth/session')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) {
+          setCurrentUser(data.user as CurrentUser)
+        }
+      })
+      .catch(console.error)
+  }, [fetchJabatan])
+
+  const isAdmin = currentUser?.role?.name === 'admin'
+
+  const handleSubmit = async () => {
+    if (!formName) return
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/jabatan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formName,
+          shortName: formShortName || null,
+          level: parseInt(formLevel),
+        }),
+      })
+
+      if (res.ok) {
+        setShowAdd(false)
+        resetForm()
+        fetchJabatan()
+      }
+    } catch (error) {
+      console.error('Error creating jabatan:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEdit = async () => {
+    if (!selectedJabatan || !formName) return
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/jabatan/${selectedJabatan.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formName,
+          shortName: formShortName || null,
+          level: parseInt(formLevel),
+          isActive: formIsActive,
+        }),
+      })
+
+      if (res.ok) {
+        setShowEdit(false)
+        resetForm()
+        setSelectedJabatan(null)
+        fetchJabatan()
+      }
+    } catch (error) {
+      console.error('Error updating jabatan:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (j: Jabatan) => {
+    if (!confirm(`Hapus jabatan "${j.name}"?`)) return
+
+    try {
+      const res = await fetch(`/api/jabatan/${j.id}`, {
+        method: 'DELETE',
+      })
+
+      if (res.ok) {
+        fetchJabatan()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Gagal menghapus jabatan')
+      }
+    } catch (error) {
+      console.error('Error deleting jabatan:', error)
+    }
+  }
+
+  const resetForm = () => {
+    setFormName('')
+    setFormShortName('')
+    setFormLevel('0')
+    setFormIsActive(true)
+  }
+
+  const openEdit = (j: Jabatan) => {
+    setSelectedJabatan(j)
+    setFormName(j.name)
+    setFormShortName(j.shortName || '')
+    setFormLevel(j.level.toString())
+    setFormIsActive(j.isActive)
+    setShowEdit(true)
+  }
+
+  return (
+    <div className="p-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Jabatan</h1>
+          <p className="text-muted-foreground">
+            Kelola jabatan organisasi ({jabatan.length} jabatan)
+          </p>
+        </div>
+        {isAdmin ? (
+          <Button onClick={() => { resetForm(); setShowAdd(true) }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Jabatan
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Lock className="h-4 w-4" />
+            Hanya administrator yang dapat mengubah
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {jabatan.map((j) => (
+            <Card key={j.id}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <UserCircle className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{j.name}</CardTitle>
+                      {j.shortName && (
+                        <CardDescription>({j.shortName})</CardDescription>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline">Level {j.level}</Badge>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm ${j.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                      {j.isActive ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                    {isAdmin && (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEdit(j)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(j)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Add Dialog */}
+      <Dialog open={showAdd} onOpenChange={(open) => {
+        if (!isAdmin) return
+        setShowAdd(open)
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tambah Jabatan</DialogTitle>
+            <DialogDescription>Tambah jabatan baru</DialogDescription>
+          </DialogHeader>
+          {!isAdmin ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                Hanya administrator yang dapat menambah jabatan
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nama *</Label>
+                <Input
+                  placeholder="Contoh: Sekretaris Jenderal"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Singkat</Label>
+                  <Input
+                    placeholder="Contoh: Sekjen"
+                    value={formShortName}
+                    onChange={(e) => setFormShortName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Level</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={formLevel}
+                    onChange={(e) => setFormLevel(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {isAdmin && (
+              <>
+                <Button variant="outline" onClick={() => setShowAdd(false)}>
+                  Batal
+                </Button>
+                <Button onClick={handleSubmit} disabled={saving || !formName}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Simpan
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEdit} onOpenChange={(open) => {
+        if (!isAdmin) return
+        setShowEdit(open)
+        if (!open) {
+          resetForm()
+          setSelectedJabatan(null)
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Jabatan</DialogTitle>
+            <DialogDescription>Ubah data jabatan</DialogDescription>
+          </DialogHeader>
+          {!isAdmin ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                Hanya administrator yang dapat mengedit jabatan
+              </p>
+            </div>
+          ) : selectedJabatan ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nama *</Label>
+                <Input
+                  placeholder="Contoh: Sekretaris Jenderal"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Singkat</Label>
+                  <Input
+                    placeholder="Contoh: Sekjen"
+                    value={formShortName}
+                    onChange={(e) => setFormShortName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Level</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={formLevel}
+                    onChange={(e) => setFormLevel(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formIsActive}
+                  onChange={(e) => setFormIsActive(e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="isActive" className="font-normal">
+                  Jabatan aktif
+                </Label>
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter>
+            {isAdmin && (
+              <>
+                <Button variant="outline" onClick={() => { setShowEdit(false); resetForm(); setSelectedJabatan(null) }}>
+                  Batal
+                </Button>
+                <Button onClick={handleEdit} disabled={saving || !formName}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Simpan
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
