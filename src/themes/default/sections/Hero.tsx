@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { sanitizeHtml } from '@/lib/sanitize'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight, Play, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface HeroProps {
@@ -56,7 +56,7 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
     right: 'items-end'
   }[config.textAlign || 'center']
 
-  // Split variant - Image + Text side by side (like KPRI)
+  // Split variant - Image + Text side by side (modern style)
   if (variant === 'split') {
     const isImageLeft = config.imagePosition === 'left'
     return (
@@ -75,8 +75,8 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
                   />
                 </div>
               ) : (
-                <div className="aspect-[4/3] bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-xl">
-                  <span className="text-8xl">🏛️</span>
+                <div className="aspect-[4/3] bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-xl text-white">
+                  <Building2 className="w-24 h-24" />
                 </div>
               )}
             </div>
@@ -165,7 +165,7 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
     )
   }
 
-  // Default variant - Full background image (like KPRI)
+  // Default variant - Full background image (modern style)
   return (
     <section className={`hero-section relative min-h-screen flex items-center ${isPreview ? 'py-20' : ''}`}>
       {config.backgroundImage && (

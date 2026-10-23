@@ -3,7 +3,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { sanitizeHtml } from '@/lib/sanitize'
-import { ArrowRight, Users, Target, Shield } from 'lucide-react'
+import { ArrowRight, Building2 } from 'lucide-react'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { Button } from '@/components/ui/button'
 
 interface AboutProps {
@@ -26,7 +27,7 @@ interface AboutProps {
 export default function About({ config, isPreview = false }: AboutProps) {
   const variant = config.variant || 'default'
 
-  // Cards variant - Like KPRI cards (3 columns)
+  // Cards variant - Like HubbHQ cards (3 columns)
   if (variant === 'cards' && config.features) {
     return (
       <section className={`py-20 bg-white ${isPreview ? 'py-12' : ''}`}>
@@ -58,7 +59,7 @@ export default function About({ config, isPreview = false }: AboutProps) {
               >
                 {feature.icon && (
                   <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors">
-                    <span className="text-2xl">{feature.icon}</span>
+                    <DynamicIcon name={feature.icon} className="w-7 h-7 text-green-700 group-hover:text-white transition-colors" />
                   </div>
                 )}
                 <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-green-600 transition-colors">
@@ -93,7 +94,7 @@ export default function About({ config, isPreview = false }: AboutProps) {
     )
   }
 
-  // Split variant - Image + Text (like KPRI)
+  // Split variant - Image + Text (modern style)
   if (variant === 'split') {
     const isImageLeft = config.imagePosition !== 'right'
 
@@ -113,8 +114,8 @@ export default function About({ config, isPreview = false }: AboutProps) {
                   />
                 </div>
               ) : (
-                <div className="aspect-[4/3] bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-xl">
-                  <span className="text-8xl">🏛️</span>
+                <div className="aspect-[4/3] bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-xl text-white">
+                  <Building2 className="w-24 h-24" />
                 </div>
               )}
             </div>
@@ -185,8 +186,8 @@ export default function About({ config, isPreview = false }: AboutProps) {
                 />
               </div>
             ) : (
-              <div className="aspect-[4/3] bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-xl">
-                <span className="text-8xl">🏛️</span>
+              <div className="aspect-[4/3] bg-gradient-to-br from-green-600 to-green-700 rounded-2xl flex items-center justify-center shadow-xl text-white">
+                <Building2 className="w-24 h-24" />
               </div>
             )}
           </div>

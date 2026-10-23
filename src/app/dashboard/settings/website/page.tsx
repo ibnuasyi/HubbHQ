@@ -53,8 +53,8 @@ interface ConfigValue {
 
 // Color presets
 const COLOR_PRESETS = [
-  // Preset dari website KPRI - tema organisasi
-  { name: 'KPRI Green', primary: '#16a34a', light: '#22c55e', dark: '#15803d', description: 'Tema KPRI - Hijau Organisai' },
+  // Preset warna tema organisasi
+  { name: 'Emerald Green', primary: '#16a34a', light: '#22c55e', dark: '#15803d', description: 'Hijau Zamrud Organisasi' },
   { name: 'Navy Pro', primary: '#1e40af', light: '#3b82f6', dark: '#1e3a8a', description: 'Biru profesional' },
   { name: 'Crimson', primary: '#dc2626', light: '#ef4444', dark: '#b91c1c', description: 'Merah-bold' },
   { name: 'Amber Warm', primary: '#d97706', light: '#f59e0b', dark: '#b45309', description: 'Kuning hangat' },

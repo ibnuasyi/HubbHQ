@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
 
 interface ProgramsProps {
   config: {
@@ -34,7 +35,7 @@ export default function Programs({ config, isPreview = false }: ProgramsProps) {
     '4': 'md:grid-cols-2 lg:grid-cols-4'
   }[columns]
 
-  // Cards variant with images (KPRI style)
+  // Cards variant with images (modern style)
   if (variant === 'cards' && config.programs) {
     return (
       <section className={`py-20 lg:py-28 bg-gray-50 ${isPreview ? 'py-12' : ''}`}>
@@ -74,7 +75,7 @@ export default function Programs({ config, isPreview = false }: ProgramsProps) {
                   </div>
                 ) : (
                   <div className="aspect-video bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-                    <span className="text-6xl">{program.icon || '📋'}</span>
+                    <DynamicIcon name={program.icon || 'clipboard'} className="w-16 h-16 text-white" />
                   </div>
                 )}
 
@@ -189,7 +190,7 @@ export default function Programs({ config, isPreview = false }: ProgramsProps) {
 
                 {/* Icon */}
                 <div className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-4 group-hover:bg-green-600 transition-colors">
-                  <span className="text-2xl">{program.icon || '📋'}</span>
+                  <DynamicIcon name={program.icon || 'clipboard'} className="w-7 h-7 text-green-700 group-hover:text-white transition-colors" />
                 </div>
 
                 {/* Content */}

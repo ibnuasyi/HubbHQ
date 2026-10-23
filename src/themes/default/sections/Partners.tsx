@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { Handshake } from 'lucide-react'
 
 interface Partner {
   name?: string
@@ -30,9 +31,9 @@ export default function Partners({ config, isPreview = false }: PartnersProps) {
   }
 
   const tierLabels = {
-    platinum: '🥇 Platinum',
-    gold: '🥈 Gold',
-    silver: '🥉 Silver'
+    platinum: 'Platinum',
+    gold: 'Gold',
+    silver: 'Silver'
   }
 
   // Group partners by tier
@@ -175,7 +176,7 @@ export default function Partners({ config, isPreview = false }: PartnersProps) {
             {/* Placeholder if no partners */}
             {(!config.partners || config.partners.length === 0) && (
               <div className="w-full text-center py-12 text-gray-400">
-                <p className="text-4xl mb-4">🤝</p>
+                <Handshake className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p>Mitra akan ditampilkan di sini</p>
               </div>
             )}

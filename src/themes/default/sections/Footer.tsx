@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useWebsiteConfig } from '@/hooks/use-website-config'
-import { Mail, Phone, MapPin, Clock, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, Facebook, Instagram, Twitter, Youtube, Building2 } from 'lucide-react'
 
 interface FooterProps {
   config?: {
@@ -69,8 +69,8 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
                 <img src={config.logo} alt="Logo" className="h-10" />
               ) : (
                 <>
-                  <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center">
-                    <span className="text-xl">🏛️</span>
+                  <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center text-white">
+                    <Building2 className="w-5 h-5" />
                   </div>
                   <span className="text-xl font-bold text-white">
                     {websiteConfig.appName || 'Organisasi'}

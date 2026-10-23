@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import { signOut, useSession } from 'next-auth/react'
-import { Bell, Search, LogOut, User, Settings } from 'lucide-react'
+import { useTheme } from 'next-themes'
+import { Bell, Search, LogOut, User, Settings, Sun, Moon, Monitor } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +25,7 @@ interface HeaderProps {
 
 export function Header({ title, description }: HeaderProps) {
   const { data: session } = useSession()
+  const { theme, setTheme } = useTheme()
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
 
   const handleLogout = async () => {
@@ -52,6 +54,30 @@ export function Header({ title, description }: HeaderProps) {
             className="w-64 pl-9"
           />
         </div>
+
+        {/* Theme Toggle */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Ganti Tema">
+              {theme === 'dark' ? (
+                <Moon className="h-5 w-5 transition-all" />
+              ) : (
+                <Sun className="h-5 w-5 transition-all" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setTheme('light')}>
+              <Sun className="mr-2 h-4 w-4" /> Mode Terang
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('dark')}>
+              <Moon className="mr-2 h-4 w-4" /> Mode Gelap
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme('system')}>
+              <Monitor className="mr-2 h-4 w-4" /> Ikuti Sistem
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Notifications */}
         <DropdownMenu>

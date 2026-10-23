@@ -2,7 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, CheckCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle, Building2 } from 'lucide-react'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
 
 interface AboutProps {
   config: {
@@ -29,7 +30,7 @@ interface AboutProps {
 export default function About({ config, isPreview = false }: AboutProps) {
   const variant = config.variant || 'default'
 
-  // Cards variant - Grid 3 columns (KPRI style)
+  // Cards variant - Grid 3 columns (modern style)
   if (variant === 'cards' && config.features) {
     return (
       <section className={`py-20 lg:py-28 bg-white ${isPreview ? 'py-12' : ''}`}>
@@ -65,7 +66,7 @@ export default function About({ config, isPreview = false }: AboutProps) {
                 {/* Icon */}
                 {feature.icon && (
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                    <span className="text-3xl">{feature.icon}</span>
+                    <DynamicIcon name={feature.icon} className="w-8 h-8 text-white" />
                   </div>
                 )}
 
@@ -127,8 +128,8 @@ export default function About({ config, isPreview = false }: AboutProps) {
                     />
                   </div>
                 ) : (
-                  <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center shadow-2xl">
-                    <span className="text-8xl">🏛️</span>
+                  <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center shadow-2xl text-white">
+                    <Building2 className="w-24 h-24" />
                   </div>
                 )}
 

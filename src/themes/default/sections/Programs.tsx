@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
 
 interface ProgramsProps {
   config: {
@@ -72,7 +73,7 @@ export default function Programs({ config, isPreview = false }: ProgramsProps) {
                   </div>
                 ) : (
                   <div className="aspect-video bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center">
-                    <span className="text-6xl">{program.icon || '📋'}</span>
+                    <DynamicIcon name={program.icon || 'clipboard'} className="w-14 h-14 text-white/90" />
                   </div>
                 )}
                 <div className="p-6">
@@ -140,7 +141,7 @@ export default function Programs({ config, isPreview = false }: ProgramsProps) {
     )
   }
 
-  // Default icon cards variant (like KPRI style)
+  // Default icon cards variant (modern style style)
   return (
     <section className={`py-20 bg-white ${isPreview ? 'py-12' : ''}`}>
       <div className="container mx-auto px-4">
@@ -171,7 +172,7 @@ export default function Programs({ config, isPreview = false }: ProgramsProps) {
                   <div
                     className="w-14 h-14 rounded-xl bg-green-100 flex items-center justify-center mb-6 group-hover:bg-green-600 transition-colors"
                   >
-                    <span className="text-2xl group-hover:scale-110 transition-transform">{program.icon}</span>
+                    <DynamicIcon name={program.icon} className="w-7 h-7 text-green-700 group-hover:text-white transition-colors" />
                   </div>
                 )}
                 {!program.icon && (

@@ -1,5 +1,7 @@
 'use client'
 
+import { Target, Compass } from 'lucide-react'
+
 interface VisiMisiProps {
   config: {
     variant?: string
@@ -30,7 +32,9 @@ export default function VisiMisi({ config, isPreview = false }: VisiMisiProps) {
           <div className="max-w-3xl mx-auto mb-16">
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8 rounded-2xl">
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-4xl">🎯</span>
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                  <Target className="w-6 h-6" />
+                </div>
                 <h3 className="text-2xl font-bold">Visi</h3>
               </div>
               <p className="text-xl leading-relaxed">
@@ -79,7 +83,11 @@ export default function VisiMisi({ config, isPreview = false }: VisiMisiProps) {
           {/* Vision */}
           <div className="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-indigo-600">
             <div className="flex items-center gap-3 mb-6">
-              {config.showIcon !== false && <span className="text-4xl">🎯</span>}
+              {config.showIcon !== false && (
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <Target className="w-5 h-5" />
+                </div>
+              )}
               <h3 className="text-2xl font-bold text-gray-900">Visi</h3>
             </div>
             <p className="text-gray-600 text-lg leading-relaxed italic">
@@ -90,7 +98,11 @@ export default function VisiMisi({ config, isPreview = false }: VisiMisiProps) {
           {/* Mission */}
           <div className="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-purple-600">
             <div className="flex items-center gap-3 mb-6">
-              {config.showIcon !== false && <span className="text-4xl">📋</span>}
+              {config.showIcon !== false && (
+                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                  <Compass className="w-5 h-5" />
+                </div>
+              )}
               <h3 className="text-2xl font-bold text-gray-900">
                 {config.missionTitle || 'Misi'}
               </h3>

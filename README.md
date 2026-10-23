@@ -15,26 +15,36 @@
 
 > **HubbHQ** - Sistem Informasi Organisasi Modern yang powerful dan mudah digunakan untuk mengelola organisasi Anda.
 
-## 📸 Screenshot
+## Screenshot Aplikasi
 
-<details>
-<summary>Klik untuk melihat screenshot</summary>
+Berikut adalah dokumentasi tampilan antarmuka sistem yang telah terpasang dan siap digunakan:
 
-| Dashboard | Login | Halaman Depan |
-|:---------:|:-----:|:-------------:|
-| ![Dashboard](.github/screenshots/dashboard.png) | ![Login](.github/screenshots/login.png) | ![Homepage](.github/screenshots/homepage.png) |
+| Halaman Depan Publik | Halaman Login Autentikasi | Dashboard Utama |
+|:--------------------:|:-------------------------:|:---------------:|
+| ![Landing Page](public/screenshots/01-landing-page.png) | ![Login](public/screenshots/02-login-page.png) | ![Dashboard](public/screenshots/03-dashboard.png) |
 
-| Manajemen Anggota | Keuangan | Kalender |
-|:-----------------:|:--------:|:--------:|
-| ![Members](.github/screenshots/members.png) | ![Keuangan](.github/screenshots/keuangan.png) | ![Kalender](.github/screenshots/kalender.png) |
+| Manajemen Anggota | Keuangan & Kas Organisasi | Kalender & Agenda Kegiatan |
+|:-----------------:|:-------------------------:|:--------------------------:|
+| ![Anggota](public/screenshots/04-anggota.png) | ![Keuangan](public/screenshots/05-keuangan.png) | ![Kalender](public/screenshots/06-kalender.png) |
 
-*Screenshot akan ditambahkan nanti*
+| Persuratan & QR Code | Pengaturan Website CMS | Pusat Pengaturan Sistem |
+|:--------------------:|:----------------------:|:-----------------------:|
+| ![Surat](public/screenshots/07-surat.png) | ![Website Builder](public/screenshots/08-website-builder.png) | ![Pengaturan](public/screenshots/09-pengaturan.png) |
 
-</details>
+> Seluruh 37 tangkapan layar halaman aplikasi (8 halaman publik dan 29 modul dashboard terproteksi) tersedia di folder [`public/screenshots/pages/`](public/screenshots/pages/) dan hasil audit fungsional otomatis dapat dilihat pada [`public/screenshots/audit-report.json`](public/screenshots/audit-report.json).
 
-## ✨ Fitur
+## Akun Bawaan (Default Credentials)
 
-### 🔐 Autentikasi & Keamanan
+Setelah menjalankan `npm run db:seed`, Anda dapat langsung masuk menggunakan akun default berikut:
+
+| Peran (Role) | Email | Password | Hak Akses |
+|--------------|-------|----------|-----------|
+| **Administrator** | `admin@siop.local` | `admin123` | Akses penuh ke seluruh fitur, pengaturan sistem, dan modul |
+| **Anggota** | `ahmad@siop.local` | `password123` | Akses dashboard anggota, profil, dan agenda kegiatan |
+
+## Fitur Utama
+
+### Autentikasi & Keamanan
 - Login dengan email dan password
 - Role-based Access Control (RBAC) dinamis
 - Permission system yang fleksibel
@@ -42,41 +52,41 @@
 - Password hashing dengan bcrypt
 - Rate limiting untuk brute-force protection
 
-### 👥 Manajemen Anggota
+### Manajemen Anggota
 - CRUD anggota lengkap
 - Upload foto profil dan TTD digital
 - Data diri lengkap (tempat/tanggal lahir, alamat, kontak)
 - Filter dan pencarian cepat
 - Export data anggota
 
-### 📁 Divisi & Struktur
+### Divisi & Struktur
 - CRUD divisi dengan warna kustom
 - Manajemen anggota divisi
 - Position/jabatan di divisi
 - Hierarki wilayah (Pusat, Korwil, dll)
 
-### 📋 Program Kerja
+### Program Kerja
 - CRUD program kerja per divisi
 - Checkpoint system (progress tracking)
 - PIC (Person In Charge) assignment
 - Timeline dan deadline
 - Export laporan proker
 
-### 💰 Keuangan
+### Keuangan
 - Manajemen kas anggota (iuran bulanan)
 - Kategori: kas, sumbangan, bisnis
 - Approval system oleh bendahara
 - Upload bukti transfer
 - Rekap dan export laporan keuangan
 
-### 📅 Kalender
+### Kalender
 - Agenda dan acara organisasi
 - FullCalendar integration
 - Integrasi dengan program kerja
 - Multiple views (Month, Week, Day)
 - Drag & drop untuk reschedule
 
-### 📨 Surat Masuk/Keluar
+### Surat Masuk/Keluar
 - Template surat yang bisa dikustomisasi
 - Form dinamis per jenis surat
 - Generate surat otomatis
@@ -85,27 +95,132 @@
 - Approval flow sekretaris
 - Halaman verifikasi publik
 
-### 📚 Mini Library
+### Mini Library
 - Upload buku (PDF/EPUB)
 - Kategori dan tags
 - PDF reader built-in
 - View count & download count
 
-### 🌐 Website Builder
+### Website Builder
 - Multiple themes (organ2-style, default)
 - Drag & drop page builder
 - WYSIWYG editor (Tiptap)
 - Section-based design
 - Customizable colors
 
-### 📊 Lainnya
+### Fitur Tambahan
 - Proposal Dana dengan approval workflow
 - Notifikasi real-time
 - Audit log system
 - Soft deletes untuk keamanan data
 - Responsive design (mobile-friendly)
 
-## 🚀 Quick Start
+## Cara Kerja & Arsitektur Sistem
+
+HubbHQ dibangun dengan arsitektur modern berbasis Next.js App Router, Prisma ORM, dan NextAuth v5. Sistem memisahkan antara portal publik yang ramah mesin pencari (SEO-friendly) dan dashboard internal terproteksi yang dilengkapi Role-Based Access Control (RBAC).
+
+### 1. Diagram Arsitektur Tingkat Tinggi
+
+```mermaid
+flowchart TD
+    subgraph Klien["1. Lapisan Pengguna & Klien"]
+        PublicUser["Pengunjung Publik (Web/Mobile)"]
+        MemberUser["Anggota & Pengurus Organisasi"]
+        AdminUser["Administrator Sistem"]
+    end
+
+    subgraph Gerbang["2. Gerbang & Keamanan Edge"]
+        Middleware["Next.js Middleware (Route Guard)"]
+        RateLimiter["Rate Limiting & Anti Brute-Force"]
+        AuthCheck["NextAuth v5 Session & Token Validator"]
+    end
+
+    subgraph Inti["3. Logika Aplikasi & App Router"]
+        PublicRoutes["Portal Publik (/berita, /galeri, /tentang, /verify)"]
+        DashboardApp["Dashboard Organisasi (/dashboard)"]
+        CMSBuilder["Website & Theme Builder Engine"]
+        APILayer["REST API Endpoints (/api/*)"]
+    end
+
+    subgraph Modul["4. Modul Fungsional"]
+        ModSurat["Persuratan & QR HMAC Verification"]
+        ModKeuangan["Keuangan, Kas Anggota & Approval"]
+        ModProker["Program Kerja & Checkpoints"]
+        ModAnggota["Direktori Anggota & Struktur Organisasi"]
+        ModKalender["Kalender Agenda & FullCalendar Sync"]
+    end
+
+    subgraph DataStore["5. Lapisan Data & Penyimpanan"]
+        PrismaORM["Prisma ORM 5.x"]
+        Database[("MySQL 8.x Database")]
+        StorageSystem["Storage Provider (Local / S3 / R2)"]
+    end
+
+    PublicUser -->|Akses Halaman Terbuka| Middleware
+    MemberUser -->|Login & Autentikasi| Middleware
+    AdminUser -->|Kelola Konfigurasi| Middleware
+
+    Middleware --> RateLimiter
+    RateLimiter --> AuthCheck
+
+    AuthCheck -->|Publik / Terverifikasi| PublicRoutes
+    AuthCheck -->|Sesi Login Valid| DashboardApp
+    AuthCheck -->|Akses API Terproteksi| APILayer
+
+    DashboardApp --> Modul
+    CMSBuilder --> PublicRoutes
+    APILayer --> Modul
+
+    Modul --> PrismaORM
+    Modul --> StorageSystem
+    PrismaORM --> Database
+```
+
+### 2. Diagram Alur Autentikasi & Otorisasi Berjenjang (RBAC)
+
+```mermaid
+flowchart TD
+    A["Pengguna Masuk ke /login"] --> B["Kirim Email & Password"]
+    B --> C{"Pemeriksaan Rate Limit"}
+    C -->|"Percobaan > 5 Kali"| D["Kunci Sementara 15 Menit"]
+    C -->|"Aman"| E["Verifikasi Kredensial via Prisma & Bcrypt"]
+    E -->|"Kredensial Salah"| F["Tampilkan Pesan Error"]
+    E -->|"Kredensial Valid"| G["Generate Sesi NextAuth"]
+    G --> H["Pengalihan ke /dashboard"]
+    H --> I{"Pemeriksaan Hak Akses (RBAC)"}
+    I -->|"Role: Administrator"| J["Akses Penuh: Master Data, CMS, Persetujuan & Log"]
+    I -->|"Role: Pengurus / BPH"| K["Akses Terbatas: Persuratan, Keuangan, & Program Kerja"]
+    I -->|"Role: Anggota"| L["Akses Personal: Profil, Iuran Kas, & Agenda Kegiatan"]
+```
+
+### 3. Diagram Alur Persuratan & Verifikasi QR Code
+
+```mermaid
+flowchart LR
+    A["Pemohon / Anggota"] -->|"1. Isi Form Dinamis"| B["Sistem Persuratan"]
+    B -->|"2. Antrean Masuk"| C["Sekretaris Organisasi"]
+    C -->|"3. Review & Setujui"| D["Penomoran Otomatis"]
+    D -->|"4. Beri Tanda Tangan"| E["Generate QR HMAC Signature"]
+    E -->|"5. Render PDF Resmi"| F["Dokumen Terbit"]
+    F -->|"6. Scan QR Code"| G["Halaman Verifikasi Publik"]
+    G -->|"7. Cek Hash Kriptografi"| H["Status: Dokumen Asli & Valid"]
+```
+
+### 4. Diagram Alur Manajemen Keuangan & Kas Anggota
+
+```mermaid
+flowchart TD
+    M["Anggota Organisasi"] -->|"1. Bayar Iuran Bulanan / Donasi"| U["Unggah Bukti Transfer"]
+    U -->|"2. Simpan Catatan (Status: PENDING)"| T["Buku Kas & Transaksi"]
+    T -->|"3. Notifikasi Antrean Transaksi"| B["Bendahara Organisasi"]
+    B -->|"4. Verifikasi Bukti Transfer"| Decision{"Pemeriksaan Bendahara"}
+    Decision -->|"Sesuai"| App["Status: APPROVED"]
+    Decision -->|"Tidak Sesuai"| Rej["Status: REJECTED (Beri Catatan)"]
+    App -->|"5. Perbarui Saldo Otomatis"| Saldo["Rekapitulasi Saldo Kas"]
+    Saldo -->|"6. Cetak Laporan"| Rep["Laporan Keuangan (Excel / PDF)"]
+```
+
+## Panduan Cepat (Quick Start)
 
 ### Prerequisites
 
@@ -163,16 +278,16 @@ npm run dev
 
 Buka [http://localhost:3000](http://localhost:3000) di browser.
 
-## ☁️ Free Hosting - cicem.net
+## Deployment Cloud - cicem.net
 
 Jika Anda ingin mendeploy aplikasi secara gratis untuk organisasi Anda, gunakan **[cicem.net](https://cicem.net)** - Platform hosting gratis untuk organisasi Indonesia.
 
 Keuntungan menggunakan cicem.net:
-- ✅ Gratis untuk organisasi nirlaba
-- ✅ Easy deployment dengan GitHub integration
-- ✅ SSL certificate otomatis
-- ✅ Support database MySQL
-- ✅ CDN global untuk performa terbaik
+- Gratis untuk organisasi nirlaba
+- Easy deployment dengan integrasi GitHub
+- Sertifikat SSL otomatis
+- Dukungan database MySQL
+- CDN global untuk performa optimal
 
 ### Deploy ke cicem.net
 
@@ -185,7 +300,7 @@ git push origin main
 # 4. Deploy otomatis!
 ```
 
-## 🐳 Docker Deployment
+## Deployment Docker
 
 ### Menggunakan Docker Compose
 
@@ -215,7 +330,7 @@ docker run -d \
   hubbhq
 ```
 
-## 📁 Struktur Project
+## Struktur Project
 
 ```
 hubbhq/
@@ -243,7 +358,7 @@ hubbhq/
 └── package.json
 ```
 
-## 🔧 Konfigurasi
+## Konfigurasi
 
 ### Environment Variables
 
@@ -266,9 +381,9 @@ Sistem menggunakan RBAC dengan roles berikut:
 | `bendahara` | Keuangan & kas |
 | `anggota` | Akses dasar |
 
-## 🛠️ Development
+## Pengembangan (Development)
 
-### Available Scripts
+### Perintah yang Tersedia
 
 ```bash
 npm run dev          # Development server
@@ -282,14 +397,14 @@ npm run db:studio    # Open Prisma Studio
 npm run db:seed      # Run basic seed
 ```
 
-### Code Style
+### Standar Kode
 
 Project menggunakan:
 - ESLint untuk linting
 - Prettier untuk formatting
 - Husky + lint-staged untuk pre-commit hooks
 
-## 📝 License
+## Lisensi
 
 Project ini dilisensikan di bawah **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
@@ -297,34 +412,34 @@ Lihat file [LICENSE](LICENSE) untuk detail lengkap.
 
 ### Implikasi Lisensi AGPL-3.0
 
-- ✅ Anda bebas menggunakan, memodifikasi, dan mendistribusikan project ini
-- ✅ Anda harus membuka source code modifikasi Anda
-- ✅ Anda harus mencantumkan attribution ke author asli
-- ✅ Modifikasi harus juga dilisensikan di bawah AGPL-3.0
-- ❌ Anda **tidak boleh** menggunakan project ini untuk proprietary software
+- Anda bebas menggunakan, memodifikasi, dan mendistribusikan project ini
+- Anda harus membuka source code modifikasi Anda
+- Anda harus mencantumkan atribusi ke pembuat asli
+- Modifikasi harus juga dilisensikan di bawah AGPL-3.0
+- Anda **tidak boleh** menggunakan project ini untuk software proprietary tertutup
 
-### Kontributor
+### Pembuat
 
 Dikembangkan oleh **Ibnu Batuthah** - All Rights Reserved
 
-## 🤝 Contributing
+## Kontribusi
 
 Kontribusi sangat diterima! Silakan baca [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan berkontribusi.
 
-## 📖 Dokumentasi
+## Dokumentasi
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Panduan berkontribusi
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Kode etik
 - [CHANGELOG.md](CHANGELOG.md) - Riwayat perubahan
 
-## 🆘 Dukungan
+## Dukungan
 
 Jika Anda menemukan bug atau memiliki pertanyaan:
 1. Buat Issue baru di GitHub
-2. Email ke developer
+2. Hubungi tim pengembang
 
 ---
 
 <p align="center">
-  Dibuat dengan ❤️ oleh <strong>Ibnu Batuthah</strong>
+  HubbHQ - Dikembangkan oleh <strong>Ibnu Batuthah</strong>
 </p>

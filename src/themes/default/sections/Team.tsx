@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { User } from 'lucide-react'
 
 interface TeamProps {
   config: {
@@ -43,8 +44,8 @@ export default function Team({ config, isPreview = false }: TeamProps) {
                   {member.photo ? (
                     <Image src={member.photo} alt={member.name || ''} width={128} height={128} className="object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gray-700 flex items-center justify-center text-4xl">
-                      👤
+                    <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400">
+                      <User className="w-16 h-16" />
                     </div>
                   )}
                 </div>
@@ -75,7 +76,9 @@ export default function Team({ config, isPreview = false }: TeamProps) {
                   {member.photo ? (
                     <Image src={member.photo} alt={member.name || ''} width={40} height={40} className="object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-gray-300 flex items-center justify-center">👤</div>
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
+                      <User className="w-5 h-5" />
+                    </div>
                   )}
                 </div>
                 <div>
@@ -123,8 +126,8 @@ export default function Team({ config, isPreview = false }: TeamProps) {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                      <span className="text-5xl text-white">👤</span>
+                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white">
+                      <User className="w-20 h-20" />
                     </div>
                   )}
                 </div>
@@ -160,8 +163,8 @@ export default function Team({ config, isPreview = false }: TeamProps) {
             // Placeholder
             Array.from({ length: 4 }).map((_, index) => (
               <div key={index} className="bg-white rounded-2xl overflow-hidden shadow-lg">
-                <div className="aspect-square bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                  <span className="text-6xl">👤</span>
+                <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400">
+                  <User className="w-20 h-20" />
                 </div>
                 <div className="p-6 text-center">
                   <h3 className="text-xl font-bold text-gray-900 mb-1">Nama Anggota</h3>

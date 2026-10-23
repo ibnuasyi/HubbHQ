@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
 
 interface Stat {
   value?: string
@@ -114,7 +115,7 @@ export default function Stats({ config, isPreview = false }: StatsProps) {
     )
   }
 
-  // Default animated stats (Green theme like KPRI)
+  // Default animated stats (Green theme modern style)
   return (
     <section className={`py-16 lg:py-20 bg-gradient-to-r from-green-700 via-green-600 to-green-700 ${isPreview ? 'py-12' : ''}`} ref={sectionRef}>
       <div className="container mx-auto px-4">
@@ -139,7 +140,11 @@ export default function Stats({ config, isPreview = false }: StatsProps) {
                 className="text-center"
               >
                 {stat.icon && (
-                  <div className="text-5xl mb-4">{stat.icon}</div>
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                      <DynamicIcon name={stat.icon} className="w-7 h-7 text-white" />
+                    </div>
+                  </div>
                 )}
                 <div
                   className="text-4xl md:text-5xl font-bold text-white mb-2"

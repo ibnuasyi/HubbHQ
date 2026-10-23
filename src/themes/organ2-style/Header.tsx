@@ -37,7 +37,7 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
   }, [])
 
   const logoUrl = websiteConfig.logoUrl || config?.logo
-  const logoText = websiteConfig.appName || config?.logoText || 'KPRI'
+  const logoText = websiteConfig.appName || config?.logoText || 'HubbHQ'
   const isTransparent = config?.transparent && !isScrolled
 
   // Navigation items

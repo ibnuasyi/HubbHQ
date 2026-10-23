@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight, Play, Building2, Users } from 'lucide-react'
 
 interface HeroProps {
   config: {
@@ -30,7 +30,7 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
     setIsVisible(true)
   }, [])
 
-  // Split variant - Image on one side, content on the other (KPRI style)
+  // Split variant - Image on one side, content on the other (modern style)
   if (config.variant === 'split') {
     const isImageLeft = config.imagePosition === 'left'
 
@@ -127,7 +127,7 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
                   <div className="aspect-[4/3] rounded-3xl bg-gradient-to-br from-green-600 via-green-500 to-emerald-400 flex items-center justify-center shadow-2xl">
                     <div className="text-center text-white">
                       <div className="w-24 h-24 mx-auto mb-4 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center">
-                        <span className="text-5xl">🏛️</span>
+                        <Building2 className="w-12 h-12 text-white" />
                       </div>
                       <p className="text-lg font-medium opacity-90">Organisasi</p>
                     </div>
@@ -137,8 +137,8 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
                 {/* Floating card */}
                 <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-xl p-5 border border-gray-100">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                      <span className="text-2xl">👥</span>
+                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-green-700">
+                      <Users className="w-6 h-6" />
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-gray-900">500+</div>

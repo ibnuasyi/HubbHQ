@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Loader2, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Trash2, Camera } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -391,9 +391,9 @@ export default function EditAnggotaPage() {
                 </Avatar>
                 <label
                   htmlFor="avatar-upload"
-                  className="absolute -bottom-2 -right-2 h-8 w-8 cursor-pointer rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90"
+                  className="absolute -bottom-2 -right-2 h-8 w-8 cursor-pointer rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
                 >
-                  <span className="text-lg">📷</span>
+                  <Camera className="w-4 h-4" />
                   <input
                     id="avatar-upload"
                     type="file"

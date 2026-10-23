@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Calendar, MapPin, Clock } from 'lucide-react'
 
 // Calendar utility functions (inline since @/lib/calendar doesn't exist)
 function getWeeksForMonth(date: Date) {
@@ -243,8 +244,9 @@ export default function Events({ config, isPreview = false }: EventsProps) {
                       <div className="text-sm text-gray-500 mb-1">{formatDate(event.startDate)}</div>
                       <h3 className="text-lg font-bold text-gray-900">{event.title}</h3>
                       {event.location && (
-                        <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
-                          📍 {event.location}
+                        <p className="text-gray-600 text-sm flex items-center gap-1.5 mt-1">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                          <span>{event.location}</span>
                         </p>
                       )}
                     </div>
@@ -253,8 +255,8 @@ export default function Events({ config, isPreview = false }: EventsProps) {
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">
-                <p className="text-4xl mb-4">📅</p>
-                <p>Belum ada event yang scheduled</p>
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p>Belum ada event yang terjadwal</p>
               </div>
             )}
           </div>
@@ -297,7 +299,10 @@ export default function Events({ config, isPreview = false }: EventsProps) {
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-900">{event.title}</h3>
                     {event.location && (
-                      <p className="text-sm text-gray-500">📍 {event.location}</p>
+                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>{event.location}</span>
+                      </p>
                     )}
                   </div>
                   {!event.allDay && (
@@ -307,7 +312,7 @@ export default function Events({ config, isPreview = false }: EventsProps) {
               ))
             ) : (
               <div className="text-center py-12 text-gray-500">
-                <p className="text-4xl mb-4">📅</p>
+                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p>Belum ada event</p>
               </div>
             )}
@@ -349,11 +354,11 @@ export default function Events({ config, isPreview = false }: EventsProps) {
                 />
                 <div className="p-6">
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                    <span>📅</span>
+                    <Calendar className="w-4 h-4 text-gray-400" />
                     <span>{formatDate(event.startDate)}</span>
                     {!event.allDay && (
                       <>
-                        <span>🕐</span>
+                        <Clock className="w-4 h-4 text-gray-400 ml-2" />
                         <span>{formatTime(event.startDate)}</span>
                       </>
                     )}
@@ -363,8 +368,9 @@ export default function Events({ config, isPreview = false }: EventsProps) {
                     <p className="text-gray-600 line-clamp-2">{event.description}</p>
                   )}
                   {event.location && (
-                    <p className="text-sm text-gray-500 mt-3 flex items-center gap-1">
-                      📍 {event.location}
+                    <p className="text-sm text-gray-500 mt-3 flex items-center gap-1.5">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <span>{event.location}</span>
                     </p>
                   )}
                 </div>

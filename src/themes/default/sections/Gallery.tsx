@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { ZoomIn, Image as ImageIcon } from 'lucide-react'
 
 interface GalleryImage {
   id: string
@@ -107,9 +108,9 @@ export default function Gallery({ config, isPreview = false }: GalleryProps) {
                       className="object-cover w-full group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                      <span className="text-white text-3xl opacity-0 group-hover:opacity-100 transition-opacity">
-                        🔍
-                      </span>
+                      <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ZoomIn className="w-6 h-6" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -219,14 +220,18 @@ export default function Gallery({ config, isPreview = false }: GalleryProps) {
                   </div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-white text-4xl bg-black/30 rounded-full p-2">🔍</span>
+                  <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white">
+                    <ZoomIn className="w-6 h-6" />
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">📷</span>
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4 text-gray-400">
+              <ImageIcon className="w-8 h-8" />
+            </div>
             <p className="text-gray-500">Belum ada foto dalam galeri</p>
           </div>
         )}

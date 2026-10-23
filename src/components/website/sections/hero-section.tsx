@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useWebsiteConfig } from '@/hooks/use-website-config'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Play } from 'lucide-react'
+import { ArrowRight, Play, Building2, Sparkles } from 'lucide-react'
 
 interface HeroSectionProps {
   title?: string
@@ -124,8 +124,8 @@ export function HeroSection({
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-32 h-32 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
-                      <span className="text-5xl">🏛️</span>
+                    <div className="w-32 h-32 mx-auto rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                      <Building2 className="w-16 h-16" />
                     </div>
                   </div>
                 </div>
@@ -135,8 +135,8 @@ export function HeroSection({
             {/* Floating Card */}
             <div className="absolute -bottom-6 -left-6 bg-card rounded-xl shadow-xl p-4 border">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-xl">✨</span>
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <Sparkles className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="font-semibold">Bergabung Sekarang</div>

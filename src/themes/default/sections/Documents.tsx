@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { FileText, FolderOpen, FileSpreadsheet, Archive, FileCode, ArrowDownToLine } from 'lucide-react'
 
 interface DocumentItem {
   id: string
@@ -54,24 +55,21 @@ export default function Documents({ config, isPreview = false }: DocumentsProps)
     fetchDocuments()
   }, [])
 
-  const getFileIcon = (fileType?: string) => {
-    switch (fileType) {
+  const renderFileIcon = (fileType?: string) => {
+    switch (fileType?.toLowerCase()) {
       case 'pdf':
-        return '📄'
+        return <FileText className="w-8 h-8 text-rose-500" />
       case 'doc':
       case 'docx':
-        return '📝'
+        return <FileText className="w-8 h-8 text-blue-500" />
       case 'xls':
       case 'xlsx':
-        return '📊'
-      case 'ppt':
-      case 'pptx':
-        return '📽️'
+        return <FileSpreadsheet className="w-8 h-8 text-emerald-500" />
       case 'zip':
       case 'rar':
-        return '📦'
+        return <Archive className="w-8 h-8 text-amber-500" />
       default:
-        return '📄'
+        return <FileCode className="w-8 h-8 text-indigo-500" />
     }
   }
 
@@ -105,7 +103,9 @@ export default function Documents({ config, isPreview = false }: DocumentsProps)
                   rel="noopener noreferrer"
                   className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <span className="text-3xl">{getFileIcon(doc.fileType)}</span>
+                  <div className="shrink-0 p-2 rounded-lg bg-gray-50 border border-gray-100">
+                    {renderFileIcon(doc.fileType)}
+                  </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{doc.title}</h3>
                     {doc.description && (
@@ -119,7 +119,7 @@ export default function Documents({ config, isPreview = false }: DocumentsProps)
               ))
             ) : (
               <div className="text-center py-12 text-gray-500">
-                <p className="text-4xl mb-4">📁</p>
+                <FolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p>Belum ada dokumen</p>
               </div>
             )}
@@ -187,7 +187,9 @@ export default function Documents({ config, isPreview = false }: DocumentsProps)
                 className="group bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-colors"
               >
                 <div className="flex items-start gap-4">
-                  <span className="text-4xl">{getFileIcon(doc.fileType)}</span>
+                  <div className="shrink-0 p-2 rounded-xl bg-white shadow-sm border border-gray-100">
+                    {renderFileIcon(doc.fileType)}
+                  </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
                       {doc.title}
@@ -200,7 +202,9 @@ export default function Documents({ config, isPreview = false }: DocumentsProps)
                     <div className="flex items-center gap-2 mt-3">
                       <span className="text-xs text-gray-500 uppercase">{doc.fileType}</span>
                       <span className="text-xs text-gray-300">•</span>
-                      <span className="text-xs text-indigo-600 font-medium">Download →</span>
+                      <span className="text-xs text-indigo-600 font-medium inline-flex items-center gap-1">
+                        Download <ArrowDownToLine className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -209,9 +213,9 @@ export default function Documents({ config, isPreview = false }: DocumentsProps)
           </div>
         ) : (
           <div className="text-center py-12 text-gray-500">
-            <p className="text-6xl mb-4">📁</p>
-            <p className="text-xl">Belum ada dokumen</p>
-            <p className="text-sm mt-2">Dokumen resmi akan ditampilkan di sini</p>
+            <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <p className="text-xl font-medium text-gray-700">Belum ada dokumen</p>
+            <p className="text-sm mt-1 text-gray-500">Dokumen resmi akan ditampilkan di sini</p>
           </div>
         )}
       </div>

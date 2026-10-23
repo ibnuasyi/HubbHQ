@@ -248,7 +248,7 @@ export async function syncAllProkerDeadlines(): Promise<{
         // Create deadline event
         await prisma.calendarEvent.create({
           data: {
-            title: `📅 [DEADLINE] ${proker.title}`,
+            title: `[DEADLINE] ${proker.title}`,
             description: `Batas akhir program kerja: ${proker.title}`,
             startDate: proker.endDate,
             endDate: proker.endDate,

@@ -73,14 +73,14 @@ export default function ThemesPage() {
             accentColor: '#ec4899',
             defaultSections: ['hero', 'about', 'visimisi', 'programs', 'team', 'contact', 'footer'],
             availableSections: [
-              { name: 'Hero', slug: 'hero', icon: '🎯' },
-              { name: 'About', slug: 'about', icon: '📝' },
-              { name: 'Visi Misi', slug: 'visimisi', icon: '🎯' },
-              { name: 'Programs', slug: 'programs', icon: '📋' },
-              { name: 'Team', slug: 'team', icon: '👥' },
-              { name: 'Gallery', slug: 'gallery', icon: '🖼️' },
-              { name: 'Contact', slug: 'contact', icon: '📧' },
-              { name: 'Footer', slug: 'footer', icon: '📄' },
+              { name: 'Hero', slug: 'hero', icon: 'image' },
+              { name: 'About', slug: 'about', icon: 'filetext' },
+              { name: 'Visi Misi', slug: 'visimisi', icon: 'target' },
+              { name: 'Programs', slug: 'programs', icon: 'clipboard' },
+              { name: 'Team', slug: 'team', icon: 'users' },
+              { name: 'Gallery', slug: 'gallery', icon: 'image' },
+              { name: 'Contact', slug: 'contact', icon: 'mail' },
+              { name: 'Footer', slug: 'footer', icon: 'filetext' },
             ],
           }
         })
@@ -180,9 +180,11 @@ export default function ThemesPage() {
                   {theme.thumbnail ? (
                     <img src={theme.thumbnail} alt={theme.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="text-center">
-                      <span className="text-5xl">🎨</span>
-                      <p className="text-sm text-muted-foreground mt-2">{theme.name}</p>
+                    <div className="text-center flex flex-col items-center">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-2">
+                        <Palette className="w-6 h-6" />
+                      </div>
+                      <p className="text-sm font-medium text-muted-foreground">{theme.name}</p>
                     </div>
                   )}
 

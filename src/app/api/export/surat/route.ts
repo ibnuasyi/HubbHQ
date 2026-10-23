@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 // GET /api/export/surat?format=pdf|excel&type=MASUK|KELUAR&year=2024
 export async function GET(request: NextRequest) {
@@ -68,26 +68,26 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'excel') {
-      const wb = XLSX.utils.book_new()
+      const workbook = new ExcelJS.Workbook()
+      workbook.creator = 'HubbHQ'
+      workbook.created = new Date()
+      const worksheet = workbook.addWorksheet('Laporan Surat')
 
-      // Summary sheet
-      const summaryData = [
-        ['LAPORAN SURAT'],
-        [`Tahun: ${year}`],
-        [],
-        ['RINGKASAN'],
-        ['Total Surat', totalSurat],
-        ['Surat Masuk', suratMasuk],
-        ['Surat Keluar', suratKeluar],
-        ['Disetujui', approved],
-        ['Menunggu', pending],
-        [],
-        ['DETAIL SURAT'],
-        ['No', 'Tanggal', 'Jenis', 'Nomor Surat', 'Perihal', 'Tipe', 'Status', 'Pemohon', 'Pemberi Approval'],
-      ]
+      worksheet.addRow(['LAPORAN SURAT'])
+      worksheet.addRow([`Tahun: ${year}`])
+      worksheet.addRow([])
+      worksheet.addRow(['RINGKASAN'])
+      worksheet.addRow(['Total Surat', totalSurat])
+      worksheet.addRow(['Surat Masuk', suratMasuk])
+      worksheet.addRow(['Surat Keluar', suratKeluar])
+      worksheet.addRow(['Disetujui', approved])
+      worksheet.addRow(['Menunggu', pending])
+      worksheet.addRow([])
+      worksheet.addRow(['DETAIL SURAT'])
+      worksheet.addRow(['No', 'Tanggal', 'Jenis', 'Nomor Surat', 'Perihal', 'Tipe', 'Status', 'Pemohon', 'Pemberi Approval'])
 
       surat.forEach((s, i) => {
-        summaryData.push([
+        worksheet.addRow([
           (i + 1).toString(),
           new Date(s.createdAt).toLocaleDateString('id-ID'),
           s.jenisSurat ? `${s.jenisSurat.name} (${s.jenisSurat.code})` : '-',
@@ -100,15 +100,10 @@ export async function GET(request: NextRequest) {
         ])
       })
 
-      const ws = XLSX.utils.aoa_to_sheet(summaryData)
-      XLSX.utils.book_append_sheet(wb, ws, 'Laporan Surat')
-
-      // Generate buffer
-      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
-
+      const buffer = await workbook.xlsx.writeBuffer()
       const filename = `laporan-surat-${year}${type ? `-${type.toLowerCase()}` : ''}.xlsx`
 
-      return new NextResponse(buffer, {
+      return new NextResponse(Buffer.from(buffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,

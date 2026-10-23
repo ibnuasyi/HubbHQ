@@ -348,11 +348,11 @@ export default function JenisSuratPage() {
                   <SelectValue placeholder="Pilih preset atau mulai dari nol" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="suratKeterangan">📄 Surat Keterangan</SelectItem>
-                  <SelectItem value="suratUndangan">📅 Surat Undangan</SelectItem>
-                  <SelectItem value="suratKeputusan">⚖️ Surat Keputusan</SelectItem>
-                  <SelectItem value="suratPerintah">📋 Surat Perintah</SelectItem>
-                  <SelectItem value="suratEdaran">📢 Surat Edaran</SelectItem>
+                  <SelectItem value="suratKeterangan">Surat Keterangan</SelectItem>
+                  <SelectItem value="suratUndangan">Surat Undangan</SelectItem>
+                  <SelectItem value="suratKeputusan">Surat Keputusan</SelectItem>
+                  <SelectItem value="suratPerintah">Surat Perintah</SelectItem>
+                  <SelectItem value="suratEdaran">Surat Edaran</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -433,7 +433,9 @@ export default function JenisSuratPage() {
                     onChange={(e) => {
                       try {
                         setFormSchema(JSON.parse(e.target.value))
-                      } catch {}
+                      } catch {
+                        // Ignore JSON parse errors during input
+                      }
                     }}
                     rows={12}
                     className="font-mono text-xs"
@@ -514,11 +516,11 @@ export default function JenisSuratPage() {
                   <SelectValue placeholder="Pilih preset atau mulai dari nol" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="suratKeterangan">📄 Surat Keterangan</SelectItem>
-                  <SelectItem value="suratUndangan">📅 Surat Undangan</SelectItem>
-                  <SelectItem value="suratKeputusan">⚖️ Surat Keputusan</SelectItem>
-                  <SelectItem value="suratPerintah">📋 Surat Perintah</SelectItem>
-                  <SelectItem value="suratEdaran">📢 Surat Edaran</SelectItem>
+                  <SelectItem value="suratKeterangan">Surat Keterangan</SelectItem>
+                  <SelectItem value="suratUndangan">Surat Undangan</SelectItem>
+                  <SelectItem value="suratKeputusan">Surat Keputusan</SelectItem>
+                  <SelectItem value="suratPerintah">Surat Perintah</SelectItem>
+                  <SelectItem value="suratEdaran">Surat Edaran</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -599,7 +601,9 @@ export default function JenisSuratPage() {
                     onChange={(e) => {
                       try {
                         setFormSchema(JSON.parse(e.target.value))
-                      } catch {}
+                      } catch {
+                        // Ignore JSON parse errors during input
+                      }
                     }}
                     rows={12}
                     className="font-mono text-xs"

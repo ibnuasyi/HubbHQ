@@ -1,6 +1,8 @@
 'use client'
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import {
   Plus,
   Loader2,
@@ -10,8 +12,6 @@ import {
   Clock,
   AlertCircle,
   Eye,
-  Upload,
-  History,
   RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -39,7 +39,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface Proposal {
   id: string
@@ -67,14 +66,15 @@ const formatCurrency = (amount: number | string) => {
 }
 
 const statusConfig = {
-  PENDING: { label: 'Menunggu Review', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  APPROVED: { label: 'Disetujui', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  REJECTED: { label: 'Ditolak', color: 'bg-red-100 text-red-800', icon: XCircle },
-  NEEDS_REVISION: { label: 'Butuh Revisi', color: 'bg-orange-100 text-orange-800', icon: AlertCircle },
-  REVISED: { label: 'Revisi Diajukan', color: 'bg-blue-100 text-blue-800', icon: RefreshCw },
+  PENDING: { label: 'Menunggu Review', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300', icon: Clock },
+  APPROVED: { label: 'Disetujui', color: 'bg-green-100 text-green-800 dark:bg-emerald-950/60 dark:text-emerald-300', icon: CheckCircle },
+  REJECTED: { label: 'Ditolak', color: 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300', icon: XCircle },
+  NEEDS_REVISION: { label: 'Butuh Revisi', color: 'bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300', icon: AlertCircle },
+  REVISED: { label: 'Revisi Diajukan', color: 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300', icon: RefreshCw },
 }
 
 export default function ProposalPage() {
+  const router = useRouter()
   const [proposals, setProposals] = React.useState<Proposal[]>([])
   const [loading, setLoading] = React.useState(true)
   const [status, setStatus] = React.useState<string>('')
@@ -82,12 +82,7 @@ export default function ProposalPage() {
   const [totalPages, setTotalPages] = React.useState(1)
   const [total, setTotal] = React.useState(0)
   const [showAdd, setShowAdd] = React.useState(false)
-  const [showDetail, setShowDetail] = React.useState(false)
-  const [selectedProposal, setSelectedProposal] = React.useState<Proposal | null>(null)
   const [submitting, setSubmitting] = React.useState(false)
-  const [actionLoading, setActionLoading] = React.useState<string | null>(null)
-  const [note, setNote] = React.useState('')
-  const [revisionFile, setRevisionFile] = React.useState<File | null>(null)
 
   const limit = 20
 
@@ -175,68 +170,6 @@ export default function ProposalPage() {
     }
   }
 
-  const handleAction = async (id: string, action: string) => {
-    setActionLoading(id)
-    try {
-      let body: any = { action }
-
-      // For request_revision, include the note
-      if (action === 'request_revision' && note) {
-        body.note = note
-      }
-
-      const res = await fetch(`/api/proposal/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      if (res.ok) {
-        setShowDetail(false)
-        setNote('')
-        fetchProposals()
-      }
-    } catch (error) {
-      console.error('Error action:', error)
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const handleSubmitRevision = async () => {
-    if (!selectedProposal || !revisionFile) return
-
-    setActionLoading(selectedProposal.id)
-    try {
-      const formData = new FormData()
-      formData.append('action', 'submit_revision')
-      formData.append('revisionFile', revisionFile)
-
-      const res = await fetch(`/api/proposal/${selectedProposal.id}`, {
-        method: 'PATCH',
-        body: formData,
-      })
-
-      if (res.ok) {
-        setShowDetail(false)
-        setRevisionFile(null)
-        setNote('')
-        fetchProposals()
-      }
-    } catch (error) {
-      console.error('Error submitting revision:', error)
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const openDetail = async (proposal: Proposal) => {
-    setSelectedProposal(proposal)
-    setShowDetail(true)
-    setNote('')
-    setRevisionFile(null)
-  }
-
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -290,36 +223,61 @@ export default function ProposalPage() {
                   return (
                     <div
                       key={p.id}
-                      className="flex items-start justify-between p-4 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => openDetail(p)}
+                      className="flex items-start justify-between p-4 rounded-lg border hover:border-primary/50 hover:bg-muted/40 cursor-pointer transition-all shadow-sm group"
+                      onClick={() => router.push(`/dashboard/proposal/${p.id}`)}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-full ${config.color}`}>
+                      <div className="flex items-start gap-3 flex-1 min-w-0 pr-4">
+                        <div className={`p-2 rounded-full shrink-0 ${config.color}`}>
                           <StatusIcon className="h-4 w-4" />
                         </div>
-                        <div>
-                          <p className="font-medium">{p.title}</p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{p.requester.name || 'Unknown'}</span>
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            href={`/dashboard/proposal/${p.id}`}
+                            className="font-semibold text-base text-foreground group-hover:text-primary transition-colors hover:underline block truncate"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {p.title}
+                          </Link>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
+                            <span>{p.requester.name || 'Pengguna'}</span>
                             {p.programKerja && (
                               <>
                                 <span>•</span>
-                                <span>{p.programKerja.title}</span>
+                                <span className="truncate">{p.programKerja.title}</span>
                               </>
                             )}
                           </div>
-                          {/* Show revision note preview */}
                           {(p.status === 'NEEDS_REVISION' || p.status === 'REVISED') && p.revisionNote && (
                             <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              {p.revisionNote.substring(0, 60)}...
+                              <AlertCircle className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{p.revisionNote}</span>
+                            </p>
+                          )}
+                          {p.reviewedNote && p.status === 'REJECTED' && (
+                            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                              <XCircle className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{p.reviewedNote}</span>
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold">{formatCurrency(p.amount)}</p>
-                        <Badge className={config.color}>{config.label}</Badge>
+                      <div className="flex items-center gap-4 shrink-0 text-right">
+                        <div>
+                          <p className="font-bold text-foreground">{formatCurrency(p.amount)}</p>
+                          <Badge className={`${config.color} text-xs mt-1`}>{config.label}</Badge>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hidden sm:inline-flex text-xs h-8"
+                          asChild
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link href={`/dashboard/proposal/${p.id}`}>
+                            <Eye className="mr-1.5 h-3.5 w-3.5" />
+                            Buka Proposal
+                          </Link>
+                        </Button>
                       </div>
                     </div>
                   )
@@ -413,288 +371,6 @@ export default function ProposalPage() {
               Ajukan
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Detail Dialog */}
-      <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedProposal?.title}
-              {selectedProposal && (
-                <Badge className={statusConfig[selectedProposal.status].color}>
-                  {statusConfig[selectedProposal.status].label}
-                </Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          {selectedProposal && (
-            <Tabs defaultValue="detail" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="detail">Detail</TabsTrigger>
-                <TabsTrigger value="files">File</TabsTrigger>
-                <TabsTrigger value="revision">
-                  Revisi
-                  {selectedProposal.status === 'NEEDS_REVISION' && (
-                    <AlertCircle className="h-4 w-4 text-orange-500 ml-1" />
-                  )}
-                </TabsTrigger>
-              </TabsList>
-
-              {/* Detail Tab */}
-              <TabsContent value="detail" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Jumlah</p>
-                    <p className="font-bold text-lg">{formatCurrency(selectedProposal.amount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Tanggal</p>
-                    <p>{new Date(selectedProposal.createdAt).toLocaleDateString('id-ID')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Pengaju</p>
-                    <p className="font-medium">{selectedProposal.requester.name || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Program Kerja</p>
-                    <p className="font-medium">{selectedProposal.programKerja?.title || '-'}</p>
-                  </div>
-                </div>
-
-                {selectedProposal.description && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Deskripsi</p>
-                    <p className="mt-1">{selectedProposal.description}</p>
-                  </div>
-                )}
-
-                {/* Revision Note Alert */}
-                {selectedProposal.status === 'NEEDS_REVISION' && selectedProposal.revisionNote && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
-                      <div>
-                        <p className="font-medium text-orange-900">Catatan Revisi dari Bendahara</p>
-                        <p className="text-orange-800 mt-1 whitespace-pre-wrap">{selectedProposal.revisionNote}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedProposal.reviewedNote && selectedProposal.status !== 'NEEDS_REVISION' && (
-                  <div className="bg-muted p-3 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Catatan Review</p>
-                    <p className="mt-1">{selectedProposal.reviewedNote}</p>
-                  </div>
-                )}
-
-                {/* Actions for Bendahara */}
-                {selectedProposal.status === 'PENDING' && (
-                  <div className="border-t pt-4 mt-4">
-                    <Label>Catatan Review (opsional)</Label>
-                    <Textarea
-                      className="mt-2"
-                      placeholder="Tambahkan catatan untuk proposal ini..."
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                    />
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleAction(selectedProposal.id, 'reject')}
-                        disabled={actionLoading === selectedProposal.id}
-                      >
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Tolak
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                        onClick={() => handleAction(selectedProposal.id, 'request_revision')}
-                        disabled={actionLoading === selectedProposal.id || !note}
-                      >
-                        <AlertCircle className="mr-2 h-4 w-4" />
-                        Minta Revisi
-                      </Button>
-                      <Button
-                        onClick={() => handleAction(selectedProposal.id, 'approve')}
-                        disabled={actionLoading === selectedProposal.id}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Setujui
-                      </Button>
-                    </div>
-                    {!note && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        * Catatan diperlukan untuk "Minta Revisi"
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {selectedProposal.status === 'REVISED' && (
-                  <div className="border-t pt-4 mt-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                      <div className="flex items-start gap-2">
-                        <RefreshCw className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-blue-900">Proposal Sudah Direvisi</p>
-                          <p className="text-blue-800 text-sm mt-1">
-                            Mohon review kembali proposal yang sudah direvisi.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleAction(selectedProposal.id, 'reject')}
-                        disabled={actionLoading === selectedProposal.id}
-                      >
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Tolak
-                      </Button>
-                      <Button
-                        onClick={() => handleAction(selectedProposal.id, 'approve')}
-                        disabled={actionLoading === selectedProposal.id}
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Setujui
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Files Tab */}
-              <TabsContent value="files" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-8 w-8 text-blue-600" />
-                        <div>
-                          <p className="font-medium">Proposal Awal</p>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedProposal.proposalFile ? 'File uploaded' : 'Tidak ada file'}
-                          </p>
-                        </div>
-                      </div>
-                      {selectedProposal.proposalFile && (
-                        <Button variant="outline" size="sm">
-                          <Eye className="mr-2 h-4 w-4" />
-                          Lihat
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedProposal.revisionFile && (
-                    <div className="border rounded-lg p-4 border-blue-200 bg-blue-50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="h-8 w-8 text-blue-600" />
-                          <div>
-                            <p className="font-medium text-blue-900">Proposal Revisi</p>
-                            <p className="text-sm text-blue-700">
-                              Diupload: {new Date(selectedProposal.updatedAt).toLocaleDateString('id-ID')}
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm" className="border-blue-300">
-                          <Eye className="mr-2 h-4 w-4" />
-                          Lihat
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              {/* Revision Tab */}
-              <TabsContent value="revision" className="space-y-4">
-                {selectedProposal.status === 'NEEDS_REVISION' ? (
-                  <div className="space-y-4">
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-orange-900">Butuh Revisi</p>
-                          <p className="text-orange-800 text-sm mt-1">
-                            Silakan perbaiki proposal sesuai catatan dari bendahara, lalu upload ulang.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedProposal.revisionNote && (
-                      <div className="bg-white border rounded-lg p-4">
-                        <p className="text-sm text-muted-foreground font-medium">Catatan dari Bendahara:</p>
-                        <p className="mt-2 whitespace-pre-wrap text-orange-900">{selectedProposal.revisionNote}</p>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label>Upload Proposal Revisi (PDF/DOCX)</Label>
-                      <Input
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => setRevisionFile(e.target.files?.[0] || null)}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Pastikan file sudah diperbaiki sesuai catatan sebelum diupload.
-                      </p>
-                    </div>
-
-                    <Button
-                      className="w-full"
-                      onClick={handleSubmitRevision}
-                      disabled={!revisionFile || actionLoading === selectedProposal.id}
-                    >
-                      {actionLoading === selectedProposal.id ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Upload className="mr-2 h-4 w-4" />
-                      )}
-                      Submit Revisi
-                    </Button>
-                  </div>
-                ) : selectedProposal.revisionNote ? (
-                  <div className="space-y-4">
-                    <div className="bg-muted rounded-lg p-4">
-                      <p className="text-sm text-muted-foreground">Riwayat Revisi</p>
-                      <p className="mt-2 whitespace-pre-wrap">{selectedProposal.revisionNote}</p>
-                    </div>
-
-                    {selectedProposal.revisionFile && (
-                      <div className="border rounded-lg p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <RefreshCw className="h-8 w-8 text-blue-600" />
-                          <div>
-                            <p className="font-medium">File Revisi</p>
-                            <p className="text-sm text-muted-foreground">
-                              Sudah diupload
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <Eye className="mr-2 h-4 w-4" />
-                          Lihat
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <History className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                    <p>Belum ada revisi untuk proposal ini</p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          )}
         </DialogContent>
       </Dialog>
     </div>

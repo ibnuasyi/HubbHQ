@@ -1,8 +1,8 @@
-// Stats Section Configuration for KPRI Style
+// Stats Section Configuration for Organ2 Style
 export const statsConfig = {
   variants: {
     default: {
-      name: 'KPRI Stats - Gradient',
+      name: 'Stats - Gradient',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', placeholder: 'Kami Terus Berkembang' },
         { key: 'stats', type: 'array', label: 'Statistik', required: true, fields: [
@@ -16,7 +16,7 @@ export const statsConfig = {
       ]
     },
     cards: {
-      name: 'KPRI Stats - Cards',
+      name: 'Stats - Cards',
       fields: [
         { key: 'title', type: 'text', label: 'Judul' },
         { key: 'stats', type: 'array', label: 'Statistik', fields: [
@@ -28,7 +28,7 @@ export const statsConfig = {
       ]
     },
     compact: {
-      name: 'KPRI Stats - Compact',
+      name: 'Stats - Compact',
       fields: [
         { key: 'stats', type: 'array', label: 'Statistik', required: true, fields: [
           { key: 'value', type: 'text', label: 'Nilai' },

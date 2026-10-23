@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Building2 } from 'lucide-react'
 import { useWebsiteConfig } from '@/hooks/use-website-config'
 
 interface NavLink {
@@ -148,8 +149,8 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
               <Image src={logoUrl} alt={logoText} width={40} height={40} className="object-contain" />
             ) : (
               <>
-                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center shadow-md">
-                  <span className="text-white text-xl">🏛️</span>
+                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center shadow-md text-white">
+                  <Building2 className="w-5 h-5" />
                 </div>
                 <span className={`text-xl font-bold hidden sm:block ${isTransparent && !isScrolled ? 'text-white' : 'text-gray-900'}`}>
                   {logoText}

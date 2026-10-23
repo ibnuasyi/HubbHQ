@@ -32,6 +32,49 @@ export async function GET(
         checkpoints: {
           orderBy: { order: 'asc' },
         },
+        panitia: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+                phone: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+        proposals: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            history: {
+              orderBy: { version: 'asc' },
+              include: {
+                reviewedBy: {
+                  select: { id: true, name: true },
+                },
+              },
+            },
+            requester: {
+              select: { id: true, name: true },
+            },
+            reviewedBy: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        lpj: {
+          include: {
+            items: {
+              orderBy: { createdAt: 'asc' },
+            },
+            reviewedBy: {
+              select: { id: true, name: true },
+            },
+          },
+        },
         calendarEvents: true,
       },
     })
@@ -96,6 +139,18 @@ export async function PATCH(
       status,
       startDate,
       endDate,
+      kategori,
+      sasaran,
+      indikator,
+      anggaranEstimasi,
+      sumberDana,
+      lokasi,
+      sertifikatTemplate,
+      sertifikatPrefix,
+      sertifikatSigner1Name,
+      sertifikatSigner1Role,
+      sertifikatSigner2Name,
+      sertifikatSigner2Role,
     } = body
 
     const updateData: any = {}
@@ -103,12 +158,25 @@ export async function PATCH(
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
     if (divisiId !== undefined) updateData.divisiId = divisiId
-    if (picId !== undefined) updateData.picId = picId
+    if (picId !== undefined) updateData.picId = picId || null
     if (status !== undefined) updateData.status = status
     if (startDate !== undefined)
       updateData.startDate = startDate ? new Date(startDate) : null
     if (endDate !== undefined)
       updateData.endDate = endDate ? new Date(endDate) : null
+    if (kategori !== undefined) updateData.kategori = kategori
+    if (sasaran !== undefined) updateData.sasaran = sasaran
+    if (indikator !== undefined) updateData.indikator = indikator
+    if (anggaranEstimasi !== undefined)
+      updateData.anggaranEstimasi = anggaranEstimasi ? parseFloat(anggaranEstimasi) : null
+    if (sumberDana !== undefined) updateData.sumberDana = sumberDana
+    if (lokasi !== undefined) updateData.lokasi = lokasi
+    if (sertifikatTemplate !== undefined) updateData.sertifikatTemplate = sertifikatTemplate
+    if (sertifikatPrefix !== undefined) updateData.sertifikatPrefix = sertifikatPrefix
+    if (sertifikatSigner1Name !== undefined) updateData.sertifikatSigner1Name = sertifikatSigner1Name
+    if (sertifikatSigner1Role !== undefined) updateData.sertifikatSigner1Role = sertifikatSigner1Role
+    if (sertifikatSigner2Name !== undefined) updateData.sertifikatSigner2Name = sertifikatSigner2Name
+    if (sertifikatSigner2Role !== undefined) updateData.sertifikatSigner2Role = sertifikatSigner2Role
 
     const proker = await prisma.programKerja.update({
       where: { id },
@@ -117,6 +185,13 @@ export async function PATCH(
         divisi: true,
         pic: true,
         checkpoints: true,
+        panitia: {
+          include: {
+            user: { select: { id: true, name: true, avatar: true } },
+          },
+        },
+        proposals: true,
+        lpj: true,
       },
     })
 

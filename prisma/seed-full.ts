@@ -13,21 +13,21 @@ async function main() {
   console.log('📦 Creating website configuration...')
 
   const websiteConfigs = [
-    { key: 'appName', value: 'KPRI - Konfederasi Pergerakan', category: 'general', description: 'Nama aplikasi', isPublic: true },
-    { key: 'appDescription', value: 'Konfederasi Pergerakan Rakyat Indonesia - Membangun Gerakan yang Kuat untuk Rakyat', category: 'general', description: 'Deskripsi aplikasi', isPublic: true },
+    { key: 'appName', value: 'HubbHQ', category: 'general', description: 'Nama aplikasi', isPublic: true },
+    { key: 'appDescription', value: 'HubbHQ - Membangun Gerakan yang Kuat untuk Rakyat', category: 'general', description: 'Deskripsi aplikasi', isPublic: true },
     { key: 'logoUrl', value: '', category: 'general', description: 'URL Logo', isPublic: true },
     { key: 'faviconUrl', value: '', category: 'general', description: 'URL Favicon', isPublic: true },
-    { key: 'primaryColor', value: '#16a34a', category: 'appearance', description: 'Warna utama - Hijau KPRI', isPublic: false },
+    { key: 'primaryColor', value: '#16a34a', category: 'appearance', description: 'Warna utama - Hijau Zamrud', isPublic: false },
     { key: 'defaultTheme', value: 'light', category: 'appearance', description: 'Tema default - Light', isPublic: false },
     { key: 'sidebarCollapsed', value: false, category: 'appearance', description: 'Sidebar collapsed', isPublic: false },
     { key: 'contactEmail', value: 'info@konfederasipergerakan.org', category: 'contact', description: 'Email kontak', isPublic: true },
     { key: 'contactPhone', value: '+62 21 1234 5678', category: 'contact', description: 'Telepon kontak', isPublic: true },
     { key: 'contactAddress', value: 'Jl. Merdeka No. 123, Jakarta Pusat 10110', category: 'contact', description: 'Alamat kontak', isPublic: true },
     { key: 'websiteUrl', value: 'https://konfederasipergerakan.org', category: 'social', description: 'Website URL', isPublic: true },
-    { key: 'instagramUrl', value: 'https://instagram.com/kpri_id', category: 'social', description: 'Instagram URL', isPublic: true },
-    { key: 'facebookUrl', value: 'https://facebook.com/kpriindonesia', category: 'social', description: 'Facebook URL', isPublic: true },
-    { key: 'twitterUrl', value: 'https://twitter.com/kpri_id', category: 'social', description: 'Twitter URL', isPublic: true },
-    { key: 'youtubeUrl', value: 'https://youtube.com/@kpri', category: 'social', description: 'YouTube URL', isPublic: true },
+    { key: 'instagramUrl', value: 'https://instagram.com/hubbhq_id', category: 'social', description: 'Instagram URL', isPublic: true },
+    { key: 'facebookUrl', value: 'https://facebook.com/hubbhqindonesia', category: 'social', description: 'Facebook URL', isPublic: true },
+    { key: 'twitterUrl', value: 'https://twitter.com/hubbhq_id', category: 'social', description: 'Twitter URL', isPublic: true },
+    { key: 'youtubeUrl', value: 'https://youtube.com/@hubbhq', category: 'social', description: 'YouTube URL', isPublic: true },
   ]
 
   for (const config of websiteConfigs) {
@@ -581,7 +581,7 @@ async function main() {
   })
 
   // ========================================
-  // 17. THEMES - Install themes including kpri-style
+  // 17. THEMES - Install themes including organ2-style
   // ========================================
   console.log('🎨 Installing themes...')
 
@@ -604,10 +604,10 @@ async function main() {
       }
     },
     {
-      name: 'KPRI Style',
-      slug: 'kpri-style',
+      name: 'Organ2 Style',
+      slug: 'organ2-style',
       version: '1.0.0',
-      description: 'Tema bergaya KPRI - Desain formal untuk organisasi pergerakan dengan layout yang bersih dan profesional',
+      description: 'Tema bergaya HubbHQ - Desain formal untuk organisasi pergerakan dengan layout yang bersih dan profesional',
       author: 'Ibnu Batuthah',
       isActive: true, // Set as default active theme
       config: {
@@ -665,10 +665,10 @@ async function main() {
   console.log('   User: ahmad@hubb.local / password123')
   console.log('')
   console.log('🌐 Website Settings:')
-  console.log('   App Name: KPRI - Konfederasi Pergerakan')
-  console.log('   Primary Color: #16a34a (Hijau KPRI)')
+  console.log('   App Name: HubbHQ')
+  console.log('   Primary Color: #16a34a (Hijau Zamrud)')
   console.log('   Website: ACTIVE')
-  console.log('   Active Theme: kpri-style (KPRI Style)')
+  console.log('   Active Theme: organ2-style (Organ2 Style)')
   console.log('')
 }
 

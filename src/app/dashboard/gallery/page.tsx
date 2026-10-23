@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Image as ImageIcon } from 'lucide-react'
 
 interface GalleryItem {
   id: string
@@ -115,7 +116,9 @@ export default function GalleryPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <span className="text-6xl mb-4 block">🖼️</span>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-200/60 flex items-center justify-center">
+            <ImageIcon className="w-8 h-8 text-gray-500" />
+          </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Belum ada foto</h2>
           <p className="text-gray-600">Tambahkan foto ke galeri</p>
           <button

@@ -91,7 +91,7 @@ export async function PATCH(
     let result;
 
     switch (action) {
-      case 'toggle':
+      case 'toggle': {
         // Toggle completion status
         const current = await prisma.checkpoint.findUnique({
           where: { id: checkpointId },
@@ -105,6 +105,7 @@ export async function PATCH(
           },
         })
         break
+      }
 
       case 'update':
         // Update checkpoint details

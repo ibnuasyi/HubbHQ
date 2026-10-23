@@ -63,14 +63,14 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
           <div className="lg:col-span-2">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
-                <span className="text-white text-xl font-bold">K</span>
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
+                <span className="text-white text-xl font-bold">H</span>
               </div>
               <div>
                 <span className="text-xl font-bold text-white">
-                  {websiteConfig.appName || 'KPRI'}
+                  {websiteConfig.appName || 'HubbHQ'}
                 </span>
-                <p className="text-xs text-gray-500">Konfederasi Pergerakan</p>
+                <p className="text-xs text-gray-500">Sistem Informasi Organisasi</p>
               </div>
             </Link>
 
@@ -185,7 +185,7 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-500 text-sm">
-              © {currentYear} {websiteConfig.appName || 'KPRI'}. All rights reserved.
+              © {currentYear} {websiteConfig.appName || 'HubbHQ'}. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link href="/kebijakan-privasi" className="text-gray-500 hover:text-gray-300 transition-colors">

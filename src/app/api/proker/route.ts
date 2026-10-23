@@ -68,9 +68,37 @@ export async function GET(request: NextRequest) {
           checkpoints: {
             orderBy: { order: 'asc' },
           },
+          panitia: {
+            include: {
+              user: {
+                select: { id: true, name: true, avatar: true },
+              },
+            },
+          },
+          proposals: {
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              amount: true,
+              status: true,
+              version: true,
+              reviewedNote: true,
+            },
+          },
+          lpj: {
+            select: {
+              id: true,
+              status: true,
+              totalPemasukan: true,
+              totalPengeluaran: true,
+              saldoAkhir: true,
+            },
+          },
           _count: {
             select: {
               checkpoints: true,
+              panitia: true,
             },
           },
         },
@@ -133,7 +161,14 @@ export async function POST(request: NextRequest) {
       startDate,
       endDate,
       status,
+      kategori,
+      sasaran,
+      indikator,
+      anggaranEstimasi,
+      sumberDana,
+      lokasi,
       checkpoints,
+      panitia,
     } = body
 
     if (!title || !divisiId) {
@@ -143,23 +178,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create proker with checkpoints
+    // Create proker with checkpoints and panitia
     const proker = await prisma.programKerja.create({
       data: {
         title,
         description,
         divisiId,
-        picId,
+        picId: picId || null,
         creatorId: session.user.id,
         status: status || 'DRAFT',
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
+        kategori: kategori || 'INSIDENTAL',
+        sasaran: sasaran || null,
+        indikator: indikator || null,
+        anggaranEstimasi: anggaranEstimasi ? parseFloat(anggaranEstimasi) : null,
+        sumberDana: sumberDana || null,
+        lokasi: lokasi || null,
         checkpoints: checkpoints?.length
           ? {
               create: checkpoints.map((cp: any, index: number) => ({
                 title: cp.title,
                 description: cp.description,
                 order: index,
+              })),
+            }
+          : undefined,
+        panitia: panitia?.length
+          ? {
+              create: panitia.map((p: any) => ({
+                userId: p.userId,
+                roleJabatan: p.roleJabatan || 'Anggota Panitia',
               })),
             }
           : undefined,
@@ -174,8 +223,35 @@ export async function POST(request: NextRequest) {
           },
         },
         checkpoints: true,
+        panitia: {
+          include: {
+            user: { select: { id: true, name: true, avatar: true } },
+          },
+        },
       },
     })
+
+    // Auto schedule calendar event if startDate provided
+    if (startDate) {
+      try {
+        await prisma.calendarEvent.create({
+          data: {
+            title: `[PROKER] ${title}`,
+            description: description || `Agenda kegiatan: ${title}`,
+            startDate: new Date(startDate),
+            endDate: endDate ? new Date(endDate) : new Date(startDate),
+            allDay: true,
+            location: lokasi || null,
+            programKerjaId: proker.id,
+            creatorId: session.user.id,
+            color: '#2563eb',
+            isPublic: true,
+          },
+        })
+      } catch (calErr) {
+        console.error('Error creating calendar event for proker:', calErr)
+      }
+    }
 
     return NextResponse.json({
       success: true,

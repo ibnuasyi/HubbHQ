@@ -75,9 +75,9 @@ export default function Organ2StyleHomePage() {
             subtitle: 'Tentang Organisasi',
             description: 'Kami adalah organisasi yang berfokus pada pemberdayaan masyarakat dan generasi muda Indonesia.',
             features: [
-              { icon: '🎯', title: 'Visi', description: 'Menjadi organisasi yang unggul dalam pemberdayaan masyarakat dan generasi muda Indonesia.', link: '/visi-misi' },
-              { icon: '🛡️', title: 'Misi', description: 'Mengembangkan potensi generasi muda melalui pendidikan, pelatihan, dan kegiatan sosial.', link: '/visi-misi' },
-              { icon: '👥', title: 'Nilai-Nilai', description: 'Berpegang pada nilai-nilai kebangsaan, keadilan, dan kesejahteraan rakyat.', link: '/tentang' },
+              { icon: 'target', title: 'Visi', description: 'Menjadi organisasi yang unggul dalam pemberdayaan masyarakat dan generasi muda Indonesia.', link: '/tentang' },
+              { icon: 'compass', title: 'Misi', description: 'Mengembangkan potensi generasi muda melalui pendidikan, pelatihan, dan kegiatan sosial.', link: '/tentang' },
+              { icon: 'shield', title: 'Nilai-Nilai', description: 'Berpegang pada nilai-nilai kebangsaan, keadilan, dan kesejahteraan rakyat.', link: '/tentang' },
             ],
             ctaText: 'Selengkapnya',
             ctaLink: '/tentang'
@@ -108,12 +108,12 @@ export default function Organ2StyleHomePage() {
             description: 'Berbagai program kerja untuk meningkatkan kapasitas dan kesejahteraan masyarakat.',
             columns: '3',
             programs: [
-              { title: 'Pendidikan', description: 'Program beasiswa dan pelatihan untuk masyarakat.', icon: '📚', image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800', link: '/program/pendidikan' },
-              { title: 'Kesehatan', description: 'Penyuluhan dan layanan kesehatan gratis.', icon: '🏥', image: 'https://images.unsplash.com/photo-1576091160399-1129e8d78d3e?w=800', link: '/program/kesehatan' },
-              { title: 'Lingkungan', description: 'Gerakan penghijauan dan pengelolaan sampah.', icon: '🌱', image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800', link: '/program/lingkungan' },
-              { title: 'Ekonomi', description: 'Pelatihan kewirausahaan dan bantuan modal.', icon: '💰', image: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800', link: '/program/ekonomi' },
-              { title: 'Sosial', description: 'Bantuan sosial dan bencana alam.', icon: '❤️', image: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800', link: '/program/sosial' },
-              { title: 'Budaya', description: 'Pelestarian budaya lokal.', icon: '🎭', image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800', link: '/program/budaya' },
+              { title: 'Pendidikan', description: 'Program beasiswa dan pelatihan untuk masyarakat.', icon: 'graduationcap', image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800', link: '/tentang' },
+              { title: 'Kesehatan', description: 'Penyuluhan dan layanan kesehatan gratis.', icon: 'activity', image: 'https://images.unsplash.com/photo-1576091160399-1129e8d78d3e?w=800', link: '/tentang' },
+              { title: 'Lingkungan', description: 'Gerakan penghijauan dan pengelolaan sampah.', icon: 'trees', image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800', link: '/tentang' },
+              { title: 'Ekonomi', description: 'Pelatihan kewirausahaan dan bantuan modal.', icon: 'trendingup', image: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800', link: '/tentang' },
+              { title: 'Sosial', description: 'Bantuan sosial dan bencana alam.', icon: 'hearthandshake', image: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800', link: '/tentang' },
+              { title: 'Budaya', description: 'Pelestarian budaya lokal.', icon: 'sparkles', image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800', link: '/tentang' },
             ],
             ctaText: 'Lihat Semua Program',
             ctaLink: '/program'

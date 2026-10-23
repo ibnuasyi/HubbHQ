@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import {
   Dialog,
   DialogContent,
@@ -67,20 +68,20 @@ const sectionComponents: Record<string, any> = {
 }
 
 const availableSections = [
-  { key: 'hero', name: 'Hero Section', icon: '🖼️', description: 'Full-width header with background' },
-  { key: 'about', name: 'About Section', icon: 'ℹ️', description: 'About information with image' },
-  { key: 'visimisi', name: 'Visi Misi', icon: '🎯', description: 'Vision and mission' },
-  { key: 'programs', name: 'Programs', icon: '📋', description: 'Program cards' },
-  { key: 'team', name: 'Team', icon: '👥', description: 'Team members grid' },
-  { key: 'events', name: 'Events', icon: '📅', description: 'Calendar events' },
-  { key: 'stats', name: 'Stats', icon: '📊', description: 'Animated counters' },
-  { key: 'gallery', name: 'Gallery', icon: '🖼️', description: 'Photo gallery with lightbox' },
-  { key: 'faq', name: 'FAQ', icon: '❓', description: 'Frequently asked questions' },
-  { key: 'cta', name: 'CTA', icon: '📢', description: 'Call to action banner' },
-  { key: 'contact', name: 'Contact', icon: '📧', description: 'Contact form and info' },
-  { key: 'partners', name: 'Partners', icon: '🤝', description: 'Partner logos' },
-  { key: 'documents', name: 'Documents', icon: '📄', description: 'Downloadable documents' },
-  { key: 'newsletter', name: 'Newsletter', icon: '✉️', description: 'Email subscription' }
+  { key: 'hero', name: 'Hero Section', icon: 'image', description: 'Full-width header with background' },
+  { key: 'about', name: 'About Section', icon: 'filetext', description: 'About information with image' },
+  { key: 'visimisi', name: 'Visi Misi', icon: 'target', description: 'Vision and mission' },
+  { key: 'programs', name: 'Programs', icon: 'clipboard', description: 'Program cards' },
+  { key: 'team', name: 'Team', icon: 'users', description: 'Team members grid' },
+  { key: 'events', name: 'Events', icon: 'calendar', description: 'Calendar events' },
+  { key: 'stats', name: 'Stats', icon: 'barchart', description: 'Animated counters' },
+  { key: 'gallery', name: 'Gallery', icon: 'image', description: 'Photo gallery with lightbox' },
+  { key: 'faq', name: 'FAQ', icon: 'help', description: 'Frequently asked questions' },
+  { key: 'cta', name: 'CTA', icon: 'zap', description: 'Call to action banner' },
+  { key: 'contact', name: 'Contact', icon: 'mail', description: 'Contact form and info' },
+  { key: 'partners', name: 'Partners', icon: 'handshake', description: 'Partner logos' },
+  { key: 'documents', name: 'Documents', icon: 'filetext', description: 'Downloadable documents' },
+  { key: 'newsletter', name: 'Newsletter', icon: 'mail', description: 'Email subscription' }
 ]
 
 interface Page {
@@ -152,7 +153,7 @@ function SortableSection({
           >
             <GripVertical className="w-4 h-4 text-gray-400" />
           </button>
-          <span className="text-lg">{sectionInfo?.icon || '📦'}</span>
+          <DynamicIcon name={sectionInfo?.icon} className="w-4 h-4 text-primary" />
           <div className="hidden sm:block">
             <span className="font-medium text-gray-900">{section.title || sectionInfo?.name}</span>
             <span className="text-xs text-gray-400 ml-2 font-mono">({section.sectionKey})</span>
@@ -512,9 +513,9 @@ export default function PageBuilderPage({ params }: Props) {
                 className="p-4 border rounded-xl hover:border-primary hover:bg-primary/5 text-left transition-all group"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl group-hover:scale-110 transition-transform">
-                    {section.icon}
-                  </span>
+                  <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <DynamicIcon name={section.icon} className="w-5 h-5" />
+                  </div>
                   <div>
                     <span className="font-medium block">{section.name}</span>
                     <span className="text-xs text-muted-foreground">{section.description}</span>
@@ -609,7 +610,9 @@ function SectionEditorForm({
           onChange={(e) => {
             try {
               setConfig(JSON.parse(e.target.value))
-            } catch {}
+            } catch {
+              // Ignore JSON parse error while user is typing
+            }
           }}
           className="font-mono text-xs h-48"
         />

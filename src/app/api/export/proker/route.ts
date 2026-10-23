@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 // GET /api/export/proker?format=pdf|excel&year=2024
 export async function GET(request: NextRequest) {
@@ -69,21 +69,21 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'excel') {
-      const wb = XLSX.utils.book_new()
+      const workbook = new ExcelJS.Workbook()
+      workbook.creator = 'HubbHQ'
+      workbook.created = new Date()
+      const worksheet = workbook.addWorksheet('Laporan Proker')
 
-      // Summary sheet
-      const summaryData = [
-        ['LAPORAN PROGRAM KERJA'],
-        [`Tahun: ${year}`],
-        [],
-        ['RINGKASAN'],
-        ['Total Program Kerja', totalProker],
-        ['Selesai', completedProker],
-        ['On Progress', onProgressProker],
-        [],
-        ['DETAIL PROGRAM KERJA'],
-        ['No', 'Judul', 'Divisi', 'Status', 'PIC', 'Checkpoint', 'Progress'],
-      ]
+      worksheet.addRow(['LAPORAN PROGRAM KERJA'])
+      worksheet.addRow([`Tahun: ${year}`])
+      worksheet.addRow([])
+      worksheet.addRow(['RINGKASAN'])
+      worksheet.addRow(['Total Program Kerja', totalProker])
+      worksheet.addRow(['Selesai', completedProker])
+      worksheet.addRow(['On Progress', onProgressProker])
+      worksheet.addRow([])
+      worksheet.addRow(['DETAIL PROGRAM KERJA'])
+      worksheet.addRow(['No', 'Judul', 'Divisi', 'Status', 'PIC', 'Checkpoint', 'Progress'])
 
       proker.forEach((p, i) => {
         const completedCheckpoints = p.checkpoints.filter((c) => c.isCompleted).length
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
           ? Math.round((completedCheckpoints / totalCheckpoints) * 100)
           : 0
 
-        summaryData.push([
+        worksheet.addRow([
           (i + 1).toString(),
           p.title,
           p.divisi.name,
@@ -103,15 +103,10 @@ export async function GET(request: NextRequest) {
         ])
       })
 
-      const ws = XLSX.utils.aoa_to_sheet(summaryData)
-      XLSX.utils.book_append_sheet(wb, ws, 'Laporan Proker')
-
-      // Generate buffer
-      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
-
+      const buffer = await workbook.xlsx.writeBuffer()
       const filename = `laporan-proker-${year}.xlsx`
 
-      return new NextResponse(buffer, {
+      return new NextResponse(Buffer.from(buffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': `attachment; filename="${filename}"`,

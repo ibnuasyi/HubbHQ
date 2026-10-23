@@ -1,8 +1,8 @@
-// About Section Configuration for KPRI Style
+// About Section Configuration for Organ2 Style
 export const aboutConfig = {
   variants: {
     default: {
-      name: 'KPRI About - Default',
+      name: 'About - Default',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Tentang Kami' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Siapa Kami' },
@@ -17,7 +17,7 @@ export const aboutConfig = {
       ]
     },
     centered: {
-      name: 'KPRI About - Centered',
+      name: 'About - Centered',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Tentang Kami' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Siapa Kami' },
@@ -26,7 +26,7 @@ export const aboutConfig = {
       ]
     },
     cards: {
-      name: 'KPRI About - Cards Grid',
+      name: 'About - Cards Grid',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Tentang Kami' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Siapa Kami' },
@@ -42,7 +42,7 @@ export const aboutConfig = {
       ]
     },
     split: {
-      name: 'KPRI About - Split',
+      name: 'About - Split',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Tentang Kami' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Siapa Kami' },

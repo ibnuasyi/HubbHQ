@@ -5,9 +5,8 @@ import { prisma } from '@/lib/db'
 import Header from '@/themes/default/Header'
 import Footer from '@/themes/default/sections/Footer'
 import SanitizedHtml from '@/components/SanitizedHtml'
-import { Calendar, Tag, User, ArrowLeft, Share2, Clock } from 'lucide-react'
+import { Calendar, Tag, User, ArrowLeft, Share2, Clock, Twitter, MessageCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -210,17 +209,19 @@ export default async function BeritaDetailPage({ params }: Props) {
                       href={twitterShareUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-10 h-10 bg-blue-500 text-white rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors"
+                      className="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center hover:bg-slate-800 transition-colors"
+                      title="Bagikan ke X / Twitter"
                     >
-                      𝕏
+                      <Twitter className="w-4 h-4" />
                     </a>
                     <a
                       href={whatsappShareUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-10 h-10 bg-green-500 text-white rounded-lg flex items-center justify-center hover:bg-green-600 transition-colors"
+                      className="w-10 h-10 bg-emerald-600 text-white rounded-lg flex items-center justify-center hover:bg-emerald-700 transition-colors"
+                      title="Bagikan ke WhatsApp"
                     >
-                      📱
+                      <MessageCircle className="w-4 h-4" />
                     </a>
                   </div>
                 </div>

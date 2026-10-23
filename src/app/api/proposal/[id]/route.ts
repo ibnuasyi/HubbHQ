@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth, hasPermission } from '@/lib/auth'
 
-// PATCH /api/proposal/[id] - Update proposal status
+// PATCH /api/proposal/[id] - Update proposal status or submit revision
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -16,19 +16,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'keuangan.approve')
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    const body = await request.json()
-    const { action, note, revisionFile } = body
-
     const proposal = await prisma.proposalDana.findUnique({
       where: { id },
       include: {
         requester: {
           select: { id: true, name: true }
+        },
+        programKerja: {
+          select: { id: true, picId: true }
         }
       }
     })
@@ -40,9 +35,21 @@ export async function PATCH(
       )
     }
 
-    // SECURITY: Prevent self-approval (Separation of Duties)
-    // The person who created the proposal cannot approve/reject it
-    if (['approve', 'reject', 'request_revision'].includes(action)) {
+    const body = await request.json()
+    const { action, note, revisionFile, title, amount, description } = body
+
+    const isReviewAction = ['approve', 'reject', 'request_revision'].includes(action)
+
+    if (isReviewAction) {
+      const hasAccess = await hasPermission(session.user.id, 'keuangan.approve')
+      if (!hasAccess) {
+        return NextResponse.json(
+          { error: 'Forbidden: Anda tidak memiliki wewenang persetujuan proposal keuangan' },
+          { status: 403 }
+        )
+      }
+
+      // SECURITY: Prevent self-approval (Separation of Duties)
       if (proposal.requester.id === session.user.id) {
         return NextResponse.json(
           {
@@ -85,15 +92,36 @@ export async function PATCH(
         break
 
       case 'submit_revision':
-        if (!revisionFile) {
-          return NextResponse.json(
-            { error: 'File revision diperlukan' },
-            { status: 400 }
-          )
-        }
+        // Archive current version to ProposalHistory
+        const currentVersion = proposal.version || 1
+        await prisma.proposalHistory.create({
+          data: {
+            proposalDanaId: proposal.id,
+            version: currentVersion,
+            title: proposal.title,
+            description: proposal.description,
+            amount: proposal.amount,
+            proposalFile: proposal.proposalFile,
+            status: proposal.status,
+            reviewedNote: proposal.reviewedNote || proposal.revisionNote,
+            reviewedById: proposal.reviewedById,
+            reviewedAt: proposal.reviewedAt,
+          },
+        })
+
+        const newVersion = currentVersion + 1
         updateData = {
-          status: 'REVISED',
-          revisionFile,
+          title: title || proposal.title,
+          description: description !== undefined ? description : proposal.description,
+          amount: amount ? parseFloat(amount) : proposal.amount,
+          proposalFile: revisionFile || proposal.proposalFile,
+          revisionFile: revisionFile || proposal.revisionFile,
+          status: 'PENDING',
+          version: newVersion,
+          reviewedById: null,
+          reviewedAt: null,
+          reviewedNote: null,
+          revisionNote: null,
         }
         break
 
@@ -109,17 +137,20 @@ export async function PATCH(
       data: updateData,
       include: {
         requester: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, avatar: true },
         },
         programKerja: {
           select: { id: true, title: true },
+        },
+        reviewedBy: {
+          select: { id: true, name: true },
         },
       },
     })
 
     return NextResponse.json({
       success: true,
-      message: 'Proposal berhasil diupdate',
+      message: 'Proposal berhasil diperbarui',
       data: updated,
     })
   } catch (error) {
@@ -147,13 +178,29 @@ export async function GET(
       where: { id },
       include: {
         requester: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, avatar: true },
         },
         programKerja: {
-          select: { id: true, title: true },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            startDate: true,
+            endDate: true,
+            divisi: { select: { id: true, name: true, color: true } },
+            pic: { select: { id: true, name: true } },
+          },
         },
         reviewedBy: {
-          select: { id: true, name: true },
+          select: { id: true, name: true, email: true },
+        },
+        history: {
+          orderBy: { version: 'desc' },
+          include: {
+            reviewedBy: {
+              select: { id: true, name: true },
+            },
+          },
         },
       },
     })
@@ -165,7 +212,7 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ data: proposal })
+    return NextResponse.json({ success: true, data: proposal })
   } catch (error) {
     console.error('Error fetching proposal:', error)
     return NextResponse.json(

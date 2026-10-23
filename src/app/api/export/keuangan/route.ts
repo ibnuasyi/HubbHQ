@@ -6,7 +6,7 @@ import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/auth'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import {
   EXPORT_CONFIG,
   validateExportParams,
@@ -103,36 +103,41 @@ export async function GET(request: NextRequest) {
     const baseFilename = `laporan-keuangan-${yearStr}${monthStr ? '-' + monthStr : ''}-${timestamp}`
 
     if (params.format === 'excel') {
-      const wb = XLSX.utils.book_new()
-      const summaryData = [
-        ['LAPORAN KEUANGAN'],
-        [params.month
+      const workbook = new ExcelJS.Workbook()
+      workbook.creator = 'HubbHQ'
+      workbook.created = new Date()
+      const worksheet = workbook.addWorksheet('Laporan')
+
+      worksheet.addRow(['LAPORAN KEUANGAN'])
+      worksheet.addRow([
+        params.month
           ? 'Bulan: ' + new Date(params.year, params.month - 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-          : 'Tahun: ' + params.year],
-        [],
-        ['RINGKASAN'],
-        ['Total Records', transactions.length.toString() + (isTruncated ? ' (dibatasi)' : '')],
-        ['Total Pemasukan', totalIncome],
-        ['Total Pengeluaran', totalExpense],
-        ['Saldo', balance],
-        [],
-        ['DETAIL TRANSAKSI'],
-        ['Tanggal', 'Jenis', 'Kategori', 'Keterangan', 'Jumlah'],
-        ...transactions.map((t) => [
+          : 'Tahun: ' + params.year,
+      ])
+      worksheet.addRow([])
+      worksheet.addRow(['RINGKASAN'])
+      worksheet.addRow(['Total Records', transactions.length.toString() + (isTruncated ? ' (dibatasi)' : '')])
+      worksheet.addRow(['Total Pemasukan', totalIncome])
+      worksheet.addRow(['Total Pengeluaran', totalExpense])
+      worksheet.addRow(['Saldo', balance])
+      worksheet.addRow([])
+      worksheet.addRow(['DETAIL TRANSAKSI'])
+      worksheet.addRow(['Tanggal', 'Jenis', 'Kategori', 'Keterangan', 'Jumlah'])
+
+      transactions.forEach((t) => {
+        worksheet.addRow([
           new Date(t.date).toLocaleDateString('id-ID'),
           t.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
           categoryLabels[t.category] || t.category,
           t.description || '-',
           parseFloat(t.amount.toString()),
-        ]),
-      ]
+        ])
+      })
 
-      const ws = XLSX.utils.aoa_to_sheet(summaryData)
-      XLSX.utils.book_append_sheet(wb, ws, 'Laporan')
-      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
+      const buffer = await workbook.xlsx.writeBuffer()
       const filename = sanitizeExportFilename(baseFilename) + '.xlsx'
 
-      return new NextResponse(buffer, {
+      return new NextResponse(Buffer.from(buffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': 'attachment; filename="' + filename + '"',

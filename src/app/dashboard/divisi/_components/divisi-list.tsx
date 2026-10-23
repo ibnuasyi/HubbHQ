@@ -33,7 +33,21 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MoreVertical, Plus, Users, Edit, Trash2 } from 'lucide-react'
+import {
+  MoreVertical,
+  Plus,
+  Users,
+  Edit,
+  Trash2,
+  Receipt,
+  BookOpen,
+  Download,
+  ExternalLink,
+  FileText,
+  CheckCircle,
+  Lightbulb,
+  Loader2,
+} from 'lucide-react'
 import { getInitials } from '@/lib/utils'
 
 interface Divisi {
@@ -70,6 +84,36 @@ export function DivisiList() {
   const [members, setMembers] = React.useState<any[]>([])
   const [selectedMember, setSelectedMember] = React.useState('')
   const [memberPosition, setMemberPosition] = React.useState('')
+
+  // Kumpulan LPJ per Divisi Modal State
+  const [showLpjModal, setShowLpjModal] = React.useState(false)
+  const [divisiLpjData, setDivisiLpjData] = React.useState<any | null>(null)
+  const [fetchingLpj, setFetchingLpj] = React.useState(false)
+
+  const formatCurrency = (amount: number | string | null | undefined) => {
+    const num = Number(amount || 0)
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(num)
+  }
+
+  const handleOpenDivisiLpj = async (divisiId: string) => {
+    try {
+      setFetchingLpj(true)
+      setShowLpjModal(true)
+      const res = await fetch(`/api/divisi/${divisiId}/lpj`)
+      if (res.ok) {
+        const json = await res.json()
+        setDivisiLpjData(json.data)
+      }
+    } catch (err) {
+      console.error('Error fetching divisi LPJ data:', err)
+    } finally {
+      setFetchingLpj(false)
+    }
+  }
 
   React.useEffect(() => {
     fetchDivisi()
@@ -225,6 +269,10 @@ export function DivisiList() {
                           Program Kerja
                         </a>
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenDivisiLpj(d.id)}>
+                        <Receipt className="mr-2 h-4 w-4 text-primary" />
+                        Kumpulan LPJ & Evaluasi
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -282,17 +330,26 @@ export function DivisiList() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 text-xs"
                     onClick={() => {
                       setSelectedDivisi(d)
                       fetchMembers()
                       setIsAddMemberOpen(true)
                     }}
                   >
-                    <Plus className="mr-1 h-4 w-4" />
+                    <Plus className="mr-1 h-3.5 w-3.5" />
                     Tambah Anggota
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-primary hover:text-primary/80"
+                    onClick={() => handleOpenDivisiLpj(d.id)}
+                  >
+                    <Receipt className="mr-1 h-3.5 w-3.5" />
+                    Kumpulan LPJ
+                  </Button>
+                  <Button variant="outline" size="sm" asChild className="text-xs">
                     <a href={`/divisi/${d.id}`}>Detail</a>
                   </Button>
                 </div>
@@ -352,6 +409,186 @@ export function DivisiList() {
             </Button>
             <Button onClick={handleAddMember} disabled={!selectedMember}>
               Tambah
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG: Kumpulan LPJ & Bank Evaluasi Divisi */}
+      <Dialog open={showLpjModal} onOpenChange={setShowLpjModal}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <div
+                className="h-3 w-3 rounded-full"
+                style={{ backgroundColor: divisiLpjData?.divisi?.color || '#3b82f6' }}
+              />
+              <DialogTitle className="text-lg">
+                Kumpulan LPJ & Evaluasi: {divisiLpjData?.divisi?.name || 'Divisi'}
+              </DialogTitle>
+            </div>
+            <DialogDescription>
+              Arsip pertanggungjawaban kegiatan, perputaran anggaran, dan bank rekomendasi mitigasi kendala divisi
+            </DialogDescription>
+          </DialogHeader>
+
+          {fetchingLpj ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+              <span className="text-sm text-muted-foreground">Memuat data LPJ divisi...</span>
+            </div>
+          ) : !divisiLpjData || divisiLpjData.prokerList?.length === 0 ? (
+            <div className="text-center py-10 border border-dashed rounded-lg text-muted-foreground text-sm">
+              Belum ada program kerja dengan data LPJ di divisi ini.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Financial Stats Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-lg border bg-muted/30 text-xs">
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Total Proker LPJ:</span>
+                  <p className="font-bold text-foreground text-sm mt-0.5">
+                    {divisiLpjData.stats.totalProkerLpj} Kegiatan ({divisiLpjData.stats.totalLpjSelesai} Disahkan)
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Akumulasi Pemasukan:</span>
+                  <p className="font-bold text-green-700 dark:text-emerald-400 text-sm mt-0.5">
+                    {formatCurrency(divisiLpjData.stats.totalPemasukanDivisi)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Akumulasi Pengeluaran:</span>
+                  <p className="font-bold text-red-700 dark:text-rose-400 text-sm mt-0.5">
+                    {formatCurrency(divisiLpjData.stats.totalPengeluaranDivisi)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Sisa Kas (Surplus):</span>
+                  <p className="font-bold text-blue-700 dark:text-blue-400 text-sm mt-0.5">
+                    {formatCurrency(divisiLpjData.stats.totalSisaSurplusDivisi)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Tabs for LPJ List vs Evaluation Bank */}
+              <Tabs defaultValue="list" className="w-full">
+                <TabsList className="grid grid-cols-2 w-full max-w-sm">
+                  <TabsTrigger value="list" className="text-xs">
+                    <Receipt className="mr-1.5 h-3.5 w-3.5" />
+                    Daftar Dokumen LPJ
+                  </TabsTrigger>
+                  <TabsTrigger value="bank" className="text-xs">
+                    <Lightbulb className="mr-1.5 h-3.5 w-3.5" />
+                    Bank Evaluasi Divisi
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="list" className="pt-3">
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/50 border-b">
+                        <tr>
+                          <th className="py-2.5 px-3 text-left font-semibold">Nama Program Kerja</th>
+                          <th className="py-2.5 px-3 text-left font-semibold">PIC</th>
+                          <th className="py-2.5 px-3 text-left font-semibold">Status LPJ</th>
+                          <th className="py-2.5 px-3 text-right font-semibold">Realisasi Belanja</th>
+                          <th className="py-2.5 px-3 text-right font-semibold">Sisa Kas</th>
+                          <th className="py-2.5 px-3 text-center font-semibold">Dokumen Final</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {divisiLpjData.prokerList.map((p: any) => (
+                          <tr key={p.id} className="hover:bg-muted/20">
+                            <td className="py-2.5 px-3 font-medium">
+                              <a
+                                href={`/dashboard/proker/${p.id}`}
+                                className="text-primary hover:underline"
+                              >
+                                {p.title}
+                              </a>
+                            </td>
+                            <td className="py-2.5 px-3 text-muted-foreground">
+                              {p.pic?.name || '-'}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${
+                                  p.lpj?.status === 'APPROVED'
+                                    ? 'bg-green-50 text-green-700 border-green-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                    : p.lpj?.status === 'SUBMITTED'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {p.lpj?.status}
+                              </Badge>
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium">
+                              {formatCurrency(p.lpj?.totalPengeluaran)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-medium">
+                              {formatCurrency(p.lpj?.saldoAkhir)}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {p.lpj?.dokumenFinalLpj ? (
+                                <Button size="sm" variant="outline" asChild className="h-6 text-[11px] px-2">
+                                  <a href={p.lpj.dokumenFinalLpj} target="_blank" rel="noreferrer">
+                                    <ExternalLink className="mr-1 h-3 w-3 text-purple-600" />
+                                    Berkas LPJ
+                                  </a>
+                                </Button>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground italic">Belum ada</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="bank" className="pt-3 space-y-3">
+                  {divisiLpjData.bankEvaluasi.length === 0 ? (
+                    <div className="p-4 border rounded-lg text-center text-muted-foreground text-xs">
+                      Belum ada catatan kendala dan rekomendasi yang diarsipkan pada LPJ divisi ini.
+                    </div>
+                  ) : (
+                    divisiLpjData.bankEvaluasi.map((item: any, i: number) => (
+                      <div key={i} className="p-3.5 border rounded-lg bg-card space-y-2 text-xs">
+                        <div className="flex items-center justify-between border-b pb-1.5">
+                          <span className="font-bold text-foreground">{item.prokerTitle}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {item.reviewedAt ? new Date(item.reviewedAt).toLocaleDateString('id-ID') : 'Arsip LPJ'}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                          <div className="p-2 rounded bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40">
+                            <span className="font-semibold text-red-800 dark:text-red-300 block mb-0.5">Kendala yang Dihadapi:</span>
+                            <p className="text-muted-foreground text-[11px] leading-relaxed whitespace-pre-wrap">{item.kendala}</p>
+                          </div>
+                          <div className="p-2 rounded bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40">
+                            <span className="font-semibold text-blue-800 dark:text-blue-300 block mb-0.5">Solusi yang Diterapkan:</span>
+                            <p className="text-muted-foreground text-[11px] leading-relaxed whitespace-pre-wrap">{item.solusi}</p>
+                          </div>
+                          <div className="p-2 rounded bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40">
+                            <span className="font-semibold text-emerald-800 dark:text-emerald-300 block mb-0.5">Rekomendasi Periode Berikutnya:</span>
+                            <p className="text-muted-foreground text-[11px] leading-relaxed whitespace-pre-wrap">{item.rekomendasi}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLpjModal(false)}>
+              Tutup
             </Button>
           </DialogFooter>
         </DialogContent>

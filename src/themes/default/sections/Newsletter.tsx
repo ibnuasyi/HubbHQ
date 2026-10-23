@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CheckCircle2 } from 'lucide-react'
 
 interface NewsletterProps {
   config: {
@@ -110,7 +111,9 @@ export default function Newsletter({ config, isPreview = false }: NewsletterProp
 
           {subscribed ? (
             <div className="bg-white/10 backdrop-blur rounded-2xl p-8">
-              <span className="text-5xl mb-4 block">🎉</span>
+              <div className="w-14 h-14 mx-auto rounded-full bg-white/20 flex items-center justify-center text-white mb-4">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
               <h3 className="text-2xl font-bold text-white mb-2">Terima Kasih!</h3>
               <p className="text-white/90">Anda berhasil berlangganan newsletter kami.</p>
             </div>

@@ -40,7 +40,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/uploads ./uploads
 
 # Set permissions
-RUN chmod -R 755 /app/uploads
+RUN chown -R nextjs:nodejs /app/uploads && chmod -R 755 /app/uploads
 
 USER nextjs
 

@@ -1,8 +1,8 @@
-// Team Section Configuration for KPRI Style
+// Team Section Configuration for Organ2 Style
 export const teamConfig = {
   variants: {
     default: {
-      name: 'KPRI Team - Grid',
+      name: 'Team - Grid',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Struktur Organisasi' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Pengurus kami' },
@@ -21,7 +21,7 @@ export const teamConfig = {
       ]
     },
     cards: {
-      name: 'KPRI Team - Cards',
+      name: 'Team - Cards',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'subtitle', type: 'text', label: 'Subtitle' },
@@ -34,7 +34,7 @@ export const teamConfig = {
       ]
     },
     carousel: {
-      name: 'KPRI Team - Carousel',
+      name: 'Team - Carousel',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'subtitle', type: 'text', label: 'Subtitle' },
@@ -46,7 +46,7 @@ export const teamConfig = {
       ]
     },
     compact: {
-      name: 'KPRI Team - Compact',
+      name: 'Team - Compact',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'members', type: 'array', label: 'Anggota Tim', fields: [
@@ -57,7 +57,7 @@ export const teamConfig = {
       ]
     },
     featured: {
-      name: 'KPRI Team - Featured (Ketua)',
+      name: 'Team - Featured (Ketua)',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'featuredMember', type: 'array', label: 'Ketua/Direktur', fields: [

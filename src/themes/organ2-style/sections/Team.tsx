@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Mail, ExternalLink } from 'lucide-react'
+import { Mail, User } from 'lucide-react'
 
 interface TeamProps {
   config: {
@@ -52,8 +52,8 @@ export default function Team({ config, isPreview = false }: TeamProps) {
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-                    <span className="text-6xl text-white">👤</span>
+                  <div className="w-full h-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                    <User className="w-16 h-16" />
                   </div>
                 )}
                 {/* Overlay on hover */}
@@ -92,8 +92,8 @@ export default function Team({ config, isPreview = false }: TeamProps) {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[1, 2, 3, 4].map((item) => (
               <div key={item} className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <span className="text-6xl text-gray-300">👤</span>
+                <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-300">
+                  <User className="w-16 h-16" />
                 </div>
                 <div className="p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Nama {item}</h3>

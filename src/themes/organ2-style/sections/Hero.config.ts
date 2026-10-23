@@ -1,10 +1,10 @@
-// Hero Section Configuration for KPRI Style
+// Hero Section Configuration for Organ2 Style
 export const heroConfig = {
   variants: {
     default: {
-      name: 'KPRI Hero - Full Width',
+      name: 'Hero - Full Width',
       fields: [
-        { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Selamat Datang di KPRI' },
+        { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Selamat Datang di HubbHQ' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Konfederasi Pergerakan' },
         { key: 'description', type: 'textarea', label: 'Deskripsi', placeholder: 'Deskripsi tentang organisasi...' },
         { key: 'backgroundImage', type: 'image', label: 'Gambar Background' },
@@ -18,9 +18,9 @@ export const heroConfig = {
       ]
     },
     split: {
-      name: 'KPRI Hero - Split (Gambar & Teks)',
+      name: 'Hero - Split (Gambar & Teks)',
       fields: [
-        { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Selamat Datang di KPRI' },
+        { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Selamat Datang di HubbHQ' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Konfederasi Pergerakan' },
         { key: 'description', type: 'textarea', label: 'Deskripsi', placeholder: 'Deskripsi tentang organisasi...' },
         { key: 'image', type: 'image', label: 'Gambar' },
@@ -33,9 +33,9 @@ export const heroConfig = {
       ]
     },
     centered: {
-      name: 'KPRI Hero - Centered',
+      name: 'Hero - Centered',
       fields: [
-        { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Selamat Datang di KPRI' },
+        { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Selamat Datang di HubbHQ' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Konfederasi Pergerakan' },
         { key: 'description', type: 'textarea', label: 'Deskripsi', placeholder: 'Deskripsi tentang organisasi...' },
         { key: 'backgroundImage', type: 'image', label: 'Gambar Background' },

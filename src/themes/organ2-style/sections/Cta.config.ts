@@ -1,8 +1,8 @@
-// CTA Section Configuration for KPRI Style
+// CTA Section Configuration for Organ2 Style
 export const ctaConfig = {
   variants: {
     default: {
-      name: 'KPRI CTA - Default',
+      name: 'CTA - Default',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Bergabung dengan Kami' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Jadilah bagian dari kami' },
@@ -17,7 +17,7 @@ export const ctaConfig = {
       ]
     },
     centered: {
-      name: 'KPRI CTA - Centered',
+      name: 'CTA - Centered',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'subtitle', type: 'text', label: 'Subtitle' },
@@ -27,7 +27,7 @@ export const ctaConfig = {
       ]
     },
     split: {
-      name: 'KPRI CTA - Split',
+      name: 'CTA - Split',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'description', type: 'textarea', label: 'Deskripsi' },
@@ -37,7 +37,7 @@ export const ctaConfig = {
       ]
     },
     banner: {
-      name: 'KPRI CTA - Banner',
+      name: 'CTA - Banner',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'subtitle', type: 'text', label: 'Subtitle' },

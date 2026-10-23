@@ -18,6 +18,7 @@ import {
   Target,
   FileText,
   FileSpreadsheet,
+  DollarSign,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,13 +47,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 interface ProgramKerja {
   id: string
@@ -61,6 +55,12 @@ interface ProgramKerja {
   status: 'DRAFT' | 'ON_PROGRESS' | 'COMPLETED' | 'CANCELLED'
   startDate: string | null
   endDate: string | null
+  kategori?: string | null
+  sasaran?: string | null
+  indikator?: string | null
+  anggaranEstimasi?: number | string | null
+  sumberDana?: string | null
+  lokasi?: string | null
   divisi: {
     id: string
     name: string
@@ -76,6 +76,15 @@ interface ProgramKerja {
     name: string | null
   }
   checkpoints: any[]
+  panitia?: any[]
+  proposals?: any[]
+  lpj?: {
+    id: string
+    status: string
+    totalPemasukan: number | string
+    totalPengeluaran: number | string
+    saldoAkhir: number | string
+  } | null
   progress: number
   completedCheckpoints: number
   totalCheckpoints: number
@@ -89,6 +98,15 @@ const statusConfig = {
   CANCELLED: { label: 'Dibatalkan', color: 'bg-red-500', icon: AlertCircle },
 }
 
+const formatCurrency = (amount: number | string | null | undefined) => {
+  const num = Number(amount || 0)
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(num)
+}
+
 export default function ProkerPage() {
   const router = useRouter()
   const [proker, setProker] = React.useState<ProgramKerja[]>([])
@@ -100,8 +118,6 @@ export default function ProkerPage() {
   const [totalPages, setTotalPages] = React.useState(1)
   const [total, setTotal] = React.useState(0)
   const [divisi, setDivisi] = React.useState<any[]>([])
-  const [selectedProker, setSelectedProker] = React.useState<ProgramKerja | null>(null)
-  const [showDetail, setShowDetail] = React.useState(false)
   const [exporting, setExporting] = React.useState(false)
   const [exportYear, setExportYear] = React.useState(new Date().getFullYear().toString())
 
@@ -152,11 +168,6 @@ export default function ProkerPage() {
       .join('')
       .toUpperCase()
       .slice(0, 2)
-  }
-
-  const viewDetail = (p: ProgramKerja) => {
-    setSelectedProker(p)
-    setShowDetail(true)
   }
 
   const handleExport = async (format: 'pdf' | 'excel') => {
@@ -284,12 +295,19 @@ export default function ProkerPage() {
                   return (
                     <div
                       key={p.id}
-                      className="rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                      onClick={() => router.push(`/dashboard/proker/${p.id}`)}
+                      className="rounded-lg border p-4 hover:border-primary/50 hover:bg-muted/40 cursor-pointer transition-all shadow-sm group"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold truncate">{p.title}</h3>
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <Link
+                              href={`/dashboard/proker/${p.id}`}
+                              className="font-semibold text-base text-foreground group-hover:text-primary transition-colors hover:underline truncate"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {p.title}
+                            </Link>
                             <Badge
                               variant="secondary"
                               className="flex items-center gap-1"
@@ -311,6 +329,37 @@ export default function ProkerPage() {
                               <StatusIcon className="h-3 w-3" />
                               {statusInfo.label}
                             </Badge>
+                            {p.kategori && (
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                {p.kategori}
+                              </Badge>
+                            )}
+                            {p.proposals?.[0] && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${
+                                  p.proposals[0].status === 'APPROVED'
+                                    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                    : p.proposals[0].status === 'REJECTED'
+                                    ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800'
+                                    : 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/60 dark:text-yellow-300 dark:border-yellow-800'
+                                }`}
+                              >
+                                Proposal: {p.proposals[0].status}
+                              </Badge>
+                            )}
+                            {p.lpj && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${
+                                  p.lpj.status === 'APPROVED'
+                                    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                    : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+                                }`}
+                              >
+                                LPJ: {p.lpj.status}
+                              </Badge>
+                            )}
                           </div>
 
                           {p.description && (
@@ -319,7 +368,7 @@ export default function ProkerPage() {
                             </p>
                           )}
 
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                             {p.pic && (
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-5 w-5">
@@ -329,6 +378,12 @@ export default function ProkerPage() {
                                   </AvatarFallback>
                                 </Avatar>
                                 <span>PIC: {p.pic.name}</span>
+                              </div>
+                            )}
+                            {p.anggaranEstimasi && (
+                              <div className="flex items-center gap-1 font-medium text-foreground">
+                                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span>{formatCurrency(Number(p.anggaranEstimasi))}</span>
                               </div>
                             )}
                             {p.startDate && (
@@ -353,27 +408,43 @@ export default function ProkerPage() {
                           </div>
                         </div>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => viewDetail(p)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              Lihat Detail
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/proker/${p.id}`}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </Link>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hidden sm:inline-flex text-xs h-8"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Link href={`/dashboard/proker/${p.id}`}>
+                              <Eye className="mr-1.5 h-3.5 w-3.5" />
+                              Buka Proker
+                            </Link>
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/proker/${p.id}`}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Buka Halaman Proker
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/proker/${p.id}`}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit & Kelola
+                                </Link>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                     </div>
                   )
@@ -410,104 +481,6 @@ export default function ProkerPage() {
           )}
         </CardContent>
       </Card>
-
-      <Dialog open={showDetail} onOpenChange={setShowDetail}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Detail Program Kerja</DialogTitle>
-            <DialogDescription>Informasi lengkap program kerja</DialogDescription>
-          </DialogHeader>
-          {selectedProker && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold">{selectedProker.title}</h3>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge
-                    variant="secondary"
-                    style={{
-                      backgroundColor: `${selectedProker.divisi.color}20`,
-                      color: selectedProker.divisi.color,
-                    }}
-                  >
-                    {selectedProker.divisi.name}
-                  </Badge>
-                  <Badge variant="outline">
-                    {statusConfig[selectedProker.status].label}
-                  </Badge>
-                </div>
-              </div>
-
-              {selectedProker.description && (
-                <p className="text-muted-foreground">{selectedProker.description}</p>
-              )}
-
-              <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">PIC</p>
-                  <p className="font-medium">{selectedProker.pic?.name || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Dibuat Oleh</p>
-                  <p className="font-medium">{selectedProker.creator.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Tanggal Mulai</p>
-                  <p className="font-medium">
-                    {selectedProker.startDate
-                      ? new Date(selectedProker.startDate).toLocaleDateString('id-ID')
-                      : '-'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Tanggal Selesai</p>
-                  <p className="font-medium">
-                    {selectedProker.endDate
-                      ? new Date(selectedProker.endDate).toLocaleDateString('id-ID')
-                      : '-'}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-medium mb-2">
-                  Progress: {selectedProker.progress}%
-                </p>
-                <Progress value={selectedProker.progress} className="h-3" />
-                <p className="text-sm text-muted-foreground mt-1">
-                  {selectedProker.completedCheckpoints} dari {selectedProker.totalCheckpoints} checkpoint selesai
-                </p>
-              </div>
-
-              <div>
-                <p className="font-medium mb-2">Checkpoint</p>
-                {selectedProker.checkpoints.length > 0 ? (
-                  <ul className="space-y-2">
-                    {selectedProker.checkpoints.map((cp: any, i: number) => (
-                      <li
-                        key={cp.id}
-                        className={`flex items-center gap-2 p-2 rounded ${
-                          cp.isCompleted ? 'bg-green-50' : 'bg-muted'
-                        }`}
-                      >
-                        <CheckCircle
-                          className={`h-4 w-4 ${
-                            cp.isCompleted ? 'text-green-500' : 'text-muted-foreground'
-                          }`}
-                        />
-                        <span className={cp.isCompleted ? 'line-through' : ''}>
-                          {cp.title}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Belum ada checkpoint</p>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

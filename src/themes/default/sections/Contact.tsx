@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { MapPin, Phone, Mail, MessageCircle } from 'lucide-react'
 
 interface ContactProps {
   config: {
@@ -77,7 +78,9 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
               <div className="space-y-4">
                 {config.address && (
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">📍</span>
+                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+                      <MapPin className="w-5 h-5" />
+                    </div>
                     <div>
                       <p className="font-semibold text-gray-900">Alamat</p>
                       <p className="text-gray-600">{config.address}</p>
@@ -86,10 +89,12 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                 )}
                 {config.phone && (
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">📞</span>
+                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+                      <Phone className="w-5 h-5" />
+                    </div>
                     <div>
                       <p className="font-semibold text-gray-900">Telepon</p>
-                      <a href={`tel:${config.phone}`} className="text-indigo-600 hover:underline">
+                      <a href={`tel:${config.phone}`} className="text-green-700 hover:underline">
                         {config.phone}
                       </a>
                     </div>
@@ -97,10 +102,12 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                 )}
                 {config.email && (
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">✉️</span>
+                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+                      <Mail className="w-5 h-5" />
+                    </div>
                     <div>
                       <p className="font-semibold text-gray-900">Email</p>
-                      <a href={`mailto:${config.email}`} className="text-indigo-600 hover:underline">
+                      <a href={`mailto:${config.email}`} className="text-green-700 hover:underline">
                         {config.email}
                       </a>
                     </div>
@@ -108,10 +115,12 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                 )}
                 {config.whatsapp && (
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">💬</span>
+                    <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+                      <MessageCircle className="w-5 h-5" />
+                    </div>
                     <div>
                       <p className="font-semibold text-gray-900">WhatsApp</p>
-                      <a href={`https://wa.me/${config.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                      <a href={`https://wa.me/${config.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline">
                         {config.whatsapp}
                       </a>
                     </div>
@@ -213,8 +222,8 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
         <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12">
           {config.phone && (
             <div className="text-center">
-              <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">📞</span>
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white">
+                <Phone className="w-7 h-7" />
               </div>
               <h3 className="text-white font-bold mb-2">Telepon</h3>
               <a href={`tel:${config.phone}`} className="text-gray-300 hover:text-white">
@@ -224,8 +233,8 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
           )}
           {config.email && (
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">✉️</span>
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white">
+                <Mail className="w-7 h-7" />
               </div>
               <h3 className="text-white font-bold mb-2">Email</h3>
               <a href={`mailto:${config.email}`} className="text-gray-300 hover:text-white">
@@ -235,8 +244,8 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
           )}
           {config.whatsapp && (
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">💬</span>
+              <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white">
+                <MessageCircle className="w-7 h-7" />
               </div>
               <h3 className="text-white font-bold mb-2">WhatsApp</h3>
               <a href={`https://wa.me/${config.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white">
@@ -247,9 +256,9 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
         </div>
 
         {config.address && (
-          <div className="text-center mb-12">
-            <span className="text-2xl mr-2">📍</span>
-            <span className="text-gray-300">{config.address}</span>
+          <div className="flex items-center justify-center gap-2 mb-12 text-gray-300">
+            <MapPin className="w-5 h-5 text-green-400 shrink-0" />
+            <span>{config.address}</span>
           </div>
         )}
 

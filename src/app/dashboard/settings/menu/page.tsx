@@ -316,10 +316,10 @@ export default function MenuManagementPage() {
                 id="icon"
                 value={formData.icon}
                 onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                placeholder="🏠 or home"
+                placeholder="home, users, calendar..."
               />
               <p className="text-xs text-muted-foreground">
-                Emoji or Lucide icon name
+                Nama icon Lucide (misal: home, users, filetext)
               </p>
             </div>
 

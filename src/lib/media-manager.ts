@@ -187,7 +187,8 @@ export class S3StorageProvider implements StorageProvider {
     this.publicUrl = config.publicUrl
 
     // Initialize S3 client (lazy import to avoid errors when not using S3)
-    const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { S3Client } = require('@aws-sdk/client-s3')
 
     this.s3Client = new S3Client({
       region: config.region,
@@ -200,6 +201,7 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async upload(file: Buffer, filename: string, mimeType: string): Promise<string> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PutObjectCommand } = require('@aws-sdk/client-s3')
 
     const ext = path.extname(filename)
@@ -217,6 +219,7 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async delete(key: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { DeleteObjectCommand } = require('@aws-sdk/client-s3')
     await this.s3Client.send(new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -260,7 +263,8 @@ export class R2StorageProvider implements StorageProvider {
     this.accountId = config.accountId
     this.publicUrl = config.publicUrl
 
-    const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { S3Client } = require('@aws-sdk/client-s3')
 
     this.r2Client = new S3Client({
       region: 'auto',
@@ -273,6 +277,7 @@ export class R2StorageProvider implements StorageProvider {
   }
 
   async upload(file: Buffer, filename: string, mimeType: string): Promise<string> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PutObjectCommand } = require('@aws-sdk/client-s3')
 
     const ext = path.extname(filename)
@@ -290,6 +295,7 @@ export class R2StorageProvider implements StorageProvider {
   }
 
   async delete(key: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { DeleteObjectCommand } = require('@aws-sdk/client-s3')
     await this.r2Client.send(new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -577,15 +583,15 @@ export async function findOrphanedMedia(): Promise<string[]> {
 
   // Build set of all referenced URLs
   const referencedUrls = new Set<string>()
-  users.forEach(u => u.avatar && referencedUrls.add(u.avatar))
-  divisi.forEach(d => d.logo && referencedUrls.add(d.logo))
+  users.forEach(u => { if (u.avatar) referencedUrls.add(u.avatar) })
+  divisi.forEach(d => { if (d.logo) referencedUrls.add(d.logo) })
   libraryBooks.forEach(b => {
-    b.coverUrl && referencedUrls.add(b.coverUrl)
-    b.fileUrl && referencedUrls.add(b.fileUrl)
+    if (b.coverUrl) referencedUrls.add(b.coverUrl)
+    if (b.fileUrl) referencedUrls.add(b.fileUrl)
   })
-  posts.forEach(p => p.featuredImage && referencedUrls.add(p.featuredImage))
-  galleries.forEach(g => g.imageUrl && referencedUrls.add(g.imageUrl))
-  documents.forEach(d => d.fileUrl && referencedUrls.add(d.fileUrl))
+  posts.forEach(p => { if (p.featuredImage) referencedUrls.add(p.featuredImage) })
+  galleries.forEach(g => { if (g.imageUrl) referencedUrls.add(g.imageUrl) })
+  documents.forEach(d => { if (d.fileUrl) referencedUrls.add(d.fileUrl) })
 
   // Find orphaned files (not in any reference)
   return allMedia

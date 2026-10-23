@@ -28,6 +28,11 @@ import {
   Paintbrush,
   Palette,
   Tag,
+  Network,
+  FileCheck,
+  Images,
+  HelpCircle,
+  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -86,9 +91,19 @@ const navigationItems: NavSection[] = [
         icon: FolderKanban,
       },
       {
+        title: 'Struktur Organisasi',
+        href: '/dashboard/orgchart',
+        icon: Network,
+      },
+      {
         title: 'Program Kerja',
         href: '/dashboard/proker',
         icon: Calendar,
+      },
+      {
+        title: 'Proposal Dana',
+        href: '/dashboard/proposal',
+        icon: FileCheck,
       },
       {
         title: 'Keuangan',
@@ -126,6 +141,16 @@ const navigationItems: NavSection[] = [
         icon: FileText,
       },
       {
+        title: 'Galeri Media',
+        href: '/dashboard/gallery',
+        icon: Images,
+      },
+      {
+        title: 'Tanya Jawab (FAQ)',
+        href: '/dashboard/faq',
+        icon: HelpCircle,
+      },
+      {
         title: 'Kategori',
         href: '/dashboard/settings/categories',
         icon: Tag,
@@ -150,6 +175,11 @@ const navigationItems: NavSection[] = [
   {
     title: 'Pengaturan',
     items: [
+      {
+        title: 'Pusat Pengaturan',
+        href: '/dashboard/settings',
+        icon: Settings,
+      },
       {
         title: 'Role & Permission',
         href: '/dashboard/settings/roles',
@@ -401,10 +431,28 @@ export function Sidebar() {
         </nav>
 
         {/* Fixed footer */}
-        <div className="flex-shrink-0 border-t p-4">
+        <div className="flex-shrink-0 border-t p-3 flex items-center justify-between">
           <div className="text-xs text-muted-foreground">
-            HubbHQ v1.0.0
+            {!isCollapsed && 'HubbHQ v1.0.0'}
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ganti Tema">
+                {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setTheme('light')}>
+                <Sun className="mr-2 h-4 w-4" /> Mode Terang
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('dark')}>
+                <Moon className="mr-2 h-4 w-4" /> Mode Gelap
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme('system')}>
+                <Monitor className="mr-2 h-4 w-4" /> Ikuti Sistem
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 
@@ -543,10 +591,28 @@ export function Sidebar() {
                 ))}
               </div>
             </nav>
-            <div className="flex-shrink-0 border-t p-4">
+            <div className="flex-shrink-0 border-t p-3 flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
                 HubbHQ v1.0.0
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ganti Tema">
+                    {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    <Sun className="mr-2 h-4 w-4" /> Mode Terang
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon className="mr-2 h-4 w-4" /> Mode Gelap
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    <Monitor className="mr-2 h-4 w-4" /> Ikuti Sistem
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </aside>
         </div>

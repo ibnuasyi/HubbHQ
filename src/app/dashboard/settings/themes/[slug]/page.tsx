@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Palette, Save, Check, Loader2 } from 'lucide-react'
+import { Palette, Save, Check, Loader2, Layers } from 'lucide-react'
 
 interface Theme {
   id: string
@@ -312,8 +312,8 @@ export default function ThemeDetailPage({ params }: PageProps) {
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {(config?.availableSections || []).map((section: any, index: number) => (
                 <div key={index} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm">📦</span>
+                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary">
+                    <Layers className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{section.name}</p>

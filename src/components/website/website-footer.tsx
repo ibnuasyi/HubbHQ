@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useWebsiteConfig } from '@/hooks/use-website-config'
-import { Mail, Phone, MapPin, Clock, Facebook, Instagram, Twitter, Youtube } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, Facebook, Instagram, Twitter, Youtube, Building2 } from 'lucide-react'
 
 export function WebsiteFooter() {
   const { config } = useWebsiteConfig()
@@ -18,8 +18,8 @@ export function WebsiteFooter() {
           {/* Column 1 - About */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-xl">🏛️</span>
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+                <Building2 className="w-5 h-5" />
               </div>
               <span className="text-xl font-bold text-white">
                 {config.appName || 'Organisasi'}

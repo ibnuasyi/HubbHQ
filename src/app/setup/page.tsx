@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 // Color presets for organization branding
 const COLOR_PRESETS = [
-  { name: 'Hijau KPRI', color: '#16a34a' },
+  { name: 'Hijau Zamrud', color: '#16a34a' },
   { name: 'Biru Navy', color: '#1e40af' },
   { name: 'Merah Maroon', color: '#dc2626' },
   { name: 'Ungu Purple', color: '#7c3aed' },
@@ -191,7 +191,7 @@ export default function SetupPage() {
                   <Label htmlFor="orgName">Nama Organisasi *</Label>
                   <Input
                     id="orgName"
-                    placeholder="Contoh: KPRI Nusantara"
+                    placeholder="Contoh: HubbHQ Organisasi"
                     value={formData.organizationName}
                     onChange={(e) => updateField('organizationName', e.target.value)}
                     required

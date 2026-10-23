@@ -81,6 +81,16 @@ model User {
   // Uploaded media files
   uploadedMedia  MediaFile[]
 
+  // Panitia Proker
+  panitiaProker  PanitiaProker[]
+
+  // Proposal History Reviewed
+  proposalHistoryReviewed ProposalHistory[]
+
+  // LPJ Reviewed
+  reviewedLpj    LpjProker[] @relation("LpjReviewer")
+  lpjChecklistVerifications LpjProker[] @relation("LpjChecklistVerifier")
+
   @@map("users")
 }
 
@@ -243,12 +253,31 @@ model ProgramKerja {
   status      ProkerStatus @default(DRAFT)
   startDate   DateTime?
   endDate     DateTime?
+
+  // Standard Indonesian Organization Proker Fields
+  kategori          String?       @default("INSIDENTAL") // RUTIN, INSIDENTAL, PRIORITAS
+  sasaran           String?       @db.Text               // Target audiens / sasaran peserta
+  indikator         String?       @db.Text               // Tolok ukur keberhasilan / KPI
+  anggaranEstimasi  Decimal?      @db.Decimal(15, 2)     // Rencana Anggaran Biaya (RAB)
+  sumberDana        String?                              // Kas Organisasi, Sponsor, Iuran, Donatur
+  lokasi            String?                              // Lokasi pelaksanaan kegiatan
+
+  // E-Sertifikat Kepanitiaan per Proker
+  sertifikatTemplate    String?       @db.Text             // URL background template sertifikat proker
+  sertifikatPrefix      String?                            // Pola nomor, cth: [NO]/SERT-OC/[DIVISI]/[KODE]/[BULAN]/[TAHUN]
+  sertifikatSigner1Name String?                            // Nama penandatangan 1 (Ketua Pelaksana)
+  sertifikatSigner1Role String?       @default("Ketua Pelaksana")
+  sertifikatSigner2Name String?                            // Nama penandatangan 2 (Ketua Umum)
+  sertifikatSigner2Role String?       @default("Ketua Umum")
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  checkpoints Checkpoint[]
-  proposals   ProposalDana[]
+  checkpoints    Checkpoint[]
+  proposals      ProposalDana[]
   calendarEvents CalendarEvent[]
+  panitia        PanitiaProker[]
+  lpj            LpjProker?
 
   @@map("program_kerja")
 }
@@ -258,6 +287,22 @@ enum ProkerStatus {
   ON_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+model PanitiaProker {
+  id             String       @id @default(cuid())
+  programKerjaId String
+  programKerja   ProgramKerja @relation(fields: [programKerjaId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleJabatan    String       // e.g. "Ketua Pelaksana", "Sekretaris Panitia", "Bendahara Panitia", "Divisi Acara", "Divisi Humas & Publikasi", "Divisi Perlengkapan", "Divisi Konsumsi"
+  nomorSertifikat       String?
+  sertifikatUrl         String?      @db.Text
+  sertifikatGeneratedAt DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([programKerjaId, userId, roleJabatan])
+  @@map("panitia_proker")
 }
 
 model Checkpoint {
@@ -288,6 +333,7 @@ model ProposalDana {
   description String?  @db.Text
   amount      Decimal  @db.Decimal(15, 2)
   status      ProposalStatus @default(PENDING)
+  version     Int      @default(1)
 
   requesterId String
   requester   User     @relation(fields: [requesterId], references: [id])
@@ -302,10 +348,31 @@ model ProposalDana {
   revisionFile    String?  // File revisian
   revisionNote    String?  @db.Text
 
+  history         ProposalHistory[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@map("proposal_dana")
+}
+
+model ProposalHistory {
+  id             String         @id @default(cuid())
+  proposalDanaId String
+  proposalDana   ProposalDana   @relation(fields: [proposalDanaId], references: [id], onDelete: Cascade)
+  version        Int
+  title          String
+  description    String?        @db.Text
+  amount         Decimal        @db.Decimal(15, 2)
+  proposalFile   String?
+  status         ProposalStatus
+  reviewedNote   String?        @db.Text
+  reviewedById   String?
+  reviewedBy     User?          @relation(fields: [reviewedById], references: [id])
+  reviewedAt     DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@map("proposal_history")
 }
 
 enum ProposalStatus {
@@ -314,6 +381,83 @@ enum ProposalStatus {
   REJECTED
   NEEDS_REVISION
   REVISED
+}
+
+// ==================== LPJ (LAPORAN PERTANGGUNGJAWABAN) ====================
+
+model LpjProker {
+  id                 String       @id @default(cuid())
+  programKerjaId     String       @unique
+  programKerja       ProgramKerja @relation(fields: [programKerjaId], references: [id], onDelete: Cascade)
+  ringkasanKegiatan  String?      @db.Text
+  pesertaHadir       Int?         @default(0)
+  ketercapaianTarget String?      @db.Text
+  kendala            String?      @db.Text
+  solusi             String?      @db.Text
+  rekomendasi        String?      @db.Text
+  totalPemasukan     Decimal      @default(0) @db.Decimal(15, 2)
+  totalPengeluaran   Decimal      @default(0) @db.Decimal(15, 2)
+  saldoAkhir         Decimal      @default(0) @db.Decimal(15, 2)
+  status             LpjStatus    @default(DRAFT)
+  reviewedById       String?
+  reviewedBy         User?        @relation("LpjReviewer", fields: [reviewedById], references: [id])
+  reviewedAt         DateTime?
+  reviewedNote       String?      @db.Text
+  dokumenFinalLpj    String?      @db.Text // URL berkas final buku LPJ lengkap / scan PDF pengesahan
+  dokumenFinalName   String?      // Nama berkas file final LPJ
+
+  // Rekonsiliasi Surplus & Alokasi Dana (KEMBALIKAN_KAS_UMUM, KAS_DIVISI, SYUKURAN_PANITIA, BAGI_HASIL, NONE)
+  surplusAction          String?
+  surplusNote            String?      @db.Text
+  surplusAmount          Decimal?     @default(0) @db.Decimal(15, 2)
+  isSurplusSettled       Boolean      @default(false)
+
+  // Checklist Kelaikan Berkas Fisik Pra-Sidang LPJ (Compliance Audit Gate)
+  checklistNotaFisik     Boolean      @default(false)
+  checklistPresensi      Boolean      @default(false)
+  checklistDokumentasi   Boolean      @default(false)
+  checklistBeritaAcara   Boolean      @default(false)
+  checklistVerifiedById  String?
+  checklistVerifiedBy    User?        @relation("LpjChecklistVerifier", fields: [checklistVerifiedById], references: [id])
+  checklistVerifiedAt    DateTime?
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  items              LpjItem[]
+
+  @@map("lpj_proker")
+}
+
+enum LpjStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model LpjItem {
+  id          String      @id @default(cuid())
+  lpjId       String
+  lpj         LpjProker   @relation(fields: [lpjId], references: [id], onDelete: Cascade)
+  type        LpjItemType @default(EXPENSE) // INCOME (Pemasukan) atau EXPENSE (Pengeluaran)
+  kategori    String      // e.g. "Konsumsi", "Kesekretariatan", "Perlengkapan", "Humas & Publikasi", "Transportasi/Akomodasi", "Sponsorship", "Pendaftaran"
+  namaBarang  String
+  qty         Decimal     @default(1) @db.Decimal(10, 2)
+  satuan      String?     @default("item")
+  hargaSatuan Decimal     @db.Decimal(15, 2)
+  totalHarga  Decimal     @db.Decimal(15, 2)
+  buktiNota   String?     // URL gambar bukti nota/struk/kuitansi
+  keterangan  String?     @db.Text
+  sumberDana  String?     @default("DANA_AJUAN") // DANA_AJUAN, KAS_PROKER, DANA_LUAR
+  createdAt   DateTime    @default(now())
+
+  @@map("lpj_items")
+}
+
+enum LpjItemType {
+  INCOME
+  EXPENSE
 }
 
 // ==================== KEUANGAN ====================

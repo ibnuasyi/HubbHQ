@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import dynamic from 'next/dynamic'
+import { FileQuestion } from 'lucide-react'
 
 // Pre-load section components
 const sectionComponents: Record<string, any> = {
@@ -68,10 +69,12 @@ export default function PageRenderer({ slug, isPreview = false }: PageRendererPr
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <span className="text-6xl mb-4 block">😕</span>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{error}</h1>
-          <p className="text-gray-600">The page you&apos;re looking for doesn&apos;t exist.</p>
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground">
+            <FileQuestion className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{error}</h1>
+          <p className="text-muted-foreground">Halaman yang Anda cari tidak ditemukan atau belum dipublikasikan.</p>
         </div>
       </div>
     )

@@ -168,26 +168,29 @@ async function getResourceOwner(
       case 'user':
         return resourceId // For users, the ID is the owner
 
-      case 'surat':
+      case 'surat': {
         const surat = await prisma.surat.findUnique({
           where: { id: resourceId },
           select: { [ownershipField]: true } as Record<string, true>,
         })
         return (surat?.[ownershipField] as unknown as string | null) ?? null
+      }
 
-      case 'proker':
+      case 'proker': {
         const proker = await prisma.programKerja.findUnique({
           where: { id: resourceId },
           select: { [ownershipField]: true } as Record<string, true>,
         })
         return (proker?.[ownershipField] as unknown as string | null) ?? null
+      }
 
-      case 'transaction':
+      case 'transaction': {
         const transaction = await prisma.transaction.findUnique({
           where: { id: resourceId },
           select: { [ownershipField]: true } as Record<string, true>,
         })
         return (transaction?.[ownershipField] as unknown as string | null) ?? null
+      }
 
       default:
         return null

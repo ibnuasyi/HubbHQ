@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Menu, X, ChevronDown, User, LogOut, Settings, LayoutDashboard } from 'lucide-react'
+import { Menu, X, ChevronDown, User, LogOut, Settings, LayoutDashboard, Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -61,8 +61,8 @@ export function WebsiteHeader() {
             {config.logoUrl ? (
               <img src={config.logoUrl} alt={config.appName || 'Logo'} className="h-10 w-10 object-contain" />
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-xl">🏛️</span>
+              <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+                <Building2 className="w-5 h-5" />
               </div>
             )}
             <span className="text-xl font-bold text-foreground hidden sm:block">

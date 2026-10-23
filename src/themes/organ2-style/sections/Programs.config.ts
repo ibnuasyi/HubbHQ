@@ -1,8 +1,8 @@
-// Programs Section Configuration for KPRI Style
+// Programs Section Configuration for Organ2 Style
 export const programsConfig = {
   variants: {
     default: {
-      name: 'KPRI Programs - Grid',
+      name: 'Programs - Grid',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true, placeholder: 'Program Kerja' },
         { key: 'subtitle', type: 'text', label: 'Subtitle', placeholder: 'Program kerja kami' },
@@ -18,7 +18,7 @@ export const programsConfig = {
       ]
     },
     cards: {
-      name: 'KPRI Programs - Cards',
+      name: 'Programs - Cards',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'subtitle', type: 'text', label: 'Subtitle' },
@@ -31,7 +31,7 @@ export const programsConfig = {
       ]
     },
     tabs: {
-      name: 'KPRI Programs - Tabs',
+      name: 'Programs - Tabs',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'categories', type: 'array', label: 'Kategori', fields: [
@@ -45,7 +45,7 @@ export const programsConfig = {
       ]
     },
     timeline: {
-      name: 'KPRI Programs - Timeline',
+      name: 'Programs - Timeline',
       fields: [
         { key: 'title', type: 'text', label: 'Judul', required: true },
         { key: 'programs', type: 'array', label: 'Program', fields: [

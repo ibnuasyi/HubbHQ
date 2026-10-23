@@ -14,22 +14,22 @@ import Newsletter from '@/themes/default/sections/Newsletter'
 // Homepage SEO metadata
 export const metadata: Metadata = {
   title: 'Beranda',
-  description: 'Website resmi Konfederasi Pergerakan Rakyat Indonesia - Membangun Gerakan yang Kuat untuk Rakyat',
-  keywords: ['organisasi', 'gerakan', 'rakyat', 'kebangsaan', 'kPRI'],
+  description: 'HubbHQ - Sistem Informasi Organisasi Modern',
+  keywords: ['organisasi', 'sistem informasi', 'manajemen organisasi', 'hubbhq'],
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'KPRI - Konfederasi Pergerakan Rakyat Indonesia',
-    description: 'Website resmi KPRI - Membangun Gerakan yang Kuat untuk Rakyat',
+    title: 'HubbHQ - Sistem Informasi Organisasi Modern',
+    description: 'HubbHQ - Platform Terpadu Manajemen Organisasi, Keuangan, Program Kerja, dan Persuratan Digital',
     url: '/',
-    siteName: 'KPRI',
+    siteName: 'HubbHQ',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'KPRI Organization',
+        alt: 'HubbHQ Organization',
       },
     ],
     locale: 'id_ID',
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KPRI - Konfederasi Pergerakan Rakyat Indonesia',
-    description: 'Membangun Gerakan yang Kuat untuk Rakyat',
+    title: 'HubbHQ - Sistem Informasi Organisasi Modern',
+    description: 'Platform Terpadu Manajemen Organisasi Modern',
     images: ['/og-image.png'],
   },
 }
@@ -67,10 +67,10 @@ export default function HomePage() {
             animate: true,
             columns: '4',
             stats: [
-              { value: '500+', label: 'Anggota Aktif', icon: '👥' },
-              { value: '50+', label: 'Program Kerja', icon: '📋' },
-              { value: '20+', label: 'Mitra', icon: '🤝' },
-              { value: '10+', label: 'Tahun Pengalaman', icon: '🏆' }
+              { value: '500+', label: 'Anggota Aktif', icon: 'users' },
+              { value: '50+', label: 'Program Kerja', icon: 'calendar' },
+              { value: '20+', label: 'Mitra', icon: 'handshake' },
+              { value: '10+', label: 'Tahun Pengalaman', icon: 'award' }
             ]
           }}
         />
@@ -78,15 +78,15 @@ export default function HomePage() {
         <About
           config={{
             variant: 'cards',
-            title: 'Tentang KPRI',
+            title: 'Tentang Organisasi',
             subtitle: 'Tentang Kami',
-            content: 'Kami adalah organisasi yang berfokus pada pemberdayaan masyarakat dan generasi muda Indonesia.',
+            content: 'Kami adalah organisasi yang berfokus pada pemberdayaan masyarakat, sinergi anggota, dan kemajuan bersama.',
             features: [
-              { icon: '🎯', title: 'Visi', description: 'Menjadi organisasi yang unggul dalam pemberdayaan masyarakat dan generasi muda Indonesia.', link: '/visi-misi' },
-              { icon: '🛡️', title: 'Misi', description: 'Mengembangkan potensi generasi muda melalui pendidikan, pelatihan, dan kegiatan sosial.', link: '/visi-misi' },
-              { icon: '👥', title: 'Nilai-Nilai', description: 'Berpegang pada nilai-nilai kebangsaan, keadilan, dan kesejahteraan rakyat.', link: '/tentang-kami' },
+              { icon: 'target', title: 'Visi', description: 'Menjadi organisasi yang unggul dalam pemberdayaan masyarakat dan pengembangan potensi anggota.', link: '/tentang' },
+              { icon: 'compass', title: 'Misi', description: 'Mengembangkan potensi anggota melalui pendidikan, kolaborasi, dan kegiatan pengabdian nyata.', link: '/tentang' },
+              { icon: 'shield', title: 'Nilai-Nilai', description: 'Berpegang teguh pada integritas, kebersamaan, keadilan, dan tata kelola modern.', link: '/tentang' },
             ],
-            ctaText: 'Selengkapnya',
+            ctaText: 'Pelajari Selengkapnya',
             ctaLink: '/tentang'
           }}
         />
@@ -97,10 +97,10 @@ export default function HomePage() {
             vision: 'Menjadi organisasi profesional yang memberikan kontribusi nyata bagi kemajuan masyarakat dan bangsa.',
             missionTitle: 'Misi Kami',
             missions: [
-              { number: '1', text: 'Meningkatkan kesejahteraan masyarakat melalui program-program sosial' },
-              { number: '2', text: 'Mengembangkan sumber daya manusia yang profesional dan berdaya saing' },
-              { number: '3', text: 'Membangun jejaring kerja sama dengan berbagai pihak terkait' },
-              { number: '4', text: 'Melakukan inovasi dalam pemberdayaan masyarakat' }
+              { number: '1', text: 'Meningkatkan kesejahteraan anggota melalui program kerja yang terukur dan transparan' },
+              { number: '2', text: 'Mengembangkan sumber daya manusia yang kompeten, beretika, dan berdaya saing tinggi' },
+              { number: '3', text: 'Membangun jejaring kolaborasi strategis dengan berbagai pemangku kepentingan' },
+              { number: '4', text: 'Menerapkan transformasi digital dan inovasi berkelanjutan dalam pengelolaan organisasi' }
             ]
           }}
         />
@@ -109,18 +109,18 @@ export default function HomePage() {
           config={{
             variant: 'default',
             title: 'Program Kerja',
-            subtitle: 'Apa Yang Kami Lakukan',
+            subtitle: 'Aktivitas & Program Unggulan',
             columns: '3',
             programs: [
-              { title: 'Pendidikan', description: 'Program beasiswa dan pelatihan untuk masyarakat.', icon: '📚' },
-              { title: 'Kesehatan', description: 'Penyuluhan dan layanan kesehatan gratis.', icon: '🏥' },
-              { title: 'Lingkungan', description: 'Gerakan penghijauan dan pengelolaan sampah.', icon: '🌱' },
-              { title: 'Ekonomi', description: 'Pelatihan kewirausahaan dan bantuan modal.', icon: '💰' },
-              { title: 'Sosial', description: 'Bantuan sosial dan bencana alam.', icon: '❤️' },
-              { title: 'Budaya', description: 'Pelestarian budaya lokal.', icon: '🎭' }
+              { title: 'Pendidikan', description: 'Program pelatihan, workshop keahlian, dan beasiswa anggota.', icon: 'graduationcap' },
+              { title: 'Kesehatan', description: 'Penyuluhan dan kegiatan layanan kesehatan terpadu.', icon: 'activity' },
+              { title: 'Lingkungan', description: 'Gerakan peduli lingkungan dan inisiatif keberlanjutan.', icon: 'trees' },
+              { title: 'Ekonomi', description: 'Pemberdayaan kewirausahaan dan penguatan ekonomi anggota.', icon: 'trendingup' },
+              { title: 'Sosial', description: 'Aksi kepedulian sosial dan tanggap kebencanaan.', icon: 'hearthandshake' },
+              { title: 'Budaya', description: 'Pelestarian nilai luhur dan apresiasi seni budaya daerah.', icon: 'sparkles' }
             ],
             ctaText: 'Lihat Semua Program',
-            ctaLink: '/program'
+            ctaLink: '/tentang'
           }}
         />
 

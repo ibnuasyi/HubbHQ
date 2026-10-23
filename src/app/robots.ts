@@ -1,35 +1,14 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://siop.example.com'
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
   return {
     rules: [
       {
-        // Allow all public pages
         userAgent: '*',
-        allow: [
-          '/',
-          '/tentang',
-          '/berita',
-          '/berita/*',
-          '/galeri',
-          '/kontak',
-          '/program',
-          '/events',
-          '/events/*',
-        ],
-        // Disallow all dashboard and API routes
-        disallow: [
-          '/dashboard',
-          '/api',
-          '/login',
-          '/register',
-          '/verify',
-          '/admin',
-          '/_next',
-          '/favicon.ico',
-        ],
+        allow: '/',
+        disallow: ['/dashboard/', '/api/', '/login', '/register', '/setup'],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

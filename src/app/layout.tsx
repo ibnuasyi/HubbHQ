@@ -1,10 +1,7 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import { Providers } from '@/components/providers'
 import { prisma } from '@/lib/db'
 import './globals.css'
-
-const inter = Inter({ subsets: ['latin'] })
 
 // Dynamic metadata based on website config
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,7 +10,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
     const configData: Record<string, string> = {}
     configs.forEach((config) => {
-      // Konversi JsonValue ke string
       const value = typeof config.value === 'string' ? config.value : JSON.stringify(config.value)
       configData[config.key] = value
     })
@@ -32,11 +28,11 @@ export async function generateMetadata(): Promise<Metadata> {
         icon: faviconUrl,
       } : undefined,
       robots: {
-        index: false,
-        follow: false,
+        index: true,
+        follow: true,
       },
     }
-  } catch (error) {
+  } catch (_error) {
     // Fallback metadata if database fails
     return {
       title: {
@@ -45,8 +41,8 @@ export async function generateMetadata(): Promise<Metadata> {
       },
       description: 'Sistem Informasi Organisasi Modern',
       robots: {
-        index: false,
-        follow: false,
+        index: true,
+        follow: true,
       },
     }
   }
@@ -58,8 +54,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="id">
-      <body className={inter.className}>
+    <html lang="id" suppressHydrationWarning>
+      <body className="font-sans antialiased min-h-screen bg-background text-foreground">
         <Providers>{children}</Providers>
       </body>
     </html>

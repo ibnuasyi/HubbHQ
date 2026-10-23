@@ -45,6 +45,9 @@ prisma/*.db-journal
 # Uploads
 uploads/
 
+# Local MySQL data
+.local_mysql/
+
 # IDE
 .idea/
 .vscode/
