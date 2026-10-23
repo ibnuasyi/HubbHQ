@@ -1,6 +1,6 @@
 # docker-compose.yml
 # HubbHQ - Sistem Informasi Organisasi Modern
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -33,7 +33,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # Security: Run as non-root user
+    # Security: Run as non-root use
     user: "nextjs"
 
   mysql:
