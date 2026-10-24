@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, isAdmin } from '@/lib/auth'
 
 // GET /api/roles - List all roles
 export async function GET() {
@@ -44,9 +43,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'settings.edit')
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const admin = await isAdmin(session.user.id)
+    if (!admin) {
+      return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 })
     }
 
     const body = await request.json()

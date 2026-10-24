@@ -1,43 +1,93 @@
 /**
- * Unified Storage System
- * Local storage dengan proteksi tambahan + S3/R2 support
- *
- * Fitur:
- * - Local storage sebagai default (aman)
- * - S3/R2 support (butuh install @aws-sdk packages)
- *
- * Untuk enable S3/R2, install packages dan uncomment class nya:
- * npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+ * Unified Storage System - HubbHQ
+ * Mendukung penyimpanan lokal, universal S3-compatible (AWS S3, Cloudflare R2, MinIO, Wasabi, AList S3 Gateway),
+ * serta WebDAV (AList WebDAV, Nextcloud, OwnCloud, Synology).
  */
 
 import { writeFile, mkdir, readFile, unlink, stat } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
 import crypto from 'crypto'
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+
+// =====================================================
+// Storage Interface
+// =====================================================
+
+export interface IStorageProvider {
+  name: string
+  upload(
+    buffer: Buffer,
+    folder: string,
+    originalName: string,
+    mimeType: string
+  ): Promise<{ url: string; filename: string; path?: string }>
+  delete(folder: string, filename: string): Promise<boolean>
+  read(folder: string, filename: string): Promise<Buffer | null>
+  exists(folder: string, filename: string): Promise<boolean>
+  getStats?(folder: string, filename: string): Promise<{ size: number; modified: Date } | null>
+  getSignedUrl?(folder: string, filename: string, expiresInSeconds?: number): Promise<string>
+}
 
 // =====================================================
 // Configuration
 // =====================================================
 
 export const STORAGE_CONFIG = {
-  // Provider: 'local' | 's3' | 'r2'
-  provider: process.env.STORAGE_PROVIDER || 'local',
+  // Provider: 'local' | 's3' | 'r2' | 'webdav'
+  provider: (process.env.STORAGE_PROVIDER || 'local').toLowerCase(),
 
-  // Local storage base directory (relative to project root)
+  // Local storage
   local: {
     baseDir: process.env.STORAGE_LOCAL_DIR || './uploads',
-    // Folder yang bisa diakses publik TANPA auth
-    publicFolders: (process.env.STORAGE_PUBLIC_FOLDERS || 'images,documents,gallery,banners,post-images').split(','),
-    // Folder yang dilindungi (butuh auth)
-    protectedFolders: (process.env.STORAGE_PROTECTED_FOLDERS || 'avatars,signatures,attachments,private,user-files').split(','),
+    publicFolders: (process.env.STORAGE_PUBLIC_FOLDERS || 'images,documents,gallery,banners,post-images,library,sertifikat').split(','),
+    protectedFolders: (process.env.STORAGE_PROTECTED_FOLDERS || 'avatars,signatures,attachments,private,user-files,lpj,proposals').split(','),
+  },
+
+  // S3 / S3-compatible (MinIO, R2, Wasabi, AList S3)
+  s3: {
+    endpoint: process.env.S3_ENDPOINT,
+    region: process.env.S3_REGION || 'us-east-1',
+    bucket: process.env.S3_BUCKET || 'hubbhq',
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true' || Boolean(process.env.S3_ENDPOINT),
+    publicUrl: process.env.S3_PUBLIC_URL || '',
+    publicPrefixes: (process.env.S3_PUBLIC_PREFIXES || 'images,documents,gallery,banners,post-images,library,sertifikat').split(','),
+  },
+
+  // Cloudflare R2
+  r2: {
+    accountId: process.env.R2_ACCOUNT_ID || '',
+    bucket: process.env.R2_BUCKET || 'hubbhq',
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    publicUrl: process.env.R2_PUBLIC_URL || '',
+    publicPrefixes: (process.env.R2_PUBLIC_PREFIXES || 'images,documents,gallery,banners,post-images,library,sertifikat').split(','),
+  },
+
+  // WebDAV (AList WebDAV, Nextcloud, OwnCloud)
+  webdav: {
+    url: (process.env.WEBDAV_URL || '').replace(/\/$/, ''),
+    username: process.env.WEBDAV_USERNAME || '',
+    password: process.env.WEBDAV_PASSWORD || '',
+    basePath: (process.env.WEBDAV_BASE_PATH || '').replace(/^\/|\/$/g, ''),
+    publicUrl: (process.env.WEBDAV_PUBLIC_URL || '').replace(/\/$/, ''),
   },
 
   // Max file sizes (bytes)
   maxFileSize: {
-    image: 5 * 1024 * 1024,      // 5MB
-    document: 10 * 1024 * 1024,    // 10MB
+    image: 10 * 1024 * 1024,      // 10MB
+    document: 25 * 1024 * 1024,   // 25MB
     video: 100 * 1024 * 1024,     // 100MB
-    default: 5 * 1024 * 1024,     // 5MB
+    default: 10 * 1024 * 1024,    // 10MB
   },
 
   // Allowed MIME types
@@ -54,7 +104,7 @@ export const STORAGE_CONFIG = {
     ],
     video: ['video/mp4', 'video/webm', 'video/quicktime'],
     audio: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'],
-    default: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    default: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'],
   },
 }
 
@@ -62,7 +112,6 @@ export const STORAGE_CONFIG = {
 // File Validation
 // =====================================================
 
-// Magic bytes signatures for validation
 const FILE_SIGNATURES: Record<string, string[]> = {
   'image/jpeg': ['ffd8ffe0', 'ffd8ffe1', 'ffd8ffe2', 'ffd8ffe3', 'ffd8ffdb', 'ffd8ffee'],
   'image/png': ['89504e47'],
@@ -71,13 +120,9 @@ const FILE_SIGNATURES: Record<string, string[]> = {
   'application/pdf': ['25504446'],
 }
 
-/**
- * Detect file type from magic bytes
- */
 export function detectFileType(buffer: Buffer): string | null {
   const signature = buffer.subarray(0, 4).toString('hex').toLowerCase()
 
-  // Check for WebP (RIFF container with WEBP chunk)
   if (signature === '52494646') {
     if (buffer.length >= 12) {
       const webpMarker = buffer.subarray(8, 12).toString('hex').toLowerCase()
@@ -88,7 +133,6 @@ export function detectFileType(buffer: Buffer): string | null {
     return null
   }
 
-  // Check standard signatures
   for (const [mime, signatures] of Object.entries(FILE_SIGNATURES)) {
     if (signatures.some(sig => signature.startsWith(sig))) {
       return mime
@@ -98,9 +142,6 @@ export function detectFileType(buffer: Buffer): string | null {
   return null
 }
 
-/**
- * Get file category from MIME type
- */
 export function getFileCategory(mimeType: string): string {
   if (mimeType.startsWith('image/')) return 'image'
   if (mimeType.startsWith('video/')) return 'video'
@@ -111,9 +152,6 @@ export function getFileCategory(mimeType: string): string {
   return 'default'
 }
 
-/**
- * Validate MIME type against allowed types
- */
 export function isAllowedFileType(mimeType: string, category?: string): boolean {
   if (category && category in STORAGE_CONFIG.allowedTypes) {
     return (STORAGE_CONFIG.allowedTypes as Record<string, string[]>)[category].includes(mimeType)
@@ -121,9 +159,6 @@ export function isAllowedFileType(mimeType: string, category?: string): boolean 
   return Object.values(STORAGE_CONFIG.allowedTypes).flat().includes(mimeType)
 }
 
-/**
- * Get max file size for category
- */
 export function getMaxFileSize(category?: string): number {
   if (category && category in STORAGE_CONFIG.maxFileSize) {
     return (STORAGE_CONFIG.maxFileSize as Record<string, number>)[category]
@@ -131,29 +166,16 @@ export function getMaxFileSize(category?: string): number {
   return STORAGE_CONFIG.maxFileSize.default
 }
 
-/**
- * Sanitize folder path component
- */
 export function sanitizeFolder(folder: string): string {
   return folder.replace(/[^a-zA-Z0-9_-]/g, '').substring(0, 50)
 }
 
-// =====================================================
-// Path Security
-// =====================================================
-
-/**
- * Check if a path is within allowed directory (prevent path traversal)
- */
 export function isPathSecure(filePath: string, baseDir: string): boolean {
   const resolved = path.resolve(baseDir, filePath)
   const resolvedBase = path.resolve(baseDir)
   return resolved.startsWith(resolvedBase)
 }
 
-/**
- * Check if folder is publicly accessible
- */
 export function isPublicFolder(folder: string): boolean {
   const normalizedFolder = folder.toLowerCase().trim()
   return STORAGE_CONFIG.local.publicFolders.some(
@@ -162,56 +184,48 @@ export function isPublicFolder(folder: string): boolean {
 }
 
 // =====================================================
-// Local Storage Operations
+// Local Storage Provider
 // =====================================================
 
-export class LocalStorage {
+export class LocalStorage implements IStorageProvider {
+  name = 'local'
   private baseDir: string
 
   constructor() {
     this.baseDir = path.resolve(process.cwd(), STORAGE_CONFIG.local.baseDir)
   }
 
-  /**
-   * Get full path for a file
-   */
   private getFilePath(folder: string, filename: string): string {
     const safeFolder = sanitizeFolder(folder)
     return path.join(this.baseDir, safeFolder, filename)
   }
 
-  /**
-   * Upload file to local storage
-   */
   async upload(
     buffer: Buffer,
     folder: string,
     originalName: string,
-    mimeType: string
+    _mimeType: string
   ): Promise<{ url: string; filename: string; path: string }> {
     const safeFolder = sanitizeFolder(folder)
     const folderPath = path.join(this.baseDir, safeFolder)
 
-    // Create folder if not exists
     if (!existsSync(folderPath)) {
       await mkdir(folderPath, { recursive: true })
     }
 
-    // Generate unique filename
-    const ext = path.extname(originalName)
+    const ext = path.extname(originalName) || ''
     const baseName = path.basename(originalName, ext)
       .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 50)
+      .substring(0, 40)
     const uniqueSuffix = crypto.randomBytes(4).toString('hex')
     const filename = `${baseName}-${Date.now()}-${uniqueSuffix}${ext}`
-
     const filePath = this.getFilePath(safeFolder, filename)
 
-    // Write file
     await writeFile(filePath, buffer)
 
-    // Return relative URL (for public access)
-    const url = `/${STORAGE_CONFIG.local.baseDir}/${safeFolder}/${filename}`
+    const url = isPublicFolder(safeFolder)
+      ? `/${STORAGE_CONFIG.local.baseDir.replace(/^\.\//, '')}/${safeFolder}/${filename}`
+      : `/api/files/${safeFolder}/${filename}`
 
     return {
       url,
@@ -220,16 +234,11 @@ export class LocalStorage {
     }
   }
 
-  /**
-   * Delete file from local storage
-   */
   async delete(folder: string, filename: string): Promise<boolean> {
     const filePath = this.getFilePath(folder, filename)
-
     if (!isPathSecure(filePath, this.baseDir)) {
       throw new Error('Invalid file path')
     }
-
     if (existsSync(filePath)) {
       await unlink(filePath)
       return true
@@ -237,41 +246,24 @@ export class LocalStorage {
     return false
   }
 
-  /**
-   * Read file from local storage
-   */
   async read(folder: string, filename: string): Promise<Buffer | null> {
     const filePath = this.getFilePath(folder, filename)
-
-    if (!isPathSecure(filePath, this.baseDir)) {
+    if (!isPathSecure(filePath, this.baseDir) || !existsSync(filePath)) {
       return null
     }
-
-    if (!existsSync(filePath)) {
-      return null
-    }
-
     return readFile(filePath)
   }
 
-  /**
-   * Check if file exists
-   */
   async exists(folder: string, filename: string): Promise<boolean> {
     const filePath = this.getFilePath(folder, filename)
     return existsSync(filePath)
   }
 
-  /**
-   * Get file stats
-   */
   async getStats(folder: string, filename: string): Promise<{ size: number; modified: Date } | null> {
     const filePath = this.getFilePath(folder, filename)
-
     if (!existsSync(filePath)) {
       return null
     }
-
     const stats = await stat(filePath)
     return {
       size: stats.size,
@@ -281,67 +273,345 @@ export class LocalStorage {
 }
 
 // =====================================================
-// S3/R2 Support (Optional)
-// To enable, install packages and uncomment:
-// npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+// Universal S3 Storage Provider (AWS, R2, MinIO, Wasabi, AList S3)
 // =====================================================
 
-export type StorageProvider = 'local'
+export class S3Storage implements IStorageProvider {
+  name = 's3'
+  private client: S3Client
+  private bucket: string
+  private publicUrl: string
 
-export function createStorage(): LocalStorage {
-  // Only local storage is available by default
-  // S3/R2 requires installing AWS SDK packages
-  return new LocalStorage()
+  constructor(isR2 = false) {
+    if (isR2) {
+      const config = STORAGE_CONFIG.r2
+      this.bucket = config.bucket
+      this.publicUrl = config.publicUrl
+      this.client = new S3Client({
+        region: 'auto',
+        endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: config.accessKeyId,
+          secretAccessKey: config.secretAccessKey,
+        },
+      })
+    } else {
+      const config = STORAGE_CONFIG.s3
+      this.bucket = config.bucket
+      this.publicUrl = config.publicUrl
+      this.client = new S3Client({
+        region: config.region,
+        endpoint: config.endpoint || undefined,
+        forcePathStyle: config.forcePathStyle,
+        credentials: {
+          accessKeyId: config.accessKeyId,
+          secretAccessKey: config.secretAccessKey,
+        },
+      })
+    }
+  }
+
+  private getKey(folder: string, filename: string): string {
+    const safeFolder = sanitizeFolder(folder)
+    return `${safeFolder}/${filename}`
+  }
+
+  async upload(
+    buffer: Buffer,
+    folder: string,
+    originalName: string,
+    mimeType: string
+  ): Promise<{ url: string; filename: string; path?: string }> {
+    const safeFolder = sanitizeFolder(folder)
+    const ext = path.extname(originalName) || ''
+    const baseName = path.basename(originalName, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .substring(0, 40)
+    const uniqueSuffix = crypto.randomBytes(4).toString('hex')
+    const filename = `${baseName}-${Date.now()}-${uniqueSuffix}${ext}`
+    const key = this.getKey(safeFolder, filename)
+
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    )
+
+    let url: string
+    if (this.publicUrl) {
+      url = `${this.publicUrl.replace(/\/$/, '')}/${key}`
+    } else if (isPublicFolder(safeFolder)) {
+      const endpoint = STORAGE_CONFIG.s3.endpoint
+      if (endpoint) {
+        url = `${endpoint.replace(/\/$/, '')}/${this.bucket}/${key}`
+      } else {
+        url = `https://${this.bucket}.s3.${STORAGE_CONFIG.s3.region}.amazonaws.com/${key}`
+      }
+    } else {
+      url = `/api/files/${safeFolder}/${filename}`
+    }
+
+    return {
+      url,
+      filename,
+      path: key,
+    }
+  }
+
+  async delete(folder: string, filename: string): Promise<boolean> {
+    const key = this.getKey(folder, filename)
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async read(folder: string, filename: string): Promise<Buffer | null> {
+    const key = this.getKey(folder, filename)
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+      if (!response.Body) return null
+      const bytes = await response.Body.transformToByteArray()
+      return Buffer.from(bytes)
+    } catch {
+      return null
+    }
+  }
+
+  async exists(folder: string, filename: string): Promise<boolean> {
+    const key = this.getKey(folder, filename)
+    try {
+      await this.client.send(
+        new HeadObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+        })
+      )
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async getSignedUrl(folder: string, filename: string, expiresInSeconds = 3600): Promise<string> {
+    const key = this.getKey(folder, filename)
+    return getSignedUrl(
+      this.client,
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+      { expiresIn: expiresInSeconds }
+    )
+  }
 }
 
 // =====================================================
-// Unified Storage Service
+// Universal WebDAV Storage Provider (AList WebDAV, Nextcloud, OwnCloud)
 // =====================================================
 
+export class WebDAVStorage implements IStorageProvider {
+  name = 'webdav'
+  private baseUrl: string
+  private authHeader: string
+  private publicUrl: string
+
+  constructor() {
+    const config = STORAGE_CONFIG.webdav
+    let base = config.url
+    if (config.basePath) {
+      base += `/${config.basePath}`
+    }
+    this.baseUrl = base
+    this.publicUrl = config.publicUrl
+
+    const credentials = `${config.username}:${config.password}`
+    this.authHeader = `Basic ${Buffer.from(credentials).toString('base64')}`
+  }
+
+  private getFullUrl(folder: string, filename?: string): string {
+    const safeFolder = sanitizeFolder(folder)
+    if (filename) {
+      return `${this.baseUrl}/${safeFolder}/${filename}`
+    }
+    return `${this.baseUrl}/${safeFolder}`
+  }
+
+  private async ensureFolder(folder: string): Promise<void> {
+    const folderUrl = this.getFullUrl(folder)
+    try {
+      await fetch(folderUrl, {
+        method: 'MKCOL',
+        headers: { Authorization: this.authHeader },
+      })
+    } catch {
+      // Ignore if folder exists
+    }
+  }
+
+  async upload(
+    buffer: Buffer,
+    folder: string,
+    originalName: string,
+    mimeType: string
+  ): Promise<{ url: string; filename: string; path?: string }> {
+    const safeFolder = sanitizeFolder(folder)
+    await this.ensureFolder(safeFolder)
+
+    const ext = path.extname(originalName) || ''
+    const baseName = path.basename(originalName, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .substring(0, 40)
+    const uniqueSuffix = crypto.randomBytes(4).toString('hex')
+    const filename = `${baseName}-${Date.now()}-${uniqueSuffix}${ext}`
+    const fileUrl = this.getFullUrl(safeFolder, filename)
+
+    const res = await fetch(fileUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: this.authHeader,
+        'Content-Type': mimeType,
+      },
+      body: new Uint8Array(buffer),
+    })
+
+    if (!res.ok && res.status !== 201 && res.status !== 204) {
+      throw new Error(`WebDAV upload failed: ${res.status} ${res.statusText}`)
+    }
+
+    let url: string
+    if (this.publicUrl) {
+      url = `${this.publicUrl}/${safeFolder}/${filename}`
+    } else if (isPublicFolder(safeFolder)) {
+      url = fileUrl
+    } else {
+      url = `/api/files/${safeFolder}/${filename}`
+    }
+
+    return {
+      url,
+      filename,
+      path: fileUrl,
+    }
+  }
+
+  async delete(folder: string, filename: string): Promise<boolean> {
+    const fileUrl = this.getFullUrl(folder, filename)
+    try {
+      const res = await fetch(fileUrl, {
+        method: 'DELETE',
+        headers: { Authorization: this.authHeader },
+      })
+      return res.ok || res.status === 404
+    } catch {
+      return false
+    }
+  }
+
+  async read(folder: string, filename: string): Promise<Buffer | null> {
+    const fileUrl = this.getFullUrl(folder, filename)
+    try {
+      const res = await fetch(fileUrl, {
+        method: 'GET',
+        headers: { Authorization: this.authHeader },
+      })
+      if (!res.ok) return null
+      const arrayBuffer = await res.arrayBuffer()
+      return Buffer.from(arrayBuffer)
+    } catch {
+      return null
+    }
+  }
+
+  async exists(folder: string, filename: string): Promise<boolean> {
+    const fileUrl = this.getFullUrl(folder, filename)
+    try {
+      const res = await fetch(fileUrl, {
+        method: 'HEAD',
+        headers: { Authorization: this.authHeader },
+      })
+      return res.ok
+    } catch {
+      return false
+    }
+  }
+}
+
+// =====================================================
+// Factory & Service
+// =====================================================
+
+export type StorageProviderType = 'local' | 's3' | 'r2' | 'webdav'
+
+export function createStorage(): IStorageProvider {
+  const provider = STORAGE_CONFIG.provider
+  if (provider === 's3') {
+    return new S3Storage(false)
+  }
+  if (provider === 'r2') {
+    return new S3Storage(true)
+  }
+  if (provider === 'webdav') {
+    return new WebDAVStorage()
+  }
+  return new LocalStorage()
+}
+
 export class StorageService {
-  private storage: LocalStorage
+  private storage: IStorageProvider
 
   constructor() {
     this.storage = createStorage()
   }
 
   getProvider(): string {
-    return 'local'
+    return this.storage.name
   }
 
-  /**
-   * Upload file with validation
-   */
+  getStorageInstance(): IStorageProvider {
+    return this.storage
+  }
+
   async upload(
     buffer: Buffer,
     folder: string,
     originalName: string,
     mimeType: string
   ): Promise<{ url: string; filename: string }> {
-    // Validate file type
     const detectedType = detectFileType(buffer)
     if (!detectedType) {
-      throw new Error('Invalid file content')
+      throw new Error('Format isi berkas tidak valid atau tidak dikenali.')
     }
 
-    // Verify detected type matches claimed MIME type
     if (!mimeType.startsWith(detectedType.split('/')[0])) {
-      throw new Error('File content does not match claimed MIME type')
+      throw new Error('Format berkas tidak sesuai dengan tipe MIME yang dikirim.')
     }
 
-    // Check if type is allowed
     if (!isAllowedFileType(mimeType)) {
-      throw new Error(`File type ${mimeType} is not allowed`)
+      throw new Error(`Tipe berkas ${mimeType} tidak diizinkan.`)
     }
 
-    // Check file size
     const category = getFileCategory(mimeType)
     const maxSize = getMaxFileSize(category)
     if (buffer.length > maxSize) {
-      throw new Error(`File size exceeds maximum allowed (${maxSize / 1024 / 1024}MB)`)
+      throw new Error(`Ukuran berkas melebihi batas maksimal (${maxSize / 1024 / 1024}MB).`)
     }
 
-    // Upload
     const result = await this.storage.upload(buffer, folder, originalName, mimeType)
     return {
       url: result.url,
@@ -349,38 +619,42 @@ export class StorageService {
     }
   }
 
-  /**
-   * Delete file
-   */
   async delete(url: string): Promise<boolean> {
-    // Extract folder and filename from URL
     const parts = url.split('/')
-    if (parts.length >= 3) {
-      const folder = parts[parts.length - 2]
+    if (parts.length >= 2) {
       const filename = parts[parts.length - 1]
+      const folder = parts[parts.length - 2]
       return this.storage.delete(folder, filename)
     }
     return false
   }
 
-  /**
-   * Check if URL is public
-   */
+  async read(folder: string, filename: string): Promise<Buffer | null> {
+    return this.storage.read(folder, filename)
+  }
+
+  async exists(folder: string, filename: string): Promise<boolean> {
+    return this.storage.exists(folder, filename)
+  }
+
+  async getSignedUrl(folder: string, filename: string, expiresInSeconds = 3600): Promise<string | null> {
+    if (this.storage.getSignedUrl) {
+      return this.storage.getSignedUrl(folder, filename, expiresInSeconds)
+    }
+    return null
+  }
+
   isPublicUrl(url: string): boolean {
     const parts = url.split('/')
     if (parts.length >= 2) {
-      return isPublicFolder(parts[1])
+      return isPublicFolder(parts[parts.length - 2])
     }
     return false
   }
 
-  /**
-   * Check if auth is required for file access
-   */
   requiresAuth(folder: string): boolean {
     return !isPublicFolder(folder)
   }
 }
 
-// Export singleton instance
 export const storageService = new StorageService()

@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, hasPermission } from '@/lib/auth'
+import { canManageProker } from '@/lib/proker-auth'
+import { validateExportRequest } from '@/lib/export-utils'
 import ExcelJS from 'exceljs'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
@@ -14,8 +16,26 @@ export async function GET(
   try {
     const { id: prokerId } = await params
     const session = await auth()
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canView =
+      ['admin', 'ketua', 'sekretaris', 'bendahara'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'proker.view')) ||
+      (await canManageProker(session.user.id, roleName, prokerId))
+
+    if (!canView) {
+      return NextResponse.json(
+        { error: 'Forbidden: Anda tidak memiliki wewenang untuk mengekspor LPJ proker ini' },
+        { status: 403 }
+      )
+    }
+
+    const validation = await validateExportRequest(session.user.id, 'proker')
+    if (!validation.allowed) {
+      return validation.response!
     }
 
     const { searchParams } = new URL(request.url)

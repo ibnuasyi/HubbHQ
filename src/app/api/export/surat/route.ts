@@ -2,27 +2,61 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, hasPermission } from '@/lib/auth'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 import ExcelJS from 'exceljs'
+import {
+  EXPORT_CONFIG,
+  validateExportRequest,
+  validateExportParams,
+  sanitizeExportFilename,
+  getExportTimestamp,
+} from '@/lib/export-utils'
 
 // GET /api/export/surat?format=pdf|excel&type=MASUK|KELUAR&year=2024
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canExportSurat =
+      ['admin', 'ketua', 'sekretaris'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'surat.view'))
+
+    if (!canExportSurat) {
+      return NextResponse.json(
+        { error: 'Forbidden: Anda tidak memiliki akses untuk mengekspor data surat' },
+        { status: 403 }
+      )
+    }
+
+    const validation = await validateExportRequest(session.user.id, 'surat')
+    if (!validation.allowed) {
+      return validation.response!
+    }
+
     const { searchParams } = new URL(request.url)
-    const format = searchParams.get('format') || 'pdf'
-    const type = searchParams.get('type') // MASUK, KELUAR, or all
-    const year = searchParams.get('year') || new Date().getFullYear().toString()
+    const params = validateExportParams({
+      year: searchParams.get('year'),
+      format: searchParams.get('format'),
+    })
+
+    if (!params.valid) {
+      return NextResponse.json({ error: params.error }, { status: 400 })
+    }
+
+    const rawType = searchParams.get('type')?.toUpperCase()
+    const type = rawType === 'MASUK' || rawType === 'KELUAR' ? rawType : undefined
+    const year = params.year
+    const format = params.format
 
     // Build date range for year
-    const startDate = new Date(parseInt(year), 0, 1)
-    const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59)
+    const startDate = new Date(year, 0, 1)
+    const endDate = new Date(year, 11, 31, 23, 59, 59)
 
     // Fetch surat
     const where: any = {
@@ -32,13 +66,16 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    if (type === 'MASUK' || type === 'KELUAR') {
+    if (type) {
       where.type = type
     }
+
+    const maxRecords = EXPORT_CONFIG.MAX_RECORDS.surat || 10000
 
     const surat = await prisma.surat.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      take: maxRecords,
       include: {
         requester: {
           select: { name: true },
@@ -101,7 +138,7 @@ export async function GET(request: NextRequest) {
       })
 
       const buffer = await workbook.xlsx.writeBuffer()
-      const filename = `laporan-surat-${year}${type ? `-${type.toLowerCase()}` : ''}.xlsx`
+      const filename = sanitizeExportFilename(`laporan-surat-${year}${type ? `-${type.toLowerCase()}` : ''}-${getExportTimestamp()}`) + '.xlsx'
 
       return new NextResponse(Buffer.from(buffer), {
         headers: {
@@ -166,7 +203,7 @@ export async function GET(request: NextRequest) {
     // Generate buffer
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
 
-    const filename = `laporan-surat-${year}${type ? `-${type.toLowerCase()}` : ''}.pdf`
+    const filename = sanitizeExportFilename(`laporan-surat-${year}${type ? `-${type.toLowerCase()}` : ''}-${getExportTimestamp()}`) + '.pdf'
 
     return new NextResponse(pdfBuffer, {
       headers: {

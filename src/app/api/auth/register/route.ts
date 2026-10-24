@@ -3,9 +3,19 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { checkRateLimitByIP, getClientIP, RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIP(request)
+    const rate = checkRateLimitByIP(clientIp, 'register', RATE_LIMITS.AUTH.REGISTER)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak percobaan registrasi. Silakan coba lagi nanti.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { name, email, password } = body
 
@@ -16,9 +26,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password minimal harus terdiri dari 8 karakter' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim()
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     })
 
     if (existingUser) {
@@ -39,8 +58,8 @@ export async function POST(request: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: String(name).trim(),
+        email: normalizedEmail,
         password: hashedPassword,
         roleId: defaultRole?.id,
       },

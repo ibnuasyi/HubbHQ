@@ -1,21 +1,25 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { requireAdmin } from '@/lib/api-auth'
+import { prisma } from '@/lib/db'
+import { auth, hasPermission } from '@/lib/auth'
 
-const prisma = new PrismaClient()
-
-// GET /api/documents - List all documents (public)
+// GET /api/documents - List all documents
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const isPublic = searchParams.get('public')
 
+    const session = await auth()
     const where: Record<string, unknown> = {}
+
+    // Force isPublic = true for unauthenticated users
+    if (!session?.user?.id || isPublic === 'true') {
+      where.isPublic = true
+    }
+
     if (category) where.category = category
-    if (isPublic === 'true') where.isPublic = true
 
     const documents = await prisma.document.findMany({
       where,
@@ -35,12 +39,22 @@ export async function GET(request: NextRequest) {
 // POST /api/documents - Create a new document (admin only)
 export async function POST(request: NextRequest) {
   try {
-    // Require admin authentication
-    const { authorized, response } = await requireAdmin(request)
-    if (!authorized) return response!
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canManageDoc =
+      ['admin', 'ketua', 'sekretaris'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'settings.edit'))
+
+    if (!canManageDoc) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const body = await request.json()
-    const { title, category, description, fileUrl, fileType, fileSize, uploadedById, isPublic } = body
+    const { title, category, description, fileUrl, fileType, fileSize, isPublic } = body
 
     // Validate required fields
     if (!title || !fileUrl) {
@@ -50,12 +64,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate URL format
-    try {
-      new URL(fileUrl)
-    } catch {
+    // Validate URL format and prevent javascript:
+    if (fileUrl.trim().toLowerCase().startsWith('javascript:')) {
       return NextResponse.json(
-        { error: 'Invalid file URL format' },
+        { error: 'Invalid file URL' },
         { status: 400 }
       )
     }
@@ -68,7 +80,7 @@ export async function POST(request: NextRequest) {
         fileUrl,
         fileType,
         fileSize,
-        uploadedById,
+        uploadedById: session.user.id,
         isPublic: isPublic !== false
       }
     })

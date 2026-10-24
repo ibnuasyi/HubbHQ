@@ -92,6 +92,19 @@ export async function PATCH(
         break
 
       case 'submit_revision':
+        // Check ownership or admin (BOLA protection)
+        const userRole = (session.user as any)?.role?.name?.toLowerCase() || ''
+        const isRequester = proposal.requester.id === session.user.id
+        const isPic = proposal.programKerja?.picId === session.user.id
+        const isAdminOrLead = ['admin', 'ketua'].includes(userRole)
+
+        if (!isRequester && !isPic && !isAdminOrLead) {
+          return NextResponse.json(
+            { error: 'Forbidden: Hanya pemohon asli atau PIC yang dapat mengajukan revisi proposal ini' },
+            { status: 403 }
+          )
+        }
+
         // Archive current version to ProposalHistory
         const currentVersion = proposal.version || 1
         await prisma.proposalHistory.create({

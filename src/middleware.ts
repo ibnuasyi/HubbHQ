@@ -10,6 +10,11 @@ const PUBLIC_API_PREFIXES = [
   '/api/revalidate',
   '/api/setup',
   '/api/website-config',
+  '/api/aspirasi/kirim',
+  '/api/aspirasi/track',
+  '/api/oprec/public',
+  '/api/sertifikat/verify',
+  '/api/webhooks',
 ]
 
 // API routes where GET method is public
@@ -36,12 +41,25 @@ function hasValidSession(request: NextRequest): boolean {
     return true
   }
 
+  // Hanya izinkan Bearer token jika cocok dengan API Secret internal yang dikonfigurasi
   const authHeader = request.headers.get('Authorization')
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return true
+  if (authHeader && authHeader.startsWith('Bearer ') && process.env.INTERNAL_API_KEY) {
+    const token = authHeader.substring(7)
+    if (token === process.env.INTERNAL_API_KEY) {
+      return true
+    }
   }
 
   return false
+}
+
+function applySecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+  res.headers.set('X-Content-Type-Options', 'nosniff')
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.headers.set('X-XSS-Protection', '1; mode=block')
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  return res
 }
 
 export async function middleware(request: NextRequest) {
@@ -52,36 +70,38 @@ export async function middleware(request: NextRequest) {
     if (!hasValidSession(request)) {
       const loginUrl = new URL('/login', request.url)
       loginUrl.searchParams.set('callbackUrl', pathname)
-      return NextResponse.redirect(loginUrl)
+      return applySecurityHeaders(NextResponse.redirect(loginUrl))
     }
-    return NextResponse.next()
+    return applySecurityHeaders(NextResponse.next())
   }
 
   // 2. API routes authentication check
   if (pathname.startsWith('/api/')) {
     // Check if route is always public
     if (PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-      return NextResponse.next()
+      return applySecurityHeaders(NextResponse.next())
     }
 
     // Check if GET method is public for this route
     if (request.method === 'GET' && PUBLIC_GET_API_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-      return NextResponse.next()
+      return applySecurityHeaders(NextResponse.next())
     }
 
-    // Protected API route requires session or Bearer token
+    // Protected API route requires valid session
     if (!hasValidSession(request)) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Sesi tidak valid atau belum masuk' },
-        { status: 401 }
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Unauthorized - Sesi tidak valid atau belum masuk' },
+          { status: 401 }
+        )
       )
     }
 
-    return NextResponse.next()
+    return applySecurityHeaders(NextResponse.next())
   }
 
   // 3. All other pages (public homepage, berita, galeri, kontak, verify, login, register, setup) are public
-  return NextResponse.next()
+  return applySecurityHeaders(NextResponse.next())
 }
 
 // Configure which routes the middleware applies to

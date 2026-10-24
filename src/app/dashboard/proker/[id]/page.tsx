@@ -34,7 +34,13 @@ import {
   Layers,
   Settings2,
   Printer,
+  QrCode,
+  Cloud,
+  CloudUpload,
 } from 'lucide-react'
+import QRCode from 'qrcode'
+import { PresensiSection } from '@/components/proker/presensi-section'
+import { NotulaSection } from '@/components/proker/notula-section'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -214,6 +220,22 @@ interface ProgramKerja {
   panitia: PanitiaMember[]
   proposals: ProposalData[]
   lpj: LpjData | null
+  presensiSesi?: {
+    id: string
+    judul: string
+    tipe: string
+    tanggal: string
+    isActive: boolean
+    isDitarikKeLpj: boolean
+    _count: { kehadiran: number }
+  }[]
+  notulaRapat?: {
+    id: string
+    judul: string
+    tanggal: string
+    pimpinanRapat: string
+    isDitarikKeLpj: boolean
+  }[]
   progress: number
   completedCheckpoints: number
   totalCheckpoints: number
@@ -313,6 +335,9 @@ export default function ProkerDetailPage() {
   const [generatingSertif, setGeneratingSertif] = React.useState(false)
   const [selectedCertPanitia, setSelectedCertPanitia] = React.useState<PanitiaMember | null>(null)
   const [showCertPreviewModal, setShowCertPreviewModal] = React.useState(false)
+  const [certRenderUrl, setCertRenderUrl] = React.useState<string | null>(null)
+  const [renderingCert, setRenderingCert] = React.useState(false)
+  const [archivingCert, setArchivingCert] = React.useState(false)
 
   // Official Master LPJ Template (Managed by Bendahara / Sekretaris)
   const [lpjTemplate, setLpjTemplate] = React.useState<{
@@ -832,6 +857,128 @@ export default function ProkerDetailPage() {
     }
   }
 
+  const renderPanitiaCertificate = async (p: PanitiaMember) => {
+    return new Promise<string>(async (resolve, reject) => {
+      try {
+        setRenderingCert(true)
+        const canvas = document.createElement('canvas')
+        canvas.width = 1920
+        canvas.height = 1080
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject('Canvas context is null')
+
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = async () => {
+          // 1. Gambar Background Template
+          ctx.drawImage(img, 0, 0, 1920, 1080)
+
+          // 2. Nomor Sertifikat
+          ctx.font = 'bold 22px Courier New, monospace'
+          ctx.fillStyle = '#64748b'
+          ctx.textAlign = 'center'
+          ctx.fillText(`Nomor: ${p.nomorSertifikat || 'SERT/000/HUBB/2026'}`, 960, 350)
+
+          // 3. Nama Penerima
+          ctx.font = 'bold 54px Georgia, serif'
+          ctx.fillStyle = '#0f172a'
+          ctx.textAlign = 'center'
+          ctx.fillText(p.user.name || 'Anggota Panitia', 960, 520)
+
+          // 4. Sebagai
+          ctx.font = '32px Arial, sans-serif'
+          ctx.fillStyle = '#334155'
+          ctx.textAlign = 'center'
+          ctx.fillText(`Sebagai: ${p.roleJabatan || 'Panitia Pelaksana'}`, 960, 620)
+
+          // 5. Tanggal
+          const nowStr = new Date(p.sertifikatGeneratedAt || Date.now()).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })
+          ctx.font = '20px Arial, sans-serif'
+          ctx.fillStyle = '#334155'
+          ctx.textAlign = 'center'
+          ctx.fillText(nowStr, 1440, 880)
+
+          // 6. QR Code Verifikasi
+          const verifyUrl = `${window.location.origin}/sertifikat/${p.nomorSertifikat}`
+          try {
+            const qrDataUrl = await QRCode.toDataURL(verifyUrl, { width: 110, margin: 1 })
+            const qrImg = new Image()
+            qrImg.onload = () => {
+              ctx.drawImage(qrImg, 220 - 55, 840 - 55, 110, 110)
+              const dataUrl = canvas.toDataURL('image/png')
+              setRenderingCert(false)
+              resolve(dataUrl)
+            }
+            qrImg.onerror = () => {
+              const dataUrl = canvas.toDataURL('image/png')
+              setRenderingCert(false)
+              resolve(dataUrl)
+            }
+            qrImg.src = qrDataUrl
+          } catch {
+            const dataUrl = canvas.toDataURL('image/png')
+            setRenderingCert(false)
+            resolve(dataUrl)
+          }
+        }
+        img.onerror = () => {
+          setRenderingCert(false)
+          reject('Gagal memuat latar template')
+        }
+        img.src =
+          proker?.sertifikatTemplate ||
+          'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=1920&auto=format&fit=crop&q=80'
+      } catch (err) {
+        setRenderingCert(false)
+        reject(err)
+      }
+    })
+  }
+
+  const handleOpenCertModal = async (p: PanitiaMember) => {
+    setSelectedCertPanitia(p)
+    setShowCertPreviewModal(true)
+    setCertRenderUrl(null)
+    try {
+      const dataUrl = await renderPanitiaCertificate(p)
+      setCertRenderUrl(dataUrl)
+    } catch (e) {
+      console.error('Error rendering proker certificate:', e)
+    }
+  }
+
+  const handleArchivePanitiaCert = async () => {
+    if (!selectedCertPanitia || !certRenderUrl) return
+    try {
+      setArchivingCert(true)
+      const verifyRes = await fetch(`/api/sertifikat/verify/${selectedCertPanitia.nomorSertifikat}`)
+      const verifyJson = await verifyRes.json()
+      if (!verifyJson.success || !verifyJson.data?.id) {
+        throw new Error('Data registrasi sertifikat tidak ditemukan di pangkalan data')
+      }
+
+      const certId = verifyJson.data.id
+      const archRes = await fetch('/api/sertifikat/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ certId, imageBase64: certRenderUrl }),
+      })
+      const archJson = await archRes.json()
+      if (!archRes.ok) throw new Error(archJson.error || 'Gagal mengarsipkan sertifikat')
+
+      setSuccessMsg(`Piagam berhasil diarsipkan ke ${archJson.provider || 'Object Storage'}`)
+      fetchProker()
+    } catch (err: any) {
+      setError(err.message || 'Gagal arsip piagam')
+    } finally {
+      setArchivingCert(false)
+    }
+  }
+
   // Official Master LPJ Template Save (Bendahara/Sekretaris/Admin)
   const handleSaveOfficialTemplate = async () => {
     if (!templateUrlInput.trim()) {
@@ -1075,22 +1222,26 @@ export default function ProkerDetailPage() {
 
       {/* Main Tabs Navigation */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full md:w-auto">
-          <TabsTrigger value="overview" className="flex items-center gap-1.5">
-            <Target className="h-4 w-4" />
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+          <TabsTrigger value="overview" className="flex items-center gap-1.5 text-xs">
+            <Target className="h-3.5 w-3.5" />
             1. Matriks & Tahapan
           </TabsTrigger>
-          <TabsTrigger value="panitia" className="flex items-center gap-1.5">
-            <Users className="h-4 w-4" />
-            2. Panitia Pelaksana ({proker.panitia?.length || 0})
+          <TabsTrigger value="panitia" className="flex items-center gap-1.5 text-xs">
+            <Users className="h-3.5 w-3.5" />
+            2. Panitia ({proker.panitia?.length || 0})
           </TabsTrigger>
-          <TabsTrigger value="proposal" className="flex items-center gap-1.5">
-            <DollarSign className="h-4 w-4" />
-            3. Proposal Dana {activeProposal && `(v${activeProposal.version})`}
+          <TabsTrigger value="presensi-notula" className="flex items-center gap-1.5 text-xs">
+            <QrCode className="h-3.5 w-3.5 text-primary" />
+            3. Presensi & Notula
           </TabsTrigger>
-          <TabsTrigger value="lpj" className="flex items-center gap-1.5">
-            <FileCheck className="h-4 w-4" />
-            4. LPJ & Realisasi Belanja
+          <TabsTrigger value="proposal" className="flex items-center gap-1.5 text-xs">
+            <DollarSign className="h-3.5 w-3.5" />
+            4. Proposal {activeProposal && `(v${activeProposal.version})`}
+          </TabsTrigger>
+          <TabsTrigger value="lpj" className="flex items-center gap-1.5 text-xs">
+            <FileCheck className="h-3.5 w-3.5" />
+            5. LPJ & Realisasi
           </TabsTrigger>
         </TabsList>
 
@@ -1428,19 +1579,33 @@ export default function ProkerDetailPage() {
                           </span>
                         )}
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs shrink-0"
-                          disabled={!p.nomorSertifikat}
-                          onClick={() => {
-                            setSelectedCertPanitia(p)
-                            setShowCertPreviewModal(true)
-                          }}
-                        >
-                          <Award className="mr-1 h-3.5 w-3.5 text-amber-500" />
-                          Piagam
-                        </Button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {p.sertifikatUrl && (
+                            <a
+                              href={p.sertifikatUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Tersimpan di Cloud Storage"
+                            >
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] text-emerald-600 border-emerald-500/30 flex items-center gap-1 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                              >
+                                <Cloud className="w-3 h-3 text-emerald-600" /> Cloud
+                              </Badge>
+                            </a>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            disabled={!p.nomorSertifikat}
+                            onClick={() => handleOpenCertModal(p)}
+                          >
+                            <Award className="mr-1 h-3.5 w-3.5 text-amber-500" />
+                            Piagam
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1450,7 +1615,30 @@ export default function ProkerDetailPage() {
           </Card>
         </TabsContent>
 
-        {/* TAB 3: PROPOSAL DANA & GIT-LIKE VERSIONING */}
+        {/* TAB 3: PRESENSI DIGITAL QR DINAMIS & NOTULA RAPAT TERINTEGRASI */}
+        <TabsContent value="presensi-notula" className="space-y-6">
+          <PresensiSection
+            prokerId={prokerId}
+            prokerTitle={proker.title}
+            members={members}
+            onUpdateLpj={fetchProker}
+          />
+          <NotulaSection
+            prokerId={prokerId}
+            prokerTitle={proker.title}
+            members={members}
+            sesiList={
+              proker.presensiSesi?.map((s) => ({
+                id: s.id,
+                judul: s.judul,
+                tanggal: s.tanggal,
+              })) || []
+            }
+            onUpdateLpj={fetchProker}
+          />
+        </TabsContent>
+
+        {/* TAB 4: PROPOSAL DANA & GIT-LIKE VERSIONING */}
         <TabsContent value="proposal" className="space-y-6">
           {/* Validation Banner: Must have PIC */}
           {!proker.pic && (
@@ -1873,6 +2061,85 @@ export default function ProkerDetailPage() {
                     </Button>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sinkronisasi Bukti Presensi Digital & Notula Rapat ke LPJ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <QrCode className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  Presensi Digital Terintegrasi ke LPJ
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Sesi kehadiran yang disinkronkan langsung sebagai lampiran daftar hadir
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                {(!proker.presensiSesi || proker.presensiSesi.filter((s) => s.isDitarikKeLpj).length === 0) ? (
+                  <p className="text-muted-foreground italic py-2">
+                    Belum ada sesi presensi yang ditandai untuk ditarik ke LPJ. Buka tab 3 (Presensi & Notula) untuk menyinkronkan.
+                  </p>
+                ) : (
+                  proker.presensiSesi
+                    .filter((s) => s.isDitarikKeLpj)
+                    .map((s) => (
+                      <div
+                        key={s.id}
+                        className="flex items-center justify-between p-2 rounded-md bg-muted/30 border"
+                      >
+                        <div>
+                          <p className="font-semibold text-foreground">{s.judul}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {new Date(s.tanggal).toLocaleDateString('id-ID', { dateStyle: 'medium' })} - {s.tipe}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-emerald-700 dark:text-emerald-300 font-mono text-[11px]">
+                          {s._count.kehadiran} Peserta Hadir
+                        </Badge>
+                      </div>
+                    ))
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  Berita Acara & Notula Rapat Terlampir
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Risalah rapat panitia dan keputusan pleno yang disertakan di LPJ
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-xs">
+                {(!proker.notulaRapat || proker.notulaRapat.filter((n) => n.isDitarikKeLpj).length === 0) ? (
+                  <p className="text-muted-foreground italic py-2">
+                    Belum ada notula rapat yang ditarik ke LPJ. Buka tab 3 (Presensi & Notula) untuk menyertakan.
+                  </p>
+                ) : (
+                  proker.notulaRapat
+                    .filter((n) => n.isDitarikKeLpj)
+                    .map((n) => (
+                      <div
+                        key={n.id}
+                        className="flex items-center justify-between p-2 rounded-md bg-muted/30 border"
+                      >
+                        <div>
+                          <p className="font-semibold text-foreground">{n.judul}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {new Date(n.tanggal).toLocaleDateString('id-ID', { dateStyle: 'medium' })} - Pimpinan: {n.pimpinanRapat}
+                          </p>
+                        </div>
+                        <Badge variant="secondary" className="text-[10px]">
+                          Terlampir
+                        </Badge>
+                      </div>
+                    ))
+                )}
               </CardContent>
             </Card>
           </div>
@@ -2845,81 +3112,90 @@ export default function ProkerDetailPage() {
 
       {/* DIALOG: Pratinjau Piagam E-Sertifikat Panitia */}
       <Dialog open={showCertPreviewModal} onOpenChange={setShowCertPreviewModal}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-amber-500" />
-              Piagam Sertifikat Penghargaan Kepanitiaan
-            </DialogTitle>
-            <DialogDescription>
-              Dokumen e-sertifikat sah kegiatan {proker.title}
-            </DialogDescription>
+        <DialogContent className="max-w-4xl p-6">
+          <DialogHeader className="flex flex-row items-center justify-between pb-3 border-b">
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <Award className="h-5 w-5 text-amber-500" />
+                Piagam E-Sertifikat: {selectedCertPanitia?.user.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                No. Registrasi: <span className="font-mono text-primary font-bold">{selectedCertPanitia?.nomorSertifikat}</span> | Peran: {selectedCertPanitia?.roleJabatan}
+              </DialogDescription>
+            </div>
           </DialogHeader>
 
-          {selectedCertPanitia && (
-            <div className="p-6 rounded-xl border-4 border-double border-amber-600/40 bg-gradient-to-br from-amber-50/50 via-background to-orange-50/30 dark:from-amber-950/20 dark:via-background dark:to-orange-950/20 text-center space-y-4">
-              <div className="space-y-1">
-                <span className="text-[11px] font-mono tracking-widest uppercase text-muted-foreground">
-                  Nomor: {selectedCertPanitia.nomorSertifikat}
-                </span>
-                <h3 className="text-xl font-serif font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wide">
-                  Sertifikat Penghargaan
-                </h3>
-                <p className="text-xs text-muted-foreground">Diberikan dengan bangga dan hormat kepada:</p>
+          {renderingCert ? (
+            <div className="p-16 text-center space-y-3">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+              <p className="text-sm text-muted-foreground">Merender naskah piagam HD dengan QR Code...</p>
+            </div>
+          ) : certRenderUrl ? (
+            <div className="space-y-4">
+              <div className="aspect-video border rounded-lg bg-slate-900 overflow-hidden relative shadow-inner">
+                <img
+                  src={certRenderUrl}
+                  alt="Piagam Render"
+                  className="w-full h-full object-contain"
+                />
               </div>
 
-              <div className="py-2">
-                <h2 className="text-2xl font-bold text-foreground border-b-2 border-primary/20 inline-block px-6 pb-1">
-                  {selectedCertPanitia.user.name}
-                </h2>
-                <p className="text-sm font-semibold text-primary mt-1">
-                  Sebagai: {selectedCertPanitia.roleJabatan}
-                </p>
-              </div>
-
-              <p className="text-xs text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                Atas dedikasi, loyalitas, dan kontribusi nyata dalam menyukseskan pelaksanaan kegiatan{' '}
-                <span className="font-semibold text-foreground">{proker.title}</span> yang diselenggarakan oleh{' '}
-                <span className="font-semibold text-foreground">{proker.divisi?.name}</span>.
-              </p>
-
-              <div className="pt-4 grid grid-cols-2 gap-6 text-xs border-t">
-                <div>
-                  <p className="font-semibold text-foreground underline underline-offset-4">
-                    {proker.sertifikatSigner1Name || proker.pic?.name || 'Ketua Pelaksana'}
-                  </p>
-                  <p className="text-muted-foreground text-[11px] mt-0.5">
-                    {proker.sertifikatSigner1Role || 'Ketua Pelaksana'}
-                  </p>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`/sertifikat/${selectedCertPanitia?.nomorSertifikat}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 mr-1 text-primary" /> Buka Portal Verifikasi Publik
+                  </a>
                 </div>
-                <div>
-                  <p className="font-semibold text-foreground underline underline-offset-4">
-                    {proker.sertifikatSigner2Name || 'Ketua Umum BPH'}
-                  </p>
-                  <p className="text-muted-foreground text-[11px] mt-0.5">
-                    {proker.sertifikatSigner2Role || 'Ketua Umum'}
-                  </p>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    disabled={archivingCert}
+                    onClick={handleArchivePanitiaCert}
+                  >
+                    {archivingCert ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Mengarsipkan...
+                      </>
+                    ) : (
+                      <>
+                        <CloudUpload className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                        Arsipkan ke Object Storage
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    className="text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={() => {
+                      if (!certRenderUrl || !selectedCertPanitia) return
+                      const link = document.createElement('a')
+                      const safeName = (selectedCertPanitia.user.name || 'Panitia').replace(/\s+/g, '_')
+                      link.download = `Piagam-${safeName}.png`
+                      link.href = certRenderUrl
+                      link.click()
+                    }}
+                  >
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Unduh Gambar HD
+                  </Button>
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-sm text-muted-foreground">
+              Gagal memuat pratinjau piagam. Pastikan tautan template sertifikat dapat diakses.
             </div>
           )}
-
-          <DialogFooter className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              Terverifikasi dalam basis data HubbHQ
-            </span>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowCertPreviewModal(false)}>Tutup</Button>
-              <Button
-                variant="default"
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-                onClick={() => window.print()}
-              >
-                <Printer className="mr-1.5 h-4 w-4" />
-                Cetak Piagam
-              </Button>
-            </div>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

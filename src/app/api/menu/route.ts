@@ -1,9 +1,25 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
+import { auth, hasPermission } from '@/lib/auth'
 
-const prisma = new PrismaClient()
+async function verifyMenuManager() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return { authorized: false, status: 401, error: 'Unauthorized' }
+  }
+  const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+  const canEdit =
+    ['admin', 'ketua', 'sekretaris'].includes(roleName) ||
+    (await hasPermission(session.user.id, 'website.edit')) ||
+    (await hasPermission(session.user.id, 'settings.edit'))
+
+  if (!canEdit) {
+    return { authorized: false, status: 403, error: 'Forbidden - Hanya pengurus berwenang yang dapat mengubah menu' }
+  }
+  return { authorized: true, session }
+}
 
 // GET /api/menu - Get all menu items (for public use)
 export async function GET(request: NextRequest) {
@@ -35,12 +51,24 @@ export async function GET(request: NextRequest) {
 // POST /api/menu - Create new menu item
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await verifyMenuManager()
+    if (!authCheck.authorized) {
+      return NextResponse.json({ error: authCheck.error }, { status: authCheck.status })
+    }
+
     const body = await request.json()
     const { label, href, icon, order, parentId, isExternal } = body
 
     if (!label || !href) {
       return NextResponse.json(
         { error: 'Label and href are required' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof href === 'string' && /^\s*(javascript|data|vbscript):/i.test(href)) {
+      return NextResponse.json(
+        { error: 'Protokol URL tidak diizinkan' },
         { status: 400 }
       )
     }
@@ -80,6 +108,11 @@ export async function POST(request: NextRequest) {
 // PATCH /api/menu - Update menu item or reorder
 export async function PATCH(request: NextRequest) {
   try {
+    const authCheck = await verifyMenuManager()
+    if (!authCheck.authorized) {
+      return NextResponse.json({ error: authCheck.error }, { status: authCheck.status })
+    }
+
     const body = await request.json()
 
     // Bulk update for reordering
@@ -125,6 +158,11 @@ export async function PATCH(request: NextRequest) {
 // DELETE /api/menu - Delete menu item
 export async function DELETE(request: NextRequest) {
   try {
+    const authCheck = await verifyMenuManager()
+    if (!authCheck.authorized) {
+      return NextResponse.json({ error: authCheck.error }, { status: authCheck.status })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

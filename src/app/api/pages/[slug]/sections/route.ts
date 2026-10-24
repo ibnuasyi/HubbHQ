@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // GET /api/pages/[slug]/sections - Get sections for a page (public)
 export async function GET(
@@ -138,6 +136,25 @@ export async function PATCH(
     if (!Array.isArray(sections)) {
       return NextResponse.json(
         { error: 'Invalid sections data' },
+        { status: 400 }
+      )
+    }
+
+    // Verify all section IDs belong to this page (BOLA protection)
+    const sectionIds = sections.map((s: any) => s.id).filter(Boolean)
+    const existingSections = await prisma.pageSection.findMany({
+      where: {
+        id: { in: sectionIds },
+        pageId: page.id,
+      },
+      select: { id: true },
+    })
+
+    const validIds = new Set(existingSections.map((s) => s.id))
+    const invalidIds = sectionIds.filter((id: string) => !validIds.has(id))
+    if (invalidIds.length > 0) {
+      return NextResponse.json(
+        { error: 'Beberapa section ID tidak valid atau bukan milik halaman ini' },
         { status: 400 }
       )
     }

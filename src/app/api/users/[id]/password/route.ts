@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { checkRateLimitByIP, getClientIP, RATE_LIMITS } from '@/lib/rate-limit'
 
 /**
  * GET /api/users/[id]/password
@@ -66,13 +67,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const clientIp = getClientIP(request)
+    const rate = checkRateLimitByIP(clientIp, 'change_password', RATE_LIMITS.AUTH.CHANGE_PASSWORD)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak percobaan penggantian password. Silakan coba lagi nanti.' },
+        { status: 429 }
+      )
+    }
+
     const userId = id
     const body = await request.json()
     const { currentPassword, newPassword, forceReset, resetAllDefaults } = body
 
     // Check permissions
     const isSelf = session.user.id === userId
-    const isAdmin = session.user.role?.name === 'admin'
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const isAdmin = roleName === 'admin' || (session.user as any)?.role === 'admin'
 
     if (!isSelf && !isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })

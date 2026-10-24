@@ -24,6 +24,8 @@ const profileSchema = z.object({
   birthDate: z.string().optional(),
   address: z.string().optional(),
   phone: z.string().optional(),
+  bloodType: z.string().optional(),
+  emergencyContact: z.string().optional(),
 })
 
 type ProfileForm = z.infer<typeof profileSchema>
@@ -51,6 +53,8 @@ export function ProfileForm({ user }: { user: any }) {
       birthDate: user?.birthDate ? new Date(user.birthDate).toISOString().split('T')[0] : '',
       address: user?.address || '',
       phone: user?.phone || '',
+      bloodType: user?.bloodType || '',
+      emergencyContact: user?.emergencyContact || '',
     },
   })
 
@@ -261,6 +265,17 @@ export function ProfileForm({ user }: { user: any }) {
           <div className="space-y-2">
             <Label htmlFor="address">Alamat</Label>
             <Textarea id="address" {...register('address')} />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="bloodType">Golongan Darah (Untuk KTA)</Label>
+              <Input id="bloodType" {...register('bloodType')} placeholder="A / B / AB / O" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emergencyContact">Kontak Darurat (Keluarga / Wali)</Label>
+              <Input id="emergencyContact" {...register('emergencyContact')} placeholder="08xxxxxxxxxx" />
+            </div>
           </div>
 
           <div className="space-y-2">

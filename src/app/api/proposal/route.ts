@@ -3,10 +3,8 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { storageService, detectFileType } from '@/lib/storage'
+import path from 'path'
 
 // GET /api/proposal - List all proposals
 export async function GET(request: NextRequest) {
@@ -92,23 +90,53 @@ export async function POST(request: NextRequest) {
 
     let fileUrl = ''
     if (proposalFile && proposalFile.size > 0) {
-      // Ensure upload directory exists
-      const uploadDir = join(process.cwd(), 'public', 'uploads', 'proposals')
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true })
+      // 1. Max size check (15MB)
+      if (proposalFile.size > 15 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'Ukuran berkas proposal terlalu besar. Maksimal 15MB.' },
+          { status: 400 }
+        )
       }
 
-      // Generate unique filename
-      const ext = proposalFile.name.split('.').pop()
-      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
-      const filepath = join(uploadDir, filename)
+      // 2. Extension check
+      const ext = path.extname(proposalFile.name || '').toLowerCase()
+      const allowedExts = ['.pdf', '.doc', '.docx']
+      if (!allowedExts.includes(ext)) {
+        return NextResponse.json(
+          { error: 'Format berkas tidak diizinkan. Hanya menerima dokumen PDF atau Word (.doc, .docx).' },
+          { status: 400 }
+        )
+      }
 
-      // Save file
+      // 3. Read buffer & check magic bytes
       const bytes = await proposalFile.arrayBuffer()
       const buffer = Buffer.from(bytes)
-      await writeFile(filepath, buffer)
 
-      fileUrl = `/uploads/proposals/${filename}`
+      const headerHex = buffer.subarray(0, 4).toString('hex').toLowerCase()
+      const isPdf = headerHex === '25504446'
+      const isDocx = headerHex === '504b0304' // ZIP archive (DOCX)
+      const isDoc = headerHex.startsWith('d0cf11e0') // Compound Binary File (DOC)
+
+      if (!isPdf && !isDocx && !isDoc) {
+        return NextResponse.json(
+          { error: 'Validasi konten berkas gagal. Format berkas tidak sesuai dengan tipe dokumen yang diizinkan.' },
+          { status: 400 }
+        )
+      }
+
+      const mimeType = isPdf
+        ? 'application/pdf'
+        : isDocx
+        ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        : 'application/msword'
+
+      const uploadResult = await storageService.upload(
+        buffer,
+        'proposals',
+        proposalFile.name || `proposal${ext}`,
+        mimeType
+      )
+      fileUrl = uploadResult.url
     }
 
     const proposal = await prisma.proposalDana.create({

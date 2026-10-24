@@ -67,7 +67,14 @@ export async function POST(
         position,
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
         divisi: true,
       },
     })

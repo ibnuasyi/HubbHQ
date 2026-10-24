@@ -4,9 +4,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 
-// Debug endpoint to check session and user
+// Debug endpoint to check session and user (Disabled in production & restricted to Admin)
 export async function GET(request: NextRequest) {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+    }
+
     const session = await auth()
 
     if (!session?.user?.id) {
@@ -16,22 +20,29 @@ export async function GET(request: NextRequest) {
       }, { status: 401 })
     }
 
+    const isAdmin =
+      (session.user as any)?.role?.name?.toLowerCase() === 'admin' ||
+      (session.user as any)?.role === 'admin'
+
     // Try to find user by the session ID
     const userFromSessionId = await prisma.user.findUnique({
       where: { id: session.user.id as string },
       include: { role: true },
     })
 
-    // Also get all users to see what's in the database
-    const allUsers = await prisma.user.findMany({
-      select: { id: true, email: true, name: true, roleId: true, role: { select: { name: true } } },
-      take: 20,
-    })
+    // Only administrators can inspect all users in dev mode
+    const allUsers = isAdmin
+      ? await prisma.user.findMany({
+          select: { id: true, email: true, name: true, roleId: true, role: { select: { name: true } } },
+          take: 20,
+        })
+      : []
 
-    // Get all roles
-    const allRoles = await prisma.role.findMany({
-      select: { id: true, name: true },
-    })
+    const allRoles = isAdmin
+      ? await prisma.role.findMany({
+          select: { id: true, name: true },
+        })
+      : []
 
     return NextResponse.json({
       session: {

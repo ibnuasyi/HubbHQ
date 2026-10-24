@@ -25,6 +25,14 @@ model User {
   isActive       Boolean  @default(true)
   emailVerified  DateTime?
 
+  // KTA Digital (Kartu Tanda Anggota)
+  nra            String?  @unique // Nomor Registrasi Anggota
+  bloodType      String?  // Golongan Darah (A, B, AB, O)
+  emergencyContact String? // Kontak darurat
+  ktaIssuedAt    DateTime? // Tanggal terbit KTA
+  ktaValidUntil  DateTime? // Masa berlaku KTA
+  ktaCardUrl     String?  @db.Text // URL arsip render KTA digital
+
   // Password security
   mustChangePassword Boolean @default(false)  // Force password change on next login
   passwordChangedAt  DateTime?                // Track when password was last changed
@@ -90,6 +98,37 @@ model User {
   // LPJ Reviewed
   reviewedLpj    LpjProker[] @relation("LpjReviewer")
   lpjChecklistVerifications LpjProker[] @relation("LpjChecklistVerifier")
+
+  // Presensi & Notula
+  presensiCreated PresensiSesi[] @relation("PresensiCreator")
+  presensiRecords PresensiKehadiran[] @relation("UserKehadiran")
+  notulaDitulis   NotulaRapat[] @relation("NotulaNotulis")
+
+  // Inventaris & Peminjaman Barang
+  peminjamanBarang PeminjamanBarang[] @relation("PeminjamanUser")
+  petugasPinjam    PeminjamanBarang[] @relation("PetugasPinjam")
+  petugasKembali   PeminjamanBarang[] @relation("PetugasKembali")
+
+  // Disposisi Surat Masuk
+  disposisiDiterima  DisposisiSurat[] @relation("DisposisiPenerima")
+  disposisiDiberikan DisposisiSurat[] @relation("DisposisiPemberi")
+
+  // E-Voting Musyawarah / Mubes
+  votingCreated     VotingEvent[] @relation("VotingCreator")
+  votingDptEntries  VotingDPT[]   @relation("UserDpt")
+
+  // Aspirasi & Advokasi
+  aspirasiDitindakLanjut Aspirasi[] @relation("AspirasiPIC")
+  aspirasiTanggapan      AspirasiTanggapan[]
+
+  // Diklat & Kaderisasi
+  jenjangKaderId         String?
+  jenjangKader           KaderisasiJenjang? @relation(fields: [jenjangKaderId], references: [id])
+  nrk                    String?            @unique // Nomor Registrasi Kader
+  diklatPesertaEntries   DiklatPeserta[]
+
+  // Alumni
+  alumniProfile          Alumni?
 
   @@map("users")
 }
@@ -212,6 +251,8 @@ model Divisi {
 
   members     DivisiMember[]
   programKerja ProgramKerja[]
+  inventaris   InventarisBarang[]
+  disposisi    DisposisiSurat[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -278,6 +319,10 @@ model ProgramKerja {
   calendarEvents CalendarEvent[]
   panitia        PanitiaProker[]
   lpj            LpjProker?
+  presensiSesi   PresensiSesi[]
+  notulaRapat    NotulaRapat[]
+  peminjamanBarang PeminjamanBarang[]
+  oprecEvents    OprecEvent[]
 
   @@map("program_kerja")
 }
@@ -460,6 +505,175 @@ enum LpjItemType {
   EXPENSE
 }
 
+// ==================== PRESENSI DIGITAL & NOTULA RAPAT ====================
+
+model PresensiSesi {
+  id                  String              @id @default(cuid())
+  programKerjaId      String
+  programKerja        ProgramKerja        @relation(fields: [programKerjaId], references: [id], onDelete: Cascade)
+  judul               String              // e.g. "Rapat Perdana Panitia", "Briefing Gladi Bersih", "Presensi Peserta Seminar"
+  tipe                String              @default("RAPAT") // RAPAT, KEGIATAN, EVALUASI
+  deskripsi           String?             @db.Text
+  lokasi              String?
+  tanggal             DateTime            @default(now())
+  qrSecret            String              // Secret unik untuk HMAC QR dinamis
+  currentQrToken      String?             // Token dinamis saat ini
+  tokenRotatedAt      DateTime?           // Waktu rotasi token
+  tokenTtlSeconds     Int                 @default(20) // Rotasi setiap 20 detik
+  isActive            Boolean             @default(true)
+  allowManualCheckin  Boolean             @default(true)
+  isDitarikKeLpj      Boolean             @default(true) // Otomatis dilampirkan ke rekap LPJ
+  createdById         String?
+  createdBy           User?               @relation("PresensiCreator", fields: [createdById], references: [id])
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  kehadiran           PresensiKehadiran[]
+  notulaList          NotulaRapat[]
+
+  @@map("presensi_sesi")
+}
+
+model PresensiKehadiran {
+  id             String         @id @default(cuid())
+  presensiSesiId String
+  presensiSesi   PresensiSesi   @relation(fields: [presensiSesiId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?          @relation("UserKehadiran", fields: [userId], references: [id], onDelete: Cascade)
+  namaPeserta    String
+  nomorIdentitas String?        // NIM / NIK / No. Anggota
+  instansi       String?        // Divisi atau Institusi Asal
+  status         PresensiStatus @default(HADIR)
+  metodeScan     String         @default("QR_SCAN") // QR_SCAN, MANUAL_PANITIA, SELF_PORTAL
+  keterangan     String?        @db.Text
+  waktuHadir     DateTime       @default(now())
+
+  @@unique([presensiSesiId, userId])
+  @@map("presensi_kehadiran")
+}
+
+enum PresensiStatus {
+  HADIR
+  IZIN
+  SAKIT
+  ALPA
+}
+
+model NotulaRapat {
+  id             String        @id @default(cuid())
+  programKerjaId String
+  programKerja   ProgramKerja  @relation(fields: [programKerjaId], references: [id], onDelete: Cascade)
+  presensiSesiId String?
+  presensiSesi   PresensiSesi? @relation(fields: [presensiSesiId], references: [id], onDelete: SetNull)
+  judul          String        // e.g. "Notula Rapat Koordinasi Panitia #1"
+  tanggal        DateTime      @default(now())
+  tempat         String?
+  pimpinanRapat  String        // Nama pimpinan rapat / pimpinan sidang
+  notulisId      String?
+  notulis        User?         @relation("NotulaNotulis", fields: [notulisId], references: [id])
+  notulisName    String?       // Nama cadangan jika notulis tamu/eksternal
+  agenda         String?       @db.Text
+  pembahasan     String        @db.Text // Uraian jalannya rapat
+  kesimpulan     String        @db.Text // Keputusan / hasil pleno
+  actionItems    String?       @db.Text // JSON daftar PIC dan deadline tugas
+  lampiranUrl    String?       @db.Text // Tautan foto dokumentasi atau lampiran
+  isDitarikKeLpj Boolean       @default(true) // Otomatis dilampirkan ke dokumen LPJ
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@map("notula_rapat")
+}
+
+// ==================== INVENTARIS & LOGISTIK SEKRETARIAT ====================
+
+model InventarisBarang {
+  id                String            @id @default(cuid())
+  kodeBarang        String            @unique // e.g. "INV-ELEC-0001", "AST-2026-005"
+  namaBarang        String            // e.g. "Proyektor Epson EB-X400", "Sound Portable Wireless Ashley"
+  kategori          String            // Elektronik, Perlengkapan, ATK, Dokumentasi, Properti
+  merkModel         String?           // Merk / tipe
+  serialNumber      String?           // No. Seri dari pabrikan
+  jumlahTotal       Int               @default(1)
+  jumlahTersedia    Int               @default(1)
+  jumlahDipinjam    Int               @default(0)
+  jumlahRusak       Int               @default(0)
+  satuan            String            @default("Unit") // Unit, Buah, Set, Pcs, Roll, Box
+  kondisi           KondisiBarang     @default(BAIK)
+  lokasiPenyimpanan String            // e.g. "Lemari Kaca A Sekretariat", "Gudang Logistik"
+  asalPengadaan     String?           // e.g. "Pengadaan Kas Umum 2024", "Hibah Alumni"
+  tanggalPengadaan  DateTime?
+  hargaBeli         Decimal?          @db.Decimal(15, 2)
+  fotoBarang        String?           @db.Text
+  catatan           String?           @db.Text
+
+  divisiId          String?
+  divisi            Divisi?           @relation(fields: [divisiId], references: [id], onDelete: SetNull)
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  peminjaman        PeminjamanBarang[]
+
+  @@map("inventaris_barang")
+}
+
+enum KondisiBarang {
+  BAIK
+  PERLU_PERBAIKAN
+  RUSAK_BERAT
+  HILANG
+}
+
+model PeminjamanBarang {
+  id               String            @id @default(cuid())
+  kodePeminjaman   String            @unique // e.g. "PINJAM-2026-0001"
+  barangId         String
+  barang           InventarisBarang  @relation(fields: [barangId], references: [id], onDelete: Cascade)
+  jumlah           Int               @default(1)
+
+  peminjamType     String            @default("ANGGOTA") // "ANGGOTA" atau "EKSTERNAL"
+  userId           String?
+  user             User?             @relation("PeminjamanUser", fields: [userId], references: [id], onDelete: SetNull)
+  namaPeminjam     String
+  kontakPeminjam   String            // No. Telepon / WhatsApp
+  instansiPeminjam String?           // Divisi, Panitia Proker, atau Nama Organisasi Luar
+  nomorIdentitas   String?           // NIM / NIK / No. Anggota
+
+  keperluan        String            @db.Text
+  programKerjaId   String?
+  programKerja     ProgramKerja?     @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+
+  tanggalPinjam    DateTime          @default(now())
+  rencanaKembali   DateTime
+  tanggalKembali   DateTime?
+
+  status           PeminjamanStatus  @default(DIPINJAM)
+  kondisiPinjam    KondisiBarang     @default(BAIK)
+  kondisiKembali   KondisiBarang?
+  catatanKembali   String?           @db.Text
+
+  petugasPinjamId  String?
+  petugasPinjam    User?             @relation("PetugasPinjam", fields: [petugasPinjamId], references: [id], onDelete: SetNull)
+  petugasKembaliId String?
+  petugasKembali   User?             @relation("PetugasKembali", fields: [petugasKembaliId], references: [id], onDelete: SetNull)
+
+  buktiFotoPinjam  String?           @db.Text
+  buktiFotoKembali String?           @db.Text
+  suratPeminjaman  String?           @db.Text
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("peminjaman_barang")
+}
+
+enum PeminjamanStatus {
+  DIPINJAM
+  DIKEMBALIKAN
+  TERLAMBAT
+  HILANG_RUSAK
+}
+
 // ==================== KEUANGAN ====================
 
 model Transaction {
@@ -514,6 +728,13 @@ model KasPayment {
   proofType   String?  // image/jpeg, application/pdf
   notes       String?  @db.Text
   status      KasStatus @default(PENDING)
+
+  // Pembayaran QRIS & Gateway
+  paymentMethod String?  @default("MANUAL") // GATEWAY_QRIS, MANDIRI_QRIS, MANUAL
+  paymentRef    String?  // ID Order / Reference unik dari Gateway atau kode unik
+  qrisString    String?  @db.Text // Payload QRIS dinamis
+  paidAmount    Decimal? @db.Decimal(15, 2)
+  paidAt        DateTime?
 
   transaction Transaction?
 
@@ -595,6 +816,9 @@ model Surat {
   // QR Code
   qrCodeUrl       String?
 
+  // Disposisi surat masuk
+  disposisi       DisposisiSurat[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -646,6 +870,55 @@ model SuratTemplate {
   isActive    Boolean  @default(true)
 
   @@map("surat_templates")
+}
+
+// ==================== DISPOSISI SURAT MASUK ====================
+
+model DisposisiSurat {
+  id                   String            @id @default(cuid())
+  suratId              String
+  surat                Surat             @relation(fields: [suratId], references: [id], onDelete: Cascade)
+
+  nomorAgenda          String?           // e.g. "042/AGD/2026"
+  sifat                SifatDisposisi    @default(BIASA)
+
+  tujuanDivisiId       String?
+  tujuanDivisi         Divisi?           @relation(fields: [tujuanDivisiId], references: [id], onDelete: SetNull)
+  tujuanUserId         String?
+  tujuanUser           User?             @relation("DisposisiPenerima", fields: [tujuanUserId], references: [id], onDelete: SetNull)
+  tujuanCustom         String?           // Misal: "Ketua Panitia Milad", "Bendahara Umum"
+
+  instruksi            String            // JSON string array e.g. '["TINDAKLANJUTI","HADIRI_WAKILI"]'
+  catatanPimpinan      String?           @db.Text
+
+  batasWaktu           DateTime?         // Target tanggal selesai
+
+  pemberiId            String?
+  pemberi              User?             @relation("DisposisiPemberi", fields: [pemberiId], references: [id], onDelete: SetNull)
+  pemberiNama          String?           // e.g. "Ketua Umum"
+  pemberiJabatan       String?           // e.g. "Ketua Umum BPH"
+
+  status               StatusDisposisi   @default(BELUM_DIPROSES)
+  catatanTindakLanjut  String?           @db.Text
+  tglSelesai           DateTime?
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@map("disposisi_surat")
+}
+
+enum SifatDisposisi {
+  SANGAT_SEGERA
+  SEGERA
+  BIASA
+  RAHASIA
+}
+
+enum StatusDisposisi {
+  BELUM_DIPROSES
+  SEDANG_DIPROSES
+  SELESAI
 }
 
 // ==================== NOTIFIKASI ====================
@@ -1022,4 +1295,486 @@ model QueueJob {
   @@index([status, scheduledFor])
   @@index([name, status])
   @@map("queue_jobs")
+}
+
+// ==================== E-VOTING MUSYAWARAH / MUBES ====================
+
+model VotingEvent {
+  id              String            @id @default(cuid())
+  title           String            // e.g. "Pemilihan Ketua Umum MUBES XV HubbHQ"
+  slug            String            @unique // e.g. "mubes-xv-ketum"
+  description     String?           @db.Text
+  rules           String?           @db.Text // Tata tertib pemilihan / konsideran pleno
+  startDate       DateTime
+  endDate         DateTime
+  status          VotingStatus      @default(DRAFT)
+  showLiveCount   Boolean           @default(true) // Tampilkan grafik perolehan langsung di layar proyektor
+  allowAbstain    Boolean           @default(false) // Mengizinkan kotak kosong / abstain
+
+  createdById     String?
+  createdBy       User?             @relation("VotingCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  kandidat        VotingKandidat[]
+  dpt             VotingDPT[]
+  ballots         VotingBallot[]
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("voting_events")
+}
+
+enum VotingStatus {
+  DRAFT
+  AKTIF
+  SELESAI
+  DIBATALKAN
+}
+
+model VotingKandidat {
+  id              String            @id @default(cuid())
+  votingEventId   String
+  votingEvent     VotingEvent       @relation(fields: [votingEventId], references: [id], onDelete: Cascade)
+
+  nomorUrut       Int
+  namaKetua       String
+  namaWakil       String?
+  fotoUrl         String?           @db.Text
+  visi            String?           @db.Text
+  misi            String?           @db.Text
+  programUnggulan String?           @db.Text
+  suaraSah        Int               @default(0)
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([votingEventId, nomorUrut])
+  @@map("voting_kandidat")
+}
+
+model VotingDPT {
+  id              String            @id @default(cuid())
+  votingEventId   String
+  votingEvent     VotingEvent       @relation(fields: [votingEventId], references: [id], onDelete: Cascade)
+
+  userId          String?
+  user            User?             @relation("UserDpt", fields: [userId], references: [id], onDelete: SetNull)
+
+  nama            String
+  nraOrNim        String?
+  emailOrPhone    String?
+  votingToken     String            @unique // Token rahasia sekali pakai untuk mencoblos di bilik suara
+  hasVoted        Boolean           @default(false)
+  votedAt         DateTime?
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([votingEventId, userId])
+  @@index([votingEventId, hasVoted])
+  @@map("voting_dpt")
+}
+
+model VotingBallot {
+  id               String           @id @default(cuid())
+  votingEventId    String
+  votingEvent      VotingEvent      @relation(fields: [votingEventId], references: [id], onDelete: Cascade)
+
+  kandidatId       String?          // null jika memilih abstain / kotak kosong
+  hashVerification String           // Hash unik (SHA-256) bukti integritas kotak suara anonim
+  timestamp        DateTime         @default(now())
+
+  @@index([votingEventId, kandidatId])
+  @@map("voting_ballots")
+}
+
+// ==================== ASPIRASI & ADVOKASI MAHASISWA / WARGA ====================
+
+enum AspirasiKategori {
+  FASILITAS
+  AKADEMIK_UKT
+  KEBIJAKAN
+  KEAMANAN_PERUNDUNGAN
+  SARAN_UMUM
+}
+
+enum AspirasiStatus {
+  MENUNGGU
+  DIVERIFIKASI
+  DALAM_ADVOKASI
+  SELESAI
+  DITOLAK
+}
+
+enum AspirasiUrgensi {
+  RENDAH
+  SEDANG
+  TINGGI
+  DARURAT
+}
+
+model Aspirasi {
+  id                   String             @id @default(cuid())
+  kodeTiket            String             @unique // e.g. "ASP-2026-0001"
+  pinPelacak           String             // PIN 6 digit untuk pelapor publik melacak status aduan
+  judul                String
+  kategori             AspirasiKategori
+  isi                  String             @db.Text
+  isAnonim             Boolean            @default(true)
+  namaPelapor          String?
+  kontakPelapor        String?
+  lampiranUrl          String?            @db.Text
+  status               AspirasiStatus     @default(MENUNGGU)
+  urgensi              AspirasiUrgensi    @default(SEDANG)
+  tindakLanjut         String?            @db.Text // Tanggapan resmi yang dapat dibaca pelapor
+  catatanInternal      String?            @db.Text // Catatan rahasia pengurus advokasi
+  ditindakLanjutOlehId String?
+  ditindakLanjutOleh   User?              @relation("AspirasiPIC", fields: [ditindakLanjutOlehId], references: [id], onDelete: SetNull)
+  tanggalSelesai       DateTime?
+  tanggapan            AspirasiTanggapan[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([status, kategori])
+  @@map("aspirasi")
+}
+
+model AspirasiTanggapan {
+  id         String   @id @default(cuid())
+  aspirasiId String
+  aspirasi   Aspirasi @relation(fields: [aspirasiId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  pengirim   String   // "PENGURUS" atau "PELAPOR"
+  pesan      String   @db.Text
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@map("aspirasi_tanggapan")
+}
+
+// ==================== DIKLAT & JENJANG KADERISASI ====================
+
+enum DiklatStatus {
+  DRAFT
+  PENDAFTARAN
+  BERJALAN
+  SELESAI
+  DIBATALKAN
+}
+
+enum ScreeningStatus {
+  PENDING
+  LOLOS
+  GAGAL
+}
+
+enum KelulusanStatus {
+  BELUM_DITETAPKAN
+  LULUS_MURNI
+  LULUS_BERSYARAT
+  TIDAK_LULUS
+}
+
+model KaderisasiJenjang {
+  id                   String         @id @default(cuid())
+  urutan               Int            @unique // 1, 2, 3...
+  namaJenjang          String         // e.g. "Kader Dasar (LK 1 / Mapaba / LDKM)"
+  singkatan            String         // e.g. "LK 1"
+  deskripsi            String?        @db.Text
+  syaratKelulusan      String?        @db.Text
+  minBulanMenujuLanjut  Int            @default(0)
+  isActive             Boolean        @default(true)
+  kader                User[]
+  batch                DiklatBatch[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@map("kaderisasi_jenjang")
+}
+
+model DiklatBatch {
+  id               String            @id @default(cuid())
+  jenjangId        String
+  jenjang          KaderisasiJenjang @relation(fields: [jenjangId], references: [id], onDelete: Restrict)
+  kodeBatch        String            @unique // e.g. "LK1-2026-01"
+  namaDiklat       String            // e.g. "Latihan Kader 1 Angkatan XXV"
+  tanggalMulai     DateTime
+  tanggalSelesai   DateTime
+  lokasi           String
+  biayaPendaftaran Decimal           @default(0) @db.Decimal(12, 2)
+  kuota            Int               @default(50)
+  status           DiklatStatus      @default(DRAFT)
+  motNama          String?           // Master of Training / Koordinator
+  skKepanitiaan    String?
+  peserta          DiklatPeserta[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@map("diklat_batch")
+}
+
+model DiklatPeserta {
+  id                   String          @id @default(cuid())
+  batchId              String
+  batch                DiklatBatch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  userId               String?
+  user                 User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  namaLengkap          String
+  nraOrNim             String?
+  instansiAsal         String?
+  kontak               String?
+  esaiUrl              String?         @db.Text
+  statusScreening      ScreeningStatus @default(PENDING)
+  nilaiKognitif        Float           @default(0)
+  nilaiAfektif         Float           @default(0)
+  nilaiPsikomotorik    Float           @default(0)
+  nilaiAkhir           Float           @default(0)
+  statusKelulusan      KelulusanStatus @default(BELUM_DITETAPKAN)
+  nomorRegistrasiKader String?         @unique
+  nomorSttpp           String?         @unique
+  sttppIssuedAt        DateTime?
+  catatanInstruktur    String?         @db.Text
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@index([batchId, statusKelulusan])
+  @@map("diklat_peserta")
+}
+
+// ==================== ALUMNI & DANA ABADI ====================
+
+enum AlumniProgramDonasi {
+  DANA_ABADI
+  BEASISWA_KADER
+  RENOVASI_SEKRETARIAT
+  TANGGAP_BENCANA
+  SPONSOR_ACARA
+}
+
+enum AlumniDonasiStatus {
+  PENDING
+  TERVERIFIKASI
+  BATAL
+}
+
+model Alumni {
+  id                 String          @id @default(cuid())
+  userId             String?         @unique
+  user               User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  nama               String
+  angkatanMasuk      Int
+  tahunLulus         Int
+  jabatanTerakhir    String?
+  profesi            String?
+  instansiBekerja    String?
+  email              String?
+  phone              String?
+  domisili           String?
+  linkedin           String?
+  bio                String?         @db.Text
+  isKontributorAktif Boolean         @default(false)
+  donasi             AlumniDonasi[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([tahunLulus, angkatanMasuk])
+  @@map("alumni")
+}
+
+model AlumniDonasi {
+  id             String               @id @default(cuid())
+  alumniId       String?
+  alumni         Alumni?              @relation(fields: [alumniId], references: [id], onDelete: SetNull)
+  namaDonatur    String
+  nominal        Decimal              @db.Decimal(12, 2)
+  programDonasi  AlumniProgramDonasi  @default(DANA_ABADI)
+  metodeBayar    String               @default("QRIS")
+  referensiBayar String?
+  status         AlumniDonasiStatus   @default(PENDING)
+  catatan        String?              @db.Text
+  pesanAlumni    String?              @db.Text
+  tanggalBayar   DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+
+  @@index([programDonasi, status])
+  @@map("alumni_donasi")
+}
+
+// ==================== PERSIDANGAN & TAP MUBES ====================
+
+enum SidangStatus {
+  PERSIAPAN
+  BERLANGSUNG
+  SKORSING
+  DITUTUP
+}
+
+model SidangMusyawarah {
+  id             String            @id @default(cuid())
+  namaMusyawarah String            // e.g. "Musyawarah Besar XXIV / Kongres"
+  tema           String?           @db.Text
+  tempat         String
+  tanggalMulai   DateTime
+  tanggalSelesai DateTime
+  presidium1     String?
+  presidium2     String?
+  presidium3     String?
+  status         SidangStatus      @default(PERSIAPAN)
+  totalKuorum    Int               @default(0)
+  kuorumTercapai Boolean           @default(false)
+  risalah        SidangRisalah[]
+  ketetapanSK    SidangKetetapanSK[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@map("sidang_musyawarah")
+}
+
+model SidangRisalah {
+  id                   String           @id @default(cuid())
+  sidangId             String
+  sidang               SidangMusyawarah @relation(fields: [sidangId], references: [id], onDelete: Cascade)
+  agenda               String           // e.g. "Sidang Pleno I: Tata Tertib"
+  waktuMulai           DateTime
+  waktuSelesai         DateTime?
+  isiRisalah           String           @db.Text
+  interupsiDanDinamika String?          @db.Text
+  notulisNama          String
+  createdAt            DateTime         @default(now())
+
+  @@map("sidang_risalah")
+}
+
+model SidangKetetapanSK {
+  id                     String           @id @default(cuid())
+  sidangId               String
+  sidang                 SidangMusyawarah @relation(fields: [sidangId], references: [id], onDelete: Cascade)
+  nomorTap               String           @unique // e.g. "TAP. 04/MUBES-XXIV/2026"
+  tentang                String           @db.Text
+  konsideranMenimbang    String           @db.Text
+  konsideranMengingat    String           @db.Text
+  konsideranMemperhatikan String          @db.Text
+  diktumMemutuskan       String           @db.Text
+  diktumMenetapkan       String           @db.Text
+  tanggalDitetapkan      DateTime
+  tempatDitetapkan       String
+  isDisahkan             Boolean          @default(true)
+  pdfUrl                 String?          @db.Text
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  @@map("sidang_ketetapan_sk")
+}
+
+// ==================== OPEN RECRUITMENT (OPREC) TERPADU ====================
+
+enum OprecTipe {
+  PENGURUS_BARU
+  PANITIA_EVENT
+}
+
+enum OprecTahap {
+  BERKAS_PENDING
+  BERKAS_LOLOS
+  BERKAS_GAGAL
+  WAWANCARA
+  LULUS
+  DITOLAK
+}
+
+model OprecEvent {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  judul            String
+  deskripsi        String?          @db.Text
+  tipeOprec        OprecTipe        @default(PANITIA_EVENT)
+  tanggalBuka      DateTime
+  tanggalTutup     DateTime
+  isOpen           Boolean          @default(true)
+  kuota            Int              @default(0)
+  bannerUrl        String?          @db.Text
+  persyaratan      String?          @db.Text
+  divisiPilihan    String           @db.Text // JSON string array: ["Acara", "Humas", "Kestari", "Logistik", "Konsumsi", "Pubdok"]
+  isPengumumanBuka Boolean          @default(false)
+  programKerjaId   String?
+  programKerja     ProgramKerja?    @relation(fields: [programKerjaId], references: [id], onDelete: SetNull)
+  pendaftar        OprecPendaftar[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("oprec_events")
+}
+
+model OprecPendaftar {
+  id                   String      @id @default(cuid())
+  oprecId              String
+  oprec                OprecEvent  @relation(fields: [oprecId], references: [id], onDelete: Cascade)
+  nomorRegistrasi      String      @unique // e.g. "REG-2026-0042"
+  namaLengkap          String
+  nimOrNra             String
+  email                String
+  phone                String
+  fakultasProdi        String?
+  angkatan             Int?
+  divisiPilihan1       String
+  divisiPilihan2       String?
+  alasanMemilih        String?     @db.Text
+  pengalamanOrganisasi String?     @db.Text
+  cvUrl                String?     @db.Text
+  ktmUrl               String?     @db.Text
+  portofolioUrl        String?     @db.Text
+  fotoUrl              String?     @db.Text
+  statusTahap          OprecTahap  @default(BERKAS_PENDING)
+  divisiDiterima       String?
+  jabatanDiterima      String?
+  nilaiWawancara       Float       @default(0)
+  catatanInterviewer   String?     @db.Text
+  isConverted          Boolean     @default(false)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  @@index([oprecId, statusTahap])
+  @@map("oprec_pendaftar")
+}
+
+// ==================== AUTOCRAT-STYLE E-SERTIFIKAT ====================
+
+enum SertifikatKategori {
+  PENGURUS
+  PANITIA
+  PESERTA
+  UMUM
+}
+
+model SertifikatTemplate {
+  id             String                @id @default(cuid())
+  namaTemplate   String                // e.g. "Sertifikat Seminar Nasional 2026"
+  kategori       SertifikatKategori    @default(UMUM)
+  imageUrl       String                @db.Text // URL template background sertifikat
+  lebarCanvas    Int                   @default(1920)
+  tinggiCanvas   Int                   @default(1080)
+  configJson     String                @db.Text // Koordinat & styling teks
+  prefixNomor    String                @default("SERT/[NO]/HUBB/[YEAR]")
+  sertifikatList SertifikatGenerated[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@map("sertifikat_templates")
+}
+
+model SertifikatGenerated {
+  id              String             @id @default(cuid())
+  templateId      String
+  template        SertifikatTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  nomorSertifikat String             @unique // e.g. "SERT/001/HUBB/2026"
+  namaPenerima    String
+  sebagai         String             @default("Peserta") // Panitia / Peserta / Pemateri / Pengurus
+  keterangan      String?
+  issuedAt        DateTime           @default(now())
+  outputImageUrl  String?            @db.Text
+  createdAt       DateTime           @default(now())
+
+  @@index([templateId, namaPenerima])
+  @@map("sertifikat_generated")
 }

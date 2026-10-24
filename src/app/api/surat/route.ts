@@ -57,6 +57,13 @@ export async function GET(request: NextRequest) {
               code: true,
             },
           },
+          disposisi: {
+            include: {
+              tujuanDivisi: { select: { id: true, name: true, color: true } },
+              tujuanUser: { select: { id: true, name: true, phone: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
       }),
       prisma.surat.count({ where }),
@@ -122,6 +129,16 @@ export async function POST(request: NextRequest) {
       finalLetterNumber = `${nextNumber}/${year}`
     }
 
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canApprove =
+      ['admin', 'ketua', 'sekretaris'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'surat.approve'))
+
+    const finalStatus =
+      (status === 'APPROVED' || status === 'ACTIVE') && canApprove
+        ? status
+        : 'DRAFT'
+
     const surat = await prisma.surat.create({
       data: {
         type,
@@ -133,8 +150,10 @@ export async function POST(request: NextRequest) {
         receivedDate: receivedDate ? new Date(receivedDate) : null,
         jenisSuratId,
         formData,
-        status: status || 'DRAFT',
+        status: finalStatus,
         requesterId: session.user.id,
+        approverId: finalStatus === 'APPROVED' ? session.user.id : null,
+        approvedAt: finalStatus === 'APPROVED' ? new Date() : null,
       },
       include: {
         requester: {

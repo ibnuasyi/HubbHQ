@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin, requireAuth } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // GET /api/pages - List all pages
 export async function GET(request: NextRequest) {

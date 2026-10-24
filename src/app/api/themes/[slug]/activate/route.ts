@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // POST /api/themes/[slug]/activate - Activate a theme (admin only)
 export async function POST(

@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { canManageProker } from '@/lib/proker-auth'
 
 // GET /api/proker/[id]/proposal - Get active proposal and history for this proker
 export async function GET(
@@ -64,6 +65,15 @@ export async function POST(
       return NextResponse.json(
         { error: 'Proposal dana hanya dapat dinaikkan setelah PIC (Penanggung Jawab) ditentukan pada program kerja ini.' },
         { status: 400 }
+      )
+    }
+
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canManage = await canManageProker(session.user.id, roleName, prokerId)
+    if (!canManage) {
+      return NextResponse.json(
+        { error: 'Forbidden: Hanya PIC atau panitia yang dapat mengajukan proposal dana proker ini' },
+        { status: 403 }
       )
     }
 

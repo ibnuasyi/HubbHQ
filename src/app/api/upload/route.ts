@@ -2,13 +2,11 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
-import { existsSync } from 'fs'
 import sharp from 'sharp'
+import { storageService, sanitizeFolder } from '@/lib/storage'
+import { checkRateLimitByIP, getClientIP } from '@/lib/rate-limit'
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads'
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '10485760') // 10MB
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '15728640') // 15MB
 
 // Magic bytes for file type validation
 const FILE_SIGNATURES: Record<string, { mime: string; ext: string }> = {
@@ -60,6 +58,15 @@ function sanitizePathComponent(type: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIP(request)
+    const rateCheck = checkRateLimitByIP(clientIp, 'upload_file', { maxRequests: 30, windowMs: 60 * 1000 })
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak permintaan upload berkas. Silakan coba beberapa saat lagi.' },
+        { status: 429 }
+      )
+    }
+
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -124,50 +131,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create upload directory if not exists
-    const uploadPath = path.join(process.cwd(), UPLOAD_DIR, type)
-    if (!existsSync(uploadPath)) {
-      await mkdir(uploadPath, { recursive: true })
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now()
-    const filename = `${timestamp}-${Math.random().toString(36).substring(2, 15)}${detectedType.ext}`
-    const filepath = path.join(uploadPath, filename)
-
     // Process images - strip EXIF metadata
+    let finalBuffer = buffer
     if (config.processImage && detectedType.mime.startsWith('image/')) {
       try {
         const image = sharp(buffer)
         const metadata = await image.metadata()
 
         if (metadata.exif) {
-          await image
+          finalBuffer = await image
             .rotate()
             .withMetadata({ exif: undefined })
-            .toFile(filepath)
-          console.log(`[SECURITY] EXIF stripped from: ${filename}`)
-        } else {
-          await writeFile(filepath, buffer)
+            .toBuffer()
         }
       } catch (sharpError) {
-        console.error('Sharp error:', sharpError)
-        await writeFile(filepath, buffer)
+        console.warn('Sharp EXIF strip warning:', sharpError)
       }
-    } else {
-      await writeFile(filepath, buffer)
     }
 
-    const fileUrl = `/${UPLOAD_DIR}/${type}/${filename}`
+    // Upload using unified storage provider (local, s3, r2, webdav, alist)
+    const uploadResult = await storageService.upload(
+      finalBuffer,
+      type,
+      file.name || `file${detectedType.ext}`,
+      detectedType.mime
+    )
 
     return NextResponse.json({
       success: true,
       message: 'File uploaded successfully',
       data: {
-        filename,
-        url: fileUrl,
+        filename: uploadResult.filename,
+        url: uploadResult.url,
         type: detectedType.mime,
-        size: file.size,
+        size: finalBuffer.length,
+        provider: storageService.getProvider(),
       },
     })
   } catch (error) {

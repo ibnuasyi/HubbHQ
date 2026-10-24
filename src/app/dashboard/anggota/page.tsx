@@ -14,7 +14,13 @@ import {
   Phone,
   MapPin,
   Loader2,
+  CreditCard,
+  Settings2,
+  Sparkles,
 } from 'lucide-react'
+import { KtaCard } from '@/components/kta/kta-card'
+import { KtaConfigModal } from '@/components/kta/kta-config-modal'
+import { KtaConfig, DEFAULT_KTA_CONFIG } from '@/lib/kta-config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -62,6 +68,10 @@ interface User {
   address: string | null
   phone: string | null
   avatar: string | null
+  nra: string | null
+  bloodType: string | null
+  ktaIssuedAt: string | null
+  ktaValidUntil: string | null
   role: { id: string; name: string; displayName: string; color: string } | null
   wilayah: { id: string; name: string } | null
   divisiMembers: { divisi: { id: string; name: string; color: string } }[]
@@ -79,7 +89,52 @@ export default function AnggotaPage() {
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null)
   const [showDetail, setShowDetail] = React.useState(false)
 
+  // KTA States
+  const [ktaConfig, setKtaConfig] = React.useState<KtaConfig>(DEFAULT_KTA_CONFIG)
+  const [showKtaConfigModal, setShowKtaConfigModal] = React.useState(false)
+  const [selectedKtaUser, setSelectedKtaUser] = React.useState<User | null>(null)
+  const [showKtaPreviewModal, setShowKtaPreviewModal] = React.useState(false)
+  const [bulkGenerating, setBulkGenerating] = React.useState(false)
+  const [bulkSuccessMsg, setBulkSuccessMsg] = React.useState<string | null>(null)
+
   const limit = 10
+
+  // Fetch KTA Config
+  React.useEffect(() => {
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/kta/config')
+        if (res.ok) {
+          const json = await res.json()
+          if (json.data) setKtaConfig(json.data)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    loadConfig()
+  }, [])
+
+  // Bulk Generate NRA Handler
+  const handleBulkGenerateNra = async () => {
+    if (!confirm('Terbitkan Nomor Registrasi Anggota (NRA) otomatis untuk seluruh anggota yang belum memiliki NRA?')) {
+      return
+    }
+    try {
+      setBulkGenerating(true)
+      setBulkSuccessMsg(null)
+      const res = await fetch('/api/kta/generate-bulk', { method: 'POST' })
+      const json = await res.json()
+      if (res.ok) {
+        setBulkSuccessMsg(json.message)
+        fetchAnggota()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setBulkGenerating(false)
+    }
+  }
 
   const fetchAnggota = React.useCallback(async () => {
     try {
@@ -140,13 +195,54 @@ export default function AnggotaPage() {
             Kelola data anggota organisasi ({total} anggota)
           </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/anggota/baru">
-            <UserPlus className="mr-2 h-4 w-4" />
-            Tambah Anggota
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowKtaConfigModal(true)}
+            className="text-xs"
+          >
+            <Settings2 className="mr-1.5 h-3.5 w-3.5" />
+            Desain KTA
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={bulkGenerating}
+            onClick={handleBulkGenerateNra}
+            className="text-xs"
+          >
+            {bulkGenerating ? (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+            )}
+            Generate NRA Massal
+          </Button>
+
+          <Button asChild size="sm" className="text-xs">
+            <Link href="/dashboard/anggota/baru">
+              <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+              Tambah Anggota
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      {bulkSuccessMsg && (
+        <div className="mb-4 p-3 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between">
+          <span>{bulkSuccessMsg}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px]"
+            onClick={() => setBulkSuccessMsg(null)}
+          >
+            Tutup
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -214,9 +310,22 @@ export default function AnggotaPage() {
                           </Avatar>
                           <div>
                             <p className="font-medium">{user.name || '-'}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {user.nickname && `@${user.nickname}`}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {user.nra ? (
+                                <span className="font-mono text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                                  {user.nra}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  Belum ada NRA
+                                </span>
+                              )}
+                              {user.nickname && (
+                                <span className="text-xs text-muted-foreground">
+                                  @{user.nickname}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
@@ -277,6 +386,15 @@ export default function AnggotaPage() {
                             <DropdownMenuItem onClick={() => viewDetail(user)}>
                               <Eye className="mr-2 h-4 w-4" />
                               Lihat Detail
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedKtaUser(user)
+                                setShowKtaPreviewModal(true)
+                              }}
+                            >
+                              <CreditCard className="mr-2 h-4 w-4 text-primary" />
+                              Lihat KTA Digital
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link href={`/dashboard/anggota/${user.id}`}>
@@ -400,6 +518,51 @@ export default function AnggotaPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL 1: Konfigurasi Desain KTA Organisasi */}
+      <KtaConfigModal
+        open={showKtaConfigModal}
+        onOpenChange={setShowKtaConfigModal}
+        initialConfig={ktaConfig}
+        onConfigSaved={(newConfig) => setKtaConfig(newConfig)}
+      />
+
+      {/* MODAL 2: Pratinjau & Cetak KTA Anggota */}
+      <Dialog open={showKtaPreviewModal} onOpenChange={setShowKtaPreviewModal}>
+        <DialogContent className="max-w-xl flex flex-col items-center p-6">
+          <DialogHeader className="w-full text-center">
+            <DialogTitle className="text-lg font-bold flex items-center justify-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              KTA Digital: {selectedKtaUser?.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Pratinjau Kartu Tanda Anggota resmi standar CR80 dengan verifikasi QR Code
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedKtaUser && (
+            <div className="py-2">
+              <KtaCard
+                member={{
+                  id: selectedKtaUser.id,
+                  name: selectedKtaUser.name,
+                  fullName: selectedKtaUser.fullName || selectedKtaUser.name,
+                  avatar: selectedKtaUser.avatar,
+                  nra: selectedKtaUser.nra,
+                  bloodType: selectedKtaUser.bloodType,
+                  role: selectedKtaUser.role,
+                  divisi: selectedKtaUser.divisiMembers?.[0]?.divisi,
+                  wilayah: selectedKtaUser.wilayah,
+                  ktaIssuedAt: selectedKtaUser.ktaIssuedAt,
+                  ktaValidUntil: selectedKtaUser.ktaValidUntil,
+                }}
+                config={ktaConfig}
+                showControls={true}
+              />
             </div>
           )}
         </DialogContent>

@@ -1,21 +1,30 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
+import { auth } from '@/lib/auth'
 
-const prisma = new PrismaClient()
-
-// GET /api/faq - List all FAQ items (public)
+// GET /api/faq - List all FAQ items (public for published FAQs)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const published = searchParams.get('published')
 
+    const session = await auth()
+    const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
+    const isAdmin = roleName === 'admin' || roleName === 'ketua'
+
     const where: Record<string, unknown> = {}
     if (category) where.category = category
-    if (published !== null) where.isPublished = published === 'true'
+
+    // If not admin, only show published FAQs
+    if (!isAdmin) {
+      where.isPublished = true
+    } else if (published !== null) {
+      where.isPublished = published === 'true'
+    }
 
     const items = await prisma.faq.findMany({
       where,

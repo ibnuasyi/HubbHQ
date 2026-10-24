@@ -76,6 +76,28 @@ export async function GET(
           },
         },
         calendarEvents: true,
+        presensiSesi: {
+          orderBy: { tanggal: 'desc' },
+          select: {
+            id: true,
+            judul: true,
+            tipe: true,
+            tanggal: true,
+            isActive: true,
+            isDitarikKeLpj: true,
+            _count: { select: { kehadiran: true } },
+          },
+        },
+        notulaRapat: {
+          orderBy: { tanggal: 'desc' },
+          select: {
+            id: true,
+            judul: true,
+            tanggal: true,
+            pimpinanRapat: true,
+            isDitarikKeLpj: true,
+          },
+        },
       },
     })
 

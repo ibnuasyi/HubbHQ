@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { canManageProker } from '@/lib/proker-auth'
 
 // GET /api/proker/[id]/lpj - Get LPJ details
 export async function GET(
@@ -46,9 +46,21 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, prokerId)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Hanya panitia atau pengurus berwenang yang dapat mengelola LPJ ini' }, { status: 403 })
+    }
+
+    // Check if LPJ already approved
+    const existingLpj = await prisma.lpjProker.findUnique({
+      where: { programKerjaId: prokerId },
+    })
+    if (existingLpj && existingLpj.status === 'APPROVED' && !['admin', 'ketua'].includes(roleName)) {
+      return NextResponse.json(
+        { error: 'Laporan Pertanggungjawaban (LPJ) sudah disetujui (APPROVED) dan terkunci dari perubahan.' },
+        { status: 400 }
+      )
     }
 
     const body = await request.json()

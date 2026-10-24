@@ -24,6 +24,15 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canViewAll =
+      ['admin', 'ketua', 'bendahara'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'keuangan.view'))
+
+    if (!canViewAll) {
+      where.userId = session.user.id
+    }
+
     if (status) {
       where.status = status
     }

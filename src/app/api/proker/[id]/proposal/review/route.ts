@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { canReviewProkerFinance } from '@/lib/proker-auth'
 
 // PATCH /api/proker/[id]/proposal/review - Approve or Reject proposal
 export async function PATCH(
@@ -18,15 +18,12 @@ export async function PATCH(
     }
 
     // Check permission to review proposals
-    const canReview =
-      (await hasPermission(session.user.id, 'proposal.review')) ||
-      (await hasPermission(session.user.id, 'proker.edit')) ||
-      session.user.role?.name === 'ADMIN' ||
-      (session.user as any).role === 'ADMIN'
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canReview = await canReviewProkerFinance(session.user.id, roleName)
 
     if (!canReview) {
       return NextResponse.json(
-        { error: 'Anda tidak memiliki hak akses untuk meninjau/menyetujui proposal.' },
+        { error: 'Anda tidak memiliki hak akses untuk meninjau/menyetujui proposal keuangan.' },
         { status: 403 }
       )
     }
@@ -58,6 +55,14 @@ export async function PATCH(
 
     if (!proposal) {
       return NextResponse.json({ error: 'Proposal tidak ditemukan' }, { status: 404 })
+    }
+
+    // Separation of Duties: Requester cannot approve their own proposal unless admin/ketua
+    if (proposal.requesterId === session.user.id && !['admin', 'ketua'].includes(roleName)) {
+      return NextResponse.json(
+        { error: 'Konflik Kepentingan: Anda tidak dapat menyetujui proposal yang Anda ajukan sendiri.' },
+        { status: 403 }
+      )
     }
 
     const now = new Date()

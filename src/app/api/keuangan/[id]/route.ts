@@ -23,6 +23,15 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess =
+      ['admin', 'ketua', 'bendahara'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'keuangan.view'))
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki hak akses melihat detail keuangan' }, { status: 403 })
+    }
+
     // Validate ID format
     if (!isValidId(id)) {
       return NextResponse.json({ error: 'Invalid transaction ID' }, { status: 400 })
@@ -88,7 +97,7 @@ export async function PATCH(
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name !== 'admin') {
+      if (user?.role?.name?.toLowerCase() !== 'admin') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
@@ -243,7 +252,7 @@ export async function DELETE(
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name !== 'admin') {
+      if (user?.role?.name?.toLowerCase() !== 'admin') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

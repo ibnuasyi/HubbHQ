@@ -1,12 +1,11 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
+import { auth } from '@/lib/auth'
 
-const prisma = new PrismaClient()
-
-// GET /api/pages/[slug] - Get single page (public)
+// GET /api/pages/[slug] - Get single page (public for published pages)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -32,6 +31,18 @@ export async function GET(
       )
     }
 
+    // Protect draft pages from unauthenticated/non-admin inspection
+    if (!page.isPublished) {
+      const session = await auth()
+      const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
+      if (roleName !== 'admin' && roleName !== 'ketua') {
+        return NextResponse.json(
+          { error: 'Page not found' },
+          { status: 404 }
+        )
+      }
+    }
+
     return NextResponse.json(page)
   } catch (error) {
     console.error('Error fetching page:', error)
@@ -55,14 +66,23 @@ export async function PATCH(
     const { slug } = await params
     const body = await request.json()
 
+    const updateData: any = {}
+    if (body.title !== undefined) updateData.title = String(body.title).trim()
+    if (body.description !== undefined) updateData.description = body.description ? String(body.description).trim() : null
+    if (body.type !== undefined) updateData.type = String(body.type)
+    if (body.themeId !== undefined) updateData.themeId = body.themeId || null
+    if (body.seoTitle !== undefined) updateData.seoTitle = body.seoTitle ? String(body.seoTitle).trim() : null
+    if (body.seoDesc !== undefined) updateData.seoDesc = body.seoDesc ? String(body.seoDesc).trim() : null
+    if (body.isPublished !== undefined) updateData.isPublished = Boolean(body.isPublished)
+
     // Sanitize slug if provided
     if (body.slug) {
-      body.slug = body.slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+      updateData.slug = String(body.slug).toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
     }
 
     const page = await prisma.page.update({
       where: { slug },
-      data: body,
+      data: updateData,
       include: {
         theme: true,
         sections: {

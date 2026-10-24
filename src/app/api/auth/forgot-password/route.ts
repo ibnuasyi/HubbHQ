@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 
 // Rate limiting for password reset requests
 const RESET_WINDOW = 60 * 60 * 1000 // 1 hour
@@ -75,31 +75,35 @@ export async function POST(request: Request) {
     if (user) {
       recordResetAttempt(email)
 
-      // Generate reset token (simple token for demo - use proper crypto in production)
-      const resetToken = Buffer.from(
+      // Buat payload token reset password yang ditandatangani secara kriptografis (HMAC-SHA256)
+      // Mengikat tanda tangan dengan hash password saat ini agar token otomatis hangus setelah dipakai sekali
+      const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET
+      if (!secret) {
+        throw new Error('Server auth secret belum dikonfigurasi')
+      }
+
+      const payloadBytes = Buffer.from(
         JSON.stringify({
           userId: user.id,
           email: user.email,
-          exp: Date.now() + 60 * 60 * 1000, // 1 hour
-          type: 'password_reset'
+          exp: Date.now() + 60 * 60 * 1000, // 1 jam
+          type: 'password_reset',
         })
       ).toString('base64url')
 
-      // In production, send email here
-      // For now, we'll return the token directly (remove in production!)
-      console.log(`[PASSWORD RESET] Token for ${email}: ${resetToken}`)
+      const hmacKey = `${secret}:${user.password || ''}`
+      const signature = crypto
+        .createHmac('sha256', hmacKey)
+        .update(payloadBytes)
+        .digest('base64url')
 
-      // TODO: Send actual email with reset link
-      // await sendEmail({
-      //   to: email,
-      //   subject: 'Reset Password SIOP',
-      //   html: `<a href="${BASE_URL}/reset-password?token=${resetToken}">Reset Password</a>`
-      // })
+      const resetToken = `${payloadBytes}.${signature}`
+
+      // Catat di log server internal (tidak pernah dikirim di body respons HTTP)
+      console.log(`[PASSWORD RESET] Link requested for ${email}`)
 
       return NextResponse.json({
         message: 'Jika email tersebut terdaftar, link reset password telah dikirim',
-        // Remove this in production - only for development
-        resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
       })
     }
 

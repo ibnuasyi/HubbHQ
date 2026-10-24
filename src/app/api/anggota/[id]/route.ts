@@ -19,7 +19,28 @@ export async function GET(
 
     const member = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        roleId: true,
+        nickname: true,
+        fullName: true,
+        birthPlace: true,
+        birthDate: true,
+        address: true,
+        phone: true,
+        avatar: true,
+        signature: true,
+        nra: true,
+        bloodType: true,
+        emergencyContact: true,
+        ktaIssuedAt: true,
+        ktaValidUntil: true,
+        ktaCardUrl: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
         role: true,
         wilayah: true,
         jabatan: true,
@@ -80,6 +101,11 @@ export async function PATCH(
       isActive,
       signature,
       avatar,
+      nra,
+      bloodType,
+      emergencyContact,
+      ktaIssuedAt,
+      ktaValidUntil,
     } = body
 
     // Build update data
@@ -95,13 +121,20 @@ export async function PATCH(
     if (phone !== undefined) updateData.phone = phone
     if (signature !== undefined) updateData.signature = signature
     if (avatar !== undefined) updateData.avatar = avatar
+    if (bloodType !== undefined) updateData.bloodType = bloodType?.trim() || null
+    if (emergencyContact !== undefined) updateData.emergencyContact = emergencyContact?.trim() || null
 
-    // Only admin can change role, wilayah, and active status
+    // Only admin can change role, wilayah, active status, and manual NRA
     if (await hasPermission(session.user.id, 'members.edit')) {
       if (roleId !== undefined) updateData.roleId = roleId
       if (wilayahId !== undefined) updateData.wilayahId = wilayahId
       if (jabatanId !== undefined) updateData.jabatanId = jabatanId
       if (isActive !== undefined) updateData.isActive = isActive
+      if (nra !== undefined) updateData.nra = nra?.trim() || null
+      if (ktaIssuedAt !== undefined)
+        updateData.ktaIssuedAt = ktaIssuedAt ? new Date(ktaIssuedAt) : null
+      if (ktaValidUntil !== undefined)
+        updateData.ktaValidUntil = ktaValidUntil ? new Date(ktaValidUntil) : null
     }
 
     const member = await prisma.user.update({
@@ -115,6 +148,8 @@ export async function PATCH(
         },
       },
     })
+
+    delete (member as any).password
 
     return NextResponse.json({
       success: true,

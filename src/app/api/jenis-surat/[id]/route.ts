@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/auth'
+import { safeParseFormSchema } from '@/lib/form-schema'
 
 // GET /api/jenis-surat/[id] - Get single jenis surat
 export async function GET(
@@ -80,7 +81,16 @@ export async function PATCH(
     if (name !== undefined) updateData.name = name
     if (code !== undefined) updateData.code = code.toUpperCase()
     if (templateUrl !== undefined) updateData.templateUrl = templateUrl
-    if (formSchema !== undefined) updateData.formSchema = formSchema
+    if (formSchema !== undefined) {
+      try {
+        updateData.formSchema = formSchema ? safeParseFormSchema(formSchema) : null
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Form schema tidak valid: ' + (error as Error).message },
+          { status: 400 }
+        )
+      }
+    }
     if (autoNumber !== undefined) updateData.autoNumber = autoNumber
     if (numberPrefix !== undefined) updateData.numberPrefix = numberPrefix
     if (numberFormat !== undefined) updateData.numberFormat = numberFormat

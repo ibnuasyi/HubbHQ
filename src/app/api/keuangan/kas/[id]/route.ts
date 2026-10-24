@@ -37,6 +37,13 @@ export async function PATCH(
     }
 
     if (action === 'approve') {
+      if (kasPayment.status === 'APPROVED') {
+        return NextResponse.json(
+          { error: 'Pembayaran kas ini sudah pernah disetujui sebelumnya' },
+          { status: 400 }
+        )
+      }
+
       // Approve and create transaction
       await prisma.$transaction(async (tx) => {
         // Update kas payment status

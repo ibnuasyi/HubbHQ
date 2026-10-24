@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { canManageProker } from '@/lib/proker-auth'
 
 // POST /api/proker/[id]/checkpoints - Add checkpoint
 export async function POST(
@@ -17,9 +17,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, id)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki akses mengelola checkpoint proker ini' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -73,9 +74,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, id)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki akses mengelola checkpoint proker ini' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -88,20 +90,28 @@ export async function PATCH(
       )
     }
 
+    const current = await prisma.checkpoint.findFirst({
+      where: { id: checkpointId, programKerjaId: id },
+    })
+
+    if (!current) {
+      return NextResponse.json(
+        { error: 'Checkpoint tidak ditemukan pada program kerja ini' },
+        { status: 404 }
+      )
+    }
+
     let result;
 
     switch (action) {
       case 'toggle': {
         // Toggle completion status
-        const current = await prisma.checkpoint.findUnique({
-          where: { id: checkpointId },
-        })
         result = await prisma.checkpoint.update({
           where: { id: checkpointId },
           data: {
-            isCompleted: !current?.isCompleted,
-            completedAt: !current?.isCompleted ? new Date() : null,
-            completedById: !current?.isCompleted ? session.user.id : null,
+            isCompleted: !current.isCompleted,
+            completedAt: !current.isCompleted ? new Date() : null,
+            completedById: !current.isCompleted ? session.user.id : null,
           },
         })
         break

@@ -5,6 +5,36 @@ Semua perubahan signifikan dari project ini akan didokumentasikan di file ini.
 Format ini berdasarkan [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 Project ini mematuhi [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.2.0] - 2026-10-25
+
+### Added
+
+#### Studio E-Sertifikat Terpadu & Sinkronisasi Proker
+- **Studio E-Sertifikat Mandiri:** Editor visual dan generator e-sertifikat terintegrasi penuh tanpa dependensi eksternal, dilengkapi kustomisasi canvas, pemetaan tag dinamis (`{Nama}`, `{Sebagai}`, `{Nomor}`, `{Tanggal}`, `{QR}`), serta pratinjau instan.
+- **Sinkronisasi E-Sertifikat Kepanitiaan Proker:** Integrasi otomatis penomoran dan penerbitan sertifikat kepanitiaan program kerja langsung ke modul verifikasi terpusat Studio E-Sertifikat (`SertifikatGenerated`).
+- **Verifikasi Kredensial Publik:** Halaman verifikasi publik (`/sertifikat/verify/[...nomor]`) dengan perlindungan *rate limiting* dan kode QR validasi keaslian dokumen.
+- **Pembaruan Aset & Dokumentasi:** Dokumentasi README diperbarui dengan fokus galeri visual modul dashboard dan petunjuk implementasi sistem.
+
+### Changed
+- **Peningkatan Efisiensi Database:** Standarisasi penggunaan instance tunggal Prisma Client (`@/lib/db`) di seluruh API handler CMS, Halaman, dan Tema untuk mencegah kebocoran pool koneksi.
+- **Penyensoran Data Peminjaman:** Masking data pribadi kontak dan identitas peminjam pada modul inventaris untuk pengguna umum non-pengurus.
+- **Standardisasi Skema Penomoran Sertifikat:** Dukungan pola format dinamis dan penyesuaian otomatis per divisi maupun jenis program kerja.
+
+### Security
+
+#### Pengerasan Perimeter & Kontrol Akses (Security Hardening)
+- **Middleware & Header Keamanan:** Penutupan celah bypass header Authorization palsu, pembatasan ketat whitelist rute publik, serta penerapan HTTP Security Headers global (CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy).
+- **Autentikasi & Reset Password:** Peningkatan keamanan token reset sandi menggunakan HMAC-SHA256 (`NEXTAUTH_SECRET:user.password`), eliminasi token dari respons JSON, dan penegakan batas laju (*rate limiting*) IP pada rute autentikasi.
+- **Payment Gateway & QRIS Dinamis:** Verifikasi signature kriptografis Midtrans/Tripay, pencegahan bypass status pembayaran simulasi berbasis RBAC, dan masking kredensial rahasia gateway bagi non-admin.
+- **Pencegahan Kebocoran Hash Password:** Proyeksi eksplisit Prisma (`select`) pada seluruh endpoint Anggota, Divisi, dan Alumni guna menjamin hash sandi bcrypt tidak pernah bocor ke klien.
+- **Anti-Race Condition & Integritas Transaksi:** Penguncian transaksi atomik pada modul Voting/Quick Count untuk mencegah *double-voting*, serta pembaruan bersyarat atomik (`updateMany`) pada peminjaman inventaris guna mencegah stok bernilai negatif.
+- **Tata Kelola Administrasi & Anti Self-Approval:** Pencegahan persetujuan mandiri (*self-approval prevention*) pada pengesahan surat dan proposal/LPJ keuangan kegiatan.
+- **Penyimpanan Berkas Terpadu & Sanitasi Path:** Penghapusan pengunggahan file arbitrary; validasi magic bytes (PDF, DOCX, DOC, PNG, JPEG), whitelist ekstensi, pembatasan ukuran maksimal 15 MB, dan sanitasi nama folder guna mencegah *path traversal*.
+- **Mitigasi BOLA / IDOR:** Pengamanan otorisasi bertingkat (`canManageProker`, `canReviewProkerFinance`) pada notula rapat, proposal, LPJ, berkas kepanitiaan, dan relasi section halaman CMS.
+- **Privasi Pengaduan Whistleblower:** Otorisasi mutasi dan penghapusan aspirasi, proteksi privasi PIN pelacak dan nomor kontak pelapor, serta rate limiting pada tracking publik untuk mencegah serangan brute-force.
+- **Mitigasi Denial of Service (DoS):** Pembatasan dimensi pembangkitan QR Code (50 - 1000 px), batas panjang karakter teks, rate limiting pada ekspor data (Surat & Proker) dan pengunggahan berkas, serta eliminasi instansiasi koneksi Prisma ganda.
+- **Pencegahan XSS & Injeksi Skema:** Pemblokiran skema `javascript:` pada seluruh input URL berkas, galeri, foto kegiatan, dan template sertifikat.
+
 ## [1.1.0] - 2026-10-24
 
 ### Added

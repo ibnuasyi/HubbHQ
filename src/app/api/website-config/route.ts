@@ -7,10 +7,14 @@ import { auth } from '@/lib/auth'
 // GET /api/website-config - Get all config or single key
 export async function GET(request: NextRequest) {
   try {
+    const session = await auth()
+    const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
+    const isAdmin = roleName === 'admin'
+    const isTreasurer = ['admin', 'bendahara', 'ketua'].includes(roleName)
+
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
     const category = searchParams.get('category')
-    const isPublic = searchParams.get('public')
 
     // If specific key requested
     if (key) {
@@ -22,11 +26,35 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Config not found' }, { status: 404 })
       }
 
-      return NextResponse.json({ data: config })
+      // Security: If config is not public, require admin authentication
+      if (!config.isPublic && !isAdmin) {
+        return NextResponse.json({ error: 'Forbidden: Konfigurasi bersifat rahasia' }, { status: 403 })
+      }
+
+      // Mask sensitive credentials if accessing payment configs without treasurer/admin privileges
+      let safeValue = config.value
+      if (key === 'qris_payment_config' && !isTreasurer && safeValue && typeof safeValue === 'object') {
+        const val = safeValue as any
+        safeValue = {
+          ...val,
+          gateway: {
+            ...(val.gateway || {}),
+            apiKey: val.gateway?.apiKey ? '********' : '',
+            webhookSecret: '********',
+          },
+        }
+      }
+
+      return NextResponse.json({ data: { ...config, value: safeValue } })
     }
 
-    // Get all configs (public endpoint - no auth required)
+    // Get all configs
     const where: any = {}
+
+    // Security: Only admins can list private system configs
+    if (!isAdmin) {
+      where.isPublic = true
+    }
 
     // Filter by category
     if (category) {
@@ -38,15 +66,28 @@ export async function GET(request: NextRequest) {
       orderBy: { key: 'asc' },
     })
 
-    // Transform to key-value object
+    // Transform to key-value object with sensitive credential masking
     const configData: Record<string, any> = {}
-    configs.forEach((config) => {
-      configData[config.key] = config.value
+    const safeConfigs = configs.map((config) => {
+      let safeValue = config.value
+      if (config.key === 'qris_payment_config' && !isTreasurer && safeValue && typeof safeValue === 'object') {
+        const val = safeValue as any
+        safeValue = {
+          ...val,
+          gateway: {
+            ...(val.gateway || {}),
+            apiKey: val.gateway?.apiKey ? '********' : '',
+            webhookSecret: '********',
+          },
+        }
+      }
+      configData[config.key] = safeValue
+      return { ...config, value: safeValue }
     })
 
     return NextResponse.json({
       data: configData,
-      configs: configs,
+      configs: safeConfigs,
     })
   } catch (error) {
     console.error('Error fetching website config:', error)

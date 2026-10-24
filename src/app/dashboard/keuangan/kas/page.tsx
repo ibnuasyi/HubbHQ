@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Check, X, Loader2, User, Search, Plus } from 'lucide-react'
+import { ArrowLeft, Check, X, Loader2, User, Search, Plus, QrCode, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -30,6 +30,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { QrisConfigModal } from '@/components/keuangan/qris-config-modal'
+import { QrisPaymentModal } from '@/components/keuangan/qris-payment-modal'
 
 interface KasPayment {
   id: string
@@ -39,6 +41,10 @@ interface KasPayment {
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   proof: string | null
   notes: string | null
+  paymentMethod?: string | null
+  paymentRef?: string | null
+  paidAmount?: string | null
+  paidAt?: string | null
   user: {
     id: string
     name: string | null
@@ -72,6 +78,12 @@ export default function KasAnggotaPage() {
   const [totalPages, setTotalPages] = React.useState(1)
   const [total, setTotal] = React.useState(0)
   const [actionLoading, setActionLoading] = React.useState<string | null>(null)
+
+  // QRIS Modals state
+  const [openQrisConfig, setOpenQrisConfig] = React.useState(false)
+  const [openQrisPay, setOpenQrisPay] = React.useState(false)
+  const [payMonth, setPayMonth] = React.useState<number>(new Date().getMonth() + 1)
+  const [payYear, setPayYear] = React.useState<number>(new Date().getFullYear())
 
   const limit = 20
 
@@ -140,18 +152,40 @@ export default function KasAnggotaPage() {
             Kembali
           </Link>
         </Button>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold">Kas Anggota</h1>
             <p className="text-muted-foreground">
-              Kelola pembayaran kas anggota
+              Kelola pembayaran kas anggota & integrasi QRIS otomatis
             </p>
           </div>
-          {pendingCount > 0 && (
-            <Badge variant="destructive" className="text-sm px-3 py-1">
-              {pendingCount} menunggu persetujuan
-            </Badge>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {pendingCount > 0 && (
+              <Badge variant="destructive" className="text-sm px-3 py-1 mr-2">
+                {pendingCount} menunggu persetujuan
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpenQrisConfig(true)}
+            >
+              <Settings className="mr-1.5 h-4 w-4" />
+              Pengaturan QRIS
+            </Button>
+            <Button
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => {
+                setPayMonth(new Date().getMonth() + 1)
+                setPayYear(new Date().getFullYear())
+                setOpenQrisPay(true)
+              }}
+            >
+              <QrCode className="mr-1.5 h-4 w-4" />
+              Bayar Kas via QRIS
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -222,8 +256,17 @@ export default function KasAnggotaPage() {
                       </Avatar>
                       <div>
                         <p className="font-medium">{kas.user.name || kas.user.email}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {monthNames[kas.month - 1]} {kas.year}
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+                          <span>{monthNames[kas.month - 1]} {kas.year}</span>
+                          {kas.paymentMethod && (
+                            <span className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded border">
+                              {kas.paymentMethod === 'GATEWAY_QRIS'
+                                ? 'QRIS Gateway'
+                                : kas.paymentMethod === 'MANDIRI_QRIS'
+                                ? 'QRIS Mandiri'
+                                : 'Manual'}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -312,6 +355,22 @@ export default function KasAnggotaPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modals QRIS */}
+      <QrisConfigModal
+        open={openQrisConfig}
+        onOpenChange={setOpenQrisConfig}
+      />
+
+      <QrisPaymentModal
+        open={openQrisPay}
+        onOpenChange={setOpenQrisPay}
+        month={payMonth}
+        year={payYear}
+        onSuccess={() => {
+          fetchKasPayments()
+        }}
+      />
     </div>
   )
 }

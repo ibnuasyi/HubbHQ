@@ -2,11 +2,12 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server'
 import { CMSRevalidation } from '@/lib/revalidate'
+import { auth, hasPermission } from '@/lib/auth'
 
 /**
  * POST /api/revalidate
  * Secure cache revalidation endpoint
- * Only allows whitelisted paths/tags
+ * Only allows whitelisted paths/tags and authorized callers
  */
 
 // Whitelist of allowed paths for revalidation
@@ -21,6 +22,37 @@ const ALLOWED_PATHS = [
 
 export async function POST(request: Request) {
   try {
+    // 1. Verify authorization (Secret header or Admin/Editor session)
+    const secretHeader =
+      request.headers.get('x-revalidate-secret') ||
+      request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+      ''
+    const configuredSecret = process.env.REVALIDATE_SECRET || process.env.NEXTAUTH_SECRET
+
+    const isSecretValid =
+      Boolean(configuredSecret) &&
+      Boolean(secretHeader.trim()) &&
+      secretHeader.trim() === configuredSecret?.trim()
+
+    let isAuthorized = isSecretValid
+    if (!isAuthorized) {
+      const session = await auth()
+      if (session?.user?.id) {
+        const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+        isAuthorized =
+          ['admin', 'ketua'].includes(roleName) ||
+          (await hasPermission(session.user.id, 'website.edit')) ||
+          (await hasPermission(session.user.id, 'settings.edit'))
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Autentikasi pengurus atau secret token diperlukan untuk revalidasi cache' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { paths, tags, type } = body
 

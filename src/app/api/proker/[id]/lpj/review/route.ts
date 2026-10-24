@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { canReviewProkerFinance } from '@/lib/proker-auth'
 
 // PATCH /api/proker/[id]/lpj/review - Approve or Reject LPJ
 export async function PATCH(
@@ -17,14 +17,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const canReview =
-      (await hasPermission(session.user.id, 'proker.edit')) ||
-      session.user.role?.name === 'ADMIN' ||
-      (session.user as any).role === 'ADMIN'
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canReview = await canReviewProkerFinance(session.user.id, roleName)
 
     if (!canReview) {
       return NextResponse.json(
-        { error: 'Anda tidak memiliki hak akses untuk meninjau LPJ ini.' },
+        { error: 'Anda tidak memiliki hak akses untuk meninjau atau mengesahkan LPJ ini.' },
         { status: 403 }
       )
     }
@@ -59,13 +57,21 @@ export async function PATCH(
       where: { programKerjaId: prokerId },
       include: {
         programKerja: {
-          select: { id: true, title: true, divisiId: true },
+          select: { id: true, title: true, divisiId: true, picId: true },
         },
       },
     })
 
     if (!lpj) {
       return NextResponse.json({ error: 'LPJ belum dibuat untuk program kerja ini.' }, { status: 404 })
+    }
+
+    // Separation of Duties: PIC of proker cannot approve their own LPJ unless admin/ketua
+    if (lpj.programKerja?.picId === session.user.id && !['admin', 'ketua'].includes(roleName)) {
+      return NextResponse.json(
+        { error: 'Konflik Kepentingan: Sebagai PIC pelaksana kegiatan, Anda tidak dapat mengesahkan LPJ Anda sendiri.' },
+        { status: 403 }
+      )
     }
 
     const now = new Date()

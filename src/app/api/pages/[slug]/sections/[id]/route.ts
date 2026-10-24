@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // PATCH /api/pages/[slug]/sections/[id] - Update a single section (admin only)
 export async function PATCH(
@@ -16,12 +14,38 @@ export async function PATCH(
     const { authorized, response } = await requireAdmin(request)
     if (!authorized) return response!
 
-    const { id } = await params
+    const { slug, id } = await params
+
+    const page = await prisma.page.findUnique({
+      where: { slug },
+      select: { id: true }
+    })
+
+    if (!page) {
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
+    }
+
+    const existingSection = await prisma.pageSection.findFirst({
+      where: { id, pageId: page.id }
+    })
+
+    if (!existingSection) {
+      return NextResponse.json({ error: 'Section not found on this page' }, { status: 404 })
+    }
+
     const body = await request.json()
+    const updateData: any = {}
+
+    if (body.sectionKey !== undefined) updateData.sectionKey = String(body.sectionKey).trim()
+    if (body.title !== undefined) updateData.title = body.title ? String(body.title).trim() : null
+    if (body.config !== undefined) updateData.config = typeof body.config === 'object' ? body.config : {}
+    if (body.content !== undefined) updateData.content = body.content ? String(body.content) : null
+    if (body.order !== undefined) updateData.order = Number(body.order)
+    if (body.isEnabled !== undefined) updateData.isEnabled = Boolean(body.isEnabled)
 
     const section = await prisma.pageSection.update({
       where: { id },
-      data: body
+      data: updateData
     })
 
     return NextResponse.json(section)
@@ -44,7 +68,24 @@ export async function DELETE(
     const { authorized, response } = await requireAdmin(request)
     if (!authorized) return response!
 
-    const { id } = await params
+    const { slug, id } = await params
+
+    const page = await prisma.page.findUnique({
+      where: { slug },
+      select: { id: true }
+    })
+
+    if (!page) {
+      return NextResponse.json({ error: 'Page not found' }, { status: 404 })
+    }
+
+    const existingSection = await prisma.pageSection.findFirst({
+      where: { id, pageId: page.id }
+    })
+
+    if (!existingSection) {
+      return NextResponse.json({ error: 'Section not found on this page' }, { status: 404 })
+    }
 
     await prisma.pageSection.delete({
       where: { id }

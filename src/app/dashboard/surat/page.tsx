@@ -49,6 +49,9 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { DynamicForm } from '@/components/dynamic-form'
+import { DisposisiModal, DisposisiData } from '@/components/surat/disposisi-modal'
+import { LembarDisposisiPrint } from '@/components/surat/lembar-disposisi-print'
+import { TindakLanjutDialog } from '@/components/surat/tindak-lanjut-dialog'
 
 interface Surat {
   id: string
@@ -63,6 +66,7 @@ interface Surat {
   requester: { id: string; name: string | null }
   approver: { id: string; name: string | null } | null
   jenisSurat: { id: string; name: string; code: string } | null
+  disposisi?: DisposisiData[]
   qrCodeUrl: string | null
   qrCodeDataUrl?: string
   createdAt: string
@@ -107,6 +111,14 @@ export default function SuratPage() {
   // Export state
   const [exporting, setExporting] = React.useState(false)
   const [exportYear, setExportYear] = React.useState(new Date().getFullYear().toString())
+
+  // Disposisi states
+  const [showDisposisiModal, setShowDisposisiModal] = React.useState(false)
+  const [selectedSuratDisposisi, setSelectedSuratDisposisi] = React.useState<Surat | null>(null)
+  const [showPrintDisposisi, setShowPrintDisposisi] = React.useState(false)
+  const [selectedDisposisiPrint, setSelectedDisposisiPrint] = React.useState<DisposisiData | null>(null)
+  const [showTindakLanjut, setShowTindakLanjut] = React.useState(false)
+  const [selectedDisposisiTindakLanjut, setSelectedDisposisiTindakLanjut] = React.useState<DisposisiData | null>(null)
 
   // Form state
   const [formType, setFormType] = React.useState<'MASUK' | 'KELUAR'>('MASUK')
@@ -471,72 +483,168 @@ export default function SuratPage() {
                         .map((s) => (
                           <div
                             key={s.id}
-                            className="flex items-start justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                            className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
                           >
-                            <div className="flex items-start gap-3">
-                              <button
-                                onClick={() => handleViewDetail(s)}
-                                className="flex items-start gap-3 flex-1 text-left hover:bg-muted/50 p-2 -m-2 rounded-lg transition-colors"
-                              >
-                                <div className={`p-2 rounded-full ${
-                                  s.type === 'MASUK' ? 'bg-blue-100' : 'bg-green-100'
-                                }`}>
-                                  {s.type === 'MASUK' ? (
-                                    <ArrowDownLeft className="h-4 w-4 text-blue-600" />
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                <button
+                                  onClick={() => handleViewDetail(s)}
+                                  className="flex items-start gap-3 flex-1 text-left hover:bg-muted/50 p-2 -m-2 rounded-lg transition-colors"
+                                >
+                                  <div className={`p-2 rounded-full ${
+                                    s.type === 'MASUK' ? 'bg-blue-100' : 'bg-green-100'
+                                  }`}>
+                                    {s.type === 'MASUK' ? (
+                                      <ArrowDownLeft className="h-4 w-4 text-blue-600" />
+                                    ) : (
+                                      <ArrowUpRight className="h-4 w-4 text-green-600" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{s.subject}</p>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      {s.jenisSurat && (
+                                        <Badge variant="outline">{s.jenisSurat.code}</Badge>
+                                      )}
+                                      {s.letterNumber && (
+                                        <span>No: {s.letterNumber}</span>
+                                      )}
+                                      {s.sender && <span>Pengirim: {s.sender}</span>}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {new Date(s.createdAt).toLocaleDateString('id-ID')}
+                                    </p>
+                                  </div>
+                                </button>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                {getStatusBadge(s.status)}
+                                {/* Approval buttons for pending surat */}
+                                {s.status === 'PENDING_APPROVAL' && (
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-green-600 hover:text-green-700"
+                                      onClick={() => handleApprove(s.id)}
+                                    >
+                                      Setuju
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-red-600 hover:text-red-700"
+                                      onClick={() => handleReject(s.id)}
+                                    >
+                                      Tolak
+                                    </Button>
+                                  </div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleShowQrCode(s)}
+                                  className="text-muted-foreground hover:text-indigo-600"
+                                >
+                                  <QrCode className="h-4 w-4 mr-1" />
+                                  QR
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Lembar Disposisi khusus Surat Masuk */}
+                            {s.type === 'MASUK' && (
+                              <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center justify-between gap-2">
+                                {s.disposisi && s.disposisi.length > 0 ? (
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={
+                                        s.disposisi[0].sifat === 'SANGAT_SEGERA'
+                                          ? 'bg-red-50 text-red-700 border-red-200'
+                                          : s.disposisi[0].sifat === 'SEGERA'
+                                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                          : 'bg-slate-50 text-slate-700 border-slate-200'
+                                      }
+                                    >
+                                      Disposisi: {s.disposisi[0].sifat.replace('_', ' ')}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      Tujuan:{' '}
+                                      <strong className="text-foreground">
+                                        {s.disposisi[0].tujuanDivisi?.name ||
+                                          s.disposisi[0].tujuanUser?.name ||
+                                          s.disposisi[0].tujuanCustom ||
+                                          'Pelaksana'}
+                                      </strong>
+                                    </span>
+                                    <Badge
+                                      className={
+                                        s.disposisi[0].status === 'SELESAI'
+                                          ? 'bg-emerald-100 text-emerald-800'
+                                          : s.disposisi[0].status === 'SEDANG_DIPROSES'
+                                          ? 'bg-amber-100 text-amber-800'
+                                          : 'bg-slate-100 text-slate-800'
+                                      }
+                                    >
+                                      {s.disposisi[0].status === 'SELESAI'
+                                        ? 'Selesai'
+                                        : s.disposisi[0].status === 'SEDANG_DIPROSES'
+                                        ? 'Sedang Berjalan'
+                                        : 'Belum Diproses'}
+                                    </Badge>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground italic">
+                                    Belum ada lembar disposisi pimpinan
+                                  </span>
+                                )}
+
+                                <div className="flex items-center gap-1.5 ml-auto">
+                                  {s.disposisi && s.disposisi.length > 0 ? (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 text-xs"
+                                        onClick={() => {
+                                          setSelectedSuratDisposisi(s)
+                                          setSelectedDisposisiPrint(s.disposisi![0])
+                                          setShowPrintDisposisi(true)
+                                        }}
+                                      >
+                                        <FileText className="h-3.5 w-3.5 mr-1" />
+                                        Lembar Disposisi
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        className="h-7 text-xs"
+                                        onClick={() => {
+                                          setSelectedDisposisiTindakLanjut(s.disposisi![0])
+                                          setShowTindakLanjut(true)
+                                        }}
+                                      >
+                                        Update Tindak Lanjut
+                                      </Button>
+                                    </>
                                   ) : (
-                                    <ArrowUpRight className="h-4 w-4 text-green-600" />
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 text-xs border-primary text-primary hover:bg-primary/5"
+                                      onClick={() => {
+                                        setSelectedSuratDisposisi(s)
+                                        setShowDisposisiModal(true)
+                                      }}
+                                    >
+                                      <Plus className="h-3.5 w-3.5 mr-1" />
+                                      Buat Disposisi
+                                    </Button>
                                   )}
                                 </div>
-                                <div>
-                                  <p className="font-medium">{s.subject}</p>
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    {s.jenisSurat && (
-                                      <Badge variant="outline">{s.jenisSurat.code}</Badge>
-                                    )}
-                                    {s.letterNumber && (
-                                      <span>No: {s.letterNumber}</span>
-                                    )}
-                                    {s.sender && <span>Pengirim: {s.sender}</span>}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {new Date(s.createdAt).toLocaleDateString('id-ID')}
-                                  </p>
-                                </div>
-                              </button>
-                            </div>
-                            <div className="flex flex-col items-end gap-2">
-                              {getStatusBadge(s.status)}
-                              {/* Approval buttons for pending surat */}
-                              {s.status === 'PENDING_APPROVAL' && (
-                                <div className="flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-green-600 hover:text-green-700"
-                                    onClick={() => handleApprove(s.id)}
-                                  >
-                                    Setuju
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 hover:text-red-700"
-                                    onClick={() => handleReject(s.id)}
-                                  >
-                                    Tolak
-                                  </Button>
-                                </div>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleShowQrCode(s)}
-                                className="text-muted-foreground hover:text-indigo-600"
-                              >
-                                <QrCode className="h-4 w-4 mr-1" />
-                                QR
-                              </Button>
-                            </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                     </div>
@@ -902,6 +1010,32 @@ export default function SuratPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Disposisi Surat Masuk */}
+      <DisposisiModal
+        open={showDisposisiModal}
+        onOpenChange={setShowDisposisiModal}
+        surat={selectedSuratDisposisi}
+        onSuccess={() => {
+          fetchSurat()
+        }}
+      />
+
+      <LembarDisposisiPrint
+        open={showPrintDisposisi}
+        onOpenChange={setShowPrintDisposisi}
+        disposisi={selectedDisposisiPrint}
+        surat={selectedSuratDisposisi}
+      />
+
+      <TindakLanjutDialog
+        open={showTindakLanjut}
+        onOpenChange={setShowTindakLanjut}
+        disposisi={selectedDisposisiTindakLanjut}
+        onSuccess={() => {
+          fetchSurat()
+        }}
+      />
     </div>
   )
 }

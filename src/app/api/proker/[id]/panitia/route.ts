@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { canManageProker } from '@/lib/proker-auth'
 
 // GET /api/proker/[id]/panitia - List panitia
 export async function GET(
@@ -53,9 +53,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, id)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki akses mengelola kepanitiaan proker ini' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -110,14 +111,16 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, id)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki akses mengelola kepanitiaan proker ini' }, { status: 403 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -125,6 +128,14 @@ export async function DELETE(
 
     if (!panitiaId) {
       return NextResponse.json({ error: 'ID Panitia diperlukan' }, { status: 400 })
+    }
+
+    const existingPanitia = await prisma.panitiaProker.findFirst({
+      where: { id: panitiaId, programKerjaId: id },
+    })
+
+    if (!existingPanitia) {
+      return NextResponse.json({ error: 'Panitia tidak ditemukan pada program kerja ini' }, { status: 404 })
     }
 
     await prisma.panitiaProker.delete({

@@ -10,116 +10,130 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?style=flat&logo=mysql)](https://mysql.com/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://docker.com/)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?style=flat&logo=node.js)](https://nodejs.org/)
-[![NextAuth](https://img.shields.io/badge/NextAuth-v5-382554?style=flat&logo=nodedotjs)](https://authjs.dev/)
 
-> **HubbHQ** - Sistem Informasi Organisasi Modern yang powerful dan mudah digunakan untuk mengelola organisasi Anda.
+> **HubbHQ** adalah Sistem Informasi & Markas Digital modern open-source yang dirancang khusus untuk memenuhi kebutuhan tata kelola organisasi di Indonesia (BEM, Himpunan Mahasiswa, Karang Taruna, OKP, Paguyuban, dan Yayasan).
 
-## Screenshot Aplikasi
+---
 
-Berikut adalah dokumentasi tampilan antarmuka sistem yang telah terpasang dan siap digunakan:
+## Screenshot Antarmuka Modul Dashboard
 
-| Halaman Depan Publik | Halaman Login Autentikasi | Dashboard Utama |
-|:--------------------:|:-------------------------:|:---------------:|
-| ![Landing Page](public/screenshots/01-landing-page.png) | ![Login](public/screenshots/02-login-page.png) | ![Dashboard](public/screenshots/03-dashboard.png) |
+| Dashboard Utama | Tata Kelola Proker & LPJ | Studio E-Sertifikat |
+| :---: | :---: | :---: |
+| ![Dashboard Utama](public/screenshots/01-dashboard.png) | ![Tata Kelola Proker](public/screenshots/02-proker.png) | ![Studio E-Sertifikat](public/screenshots/03-sertifikat.png) |
 
-| Manajemen Anggota | Keuangan & Kas Organisasi | Kalender & Agenda Kegiatan |
-|:-----------------:|:-------------------------:|:--------------------------:|
-| ![Anggota](public/screenshots/04-anggota.png) | ![Keuangan](public/screenshots/05-keuangan.png) | ![Kalender](public/screenshots/06-kalender.png) |
+| Persuratan & Verifikasi QR | Keuangan & Kas Organisasi | Manajemen Anggota & KTA |
+| :---: | :---: | :---: |
+| ![Persuratan](public/screenshots/04-surat.png) | ![Keuangan & Kas](public/screenshots/05-keuangan.png) | ![Direktori Anggota](public/screenshots/06-anggota.png) |
 
-| Persuratan & QR Code | Pengaturan Website CMS | Pusat Pengaturan Sistem |
-|:--------------------:|:----------------------:|:-----------------------:|
-| ![Surat](public/screenshots/07-surat.png) | ![Website Builder](public/screenshots/08-website-builder.png) | ![Pengaturan](public/screenshots/09-pengaturan.png) |
+| Open Recruitment Terpadu | Portal Aspirasi & Advokasi | Kaderisasi & Jenjang Diklat |
+| :---: | :---: | :---: |
+| ![Open Recruitment](public/screenshots/07-oprec.png) | ![Portal Aspirasi](public/screenshots/08-aspirasi.png) | ![Kaderisasi & Diklat](public/screenshots/09-kaderisasi.png) |
 
-> Seluruh 37 tangkapan layar halaman aplikasi (8 halaman publik dan 29 modul dashboard terproteksi) tersedia di folder [`public/screenshots/pages/`](public/screenshots/pages/) dan hasil audit fungsional otomatis dapat dilihat pada [`public/screenshots/audit-report.json`](public/screenshots/audit-report.json).
+| Jaringan Alumni & Dana Abadi | Risalah Sidang Musyawarah & SK |
+| :---: | :---: |
+| ![Direktori Alumni](public/screenshots/10-alumni.png) | ![Risalah Sidang](public/screenshots/11-sidang.png) |
 
-## Akun Bawaan (Default Credentials)
-
-Setelah menjalankan `npm run db:seed`, Anda dapat langsung masuk menggunakan akun default berikut:
-
-| Peran (Role) | Email | Password | Hak Akses |
-|--------------|-------|----------|-----------|
-| **Administrator** | `admin@siop.local` | `admin123` | Akses penuh ke seluruh fitur, pengaturan sistem, dan modul |
-| **Anggota** | `ahmad@siop.local` | `password123` | Akses dashboard anggota, profil, dan agenda kegiatan |
+---
 
 ## Fitur Utama
 
-### Autentikasi & Keamanan
-- Login dengan email dan password
-- Role-based Access Control (RBAC) dinamis
-- Permission system yang fleksibel
-- Two-factor authentication (via NextAuth)
-- Password hashing dengan bcrypt
-- Rate limiting untuk brute-force protection
+- **Tata Kelola Program Kerja (Proker):** Halaman mandiri per-kegiatan, checkpoint tahapan progres (kontras tinggi di Dark Mode), penugasan PIC, dan struktur panitia pelaksana (OC).
+- **Proposal Dana & Versioning (Git-Like):** Pengajuan anggaran berbasis PIC, review persetujuan/penolakan BPH, dan audit trail riwayat revisi proposal.
+- **Sistem LPJ 3 Kantong Dana:** Pembagian pos dana riil (`DANA_AJUAN`, `KAS_PROKER`, `DANA_LUAR`), opsi fleksibel alokasi surplus sisa kas (auto-jurnal kas umum atau apresiasi panitia), checklist kelaikan berkas fisik pra-sidang, dan ekspor LPJ otomatis ke PDF/Excel.
+- **Studio E-Sertifikat:** Desain visual canvas HD kustom (berbasis template blanko Canva/Photoshop), pemetaan koordinat dinamis `{Nama}`, `{Sebagai}`, `{Nomor}`, `{Tanggal}`, kode QR verifikasi publik, generate massal dari daftar nama, serta integrasi arsip langsung ke Object Storage (Cloudflare R2 / S3 / AList).
+- **E-Sertifikat Kepanitiaan Proker:** Terintegrasi penuh dengan Studio E-Sertifikat, penomoran baku otomatis (`001/SERT-OC/...`), verifikasi keabsahan publik, dan unduh piagam beresolusi tinggi.
+- **Open Recruitment (Oprec) Terpadu:** Portal pendaftaran publik ber-slug unik, pelacakan mandiri status seleksi calon anggota, manajemen verifikasi berkas & penilaian wawancara, serta konversi 1-klik pendaftar lulus menjadi anggota resmi.
+- **Portal Advokasi & Aspirasi Berstatus:** Kotak saran dan aduan publik (opsi anonim/terdata), penerbitan nomor tiket unik ber-token verifikasi, serta pemantauan progres tindak lanjut oleh pengurus/BPH.
+- **Kaderisasi & Jenjang Diklat/Dikpol:** Buku induk kaderisasi, pencatatan Nomor Registrasi Kader (NRK), jenjang kaderisasi berjenjang (Pra-Dasar, Dasar, Menengah, Lanjut), serta penerbitan STTPP/Sertifikat Kelulusan.
+- **Pengelolaan Jaringan Alumni & Dana Abadi:** Direktori pangkalan data alumni lintas angkatan, pelacakan karier/afiliasi profesional, pencatatan kontribusi donasi dana abadi program organisasi, dan transparansi laporan kas alumni.
+- **Risalah Persidangan Musyawarah & Konsideran SK:** Workbench sidang pleno/musyawarah (Musyang/Mubes/Raker), notulensi kronologis waktu nyata, dan generator Surat Keputusan (SK/TAP) berkonsideran lengkap (*Menimbang, Mengingat, Memperhatikan, Memutuskan*) siap cetak resmi ber-QR.
+- **Persuratan & QR HMAC Verification:** Generator surat dinamis, penomoran otomatis, stempel tanda tangan, dan verifikasi keaslian surat via scan QR publik.
+- **Keuangan & Iuran Kas Anggota:** Pencatatan kas masuk/keluar, approval bendahara, rekapitulasi saldo, dan ekspor laporan keuangan.
+- **Kalender Kegiatan Organisasi:** Integrasi jadwal agenda dan timeline program kerja berbasis FullCalendar.
+- **Website CMS Builder:** Pembuat portal publik dinamis berbasis drag-and-drop dengan tema modern.
+- **Keamanan Berstandar Tinggi:** NextAuth v5, Role-Based Access Control (RBAC), perlindungan brute-force rate-limiting, dan integrasi spreadsheet aman via ExcelJS.
 
-### Manajemen Anggota
-- CRUD anggota lengkap
-- Upload foto profil dan TTD digital
-- Data diri lengkap (tempat/tanggal lahir, alamat, kontak)
-- Filter dan pencarian cepat
-- Export data anggota
+---
 
-### Divisi & Struktur
-- CRUD divisi dengan warna kustom
-- Manajemen anggota divisi
-- Position/jabatan di divisi
-- Hierarki wilayah (Pusat, Korwil, dll)
+## Rekomendasi Spesifikasi Server & Hosting
 
-### Program Kerja
-- CRUD program kerja per divisi
-- Checkpoint system (progress tracking)
-- PIC (Person In Charge) assignment
-- Timeline dan deadline
-- Export laporan proker
+Agar HubbHQ berjalan lancar, cepat, dan tidak mengalami penurunan performa atau server mogok (*crash / Out of Memory*), berikut adalah panduan kapasitas server:
 
-### Keuangan
-- Manajemen kas anggota (iuran bulanan)
-- Kategori: kas, sumbangan, bisnis
-- Approval system oleh bendahara
-- Upload bukti transfer
-- Rekap dan export laporan keuangan
+### Tabel Kebutuhan Hardware
 
-### Kalender
-- Agenda dan acara organisasi
-- FullCalendar integration
-- Integrasi dengan program kerja
-- Multiple views (Month, Week, Day)
-- Drag & drop untuk reschedule
+| Kategori | Spesifikasi Minimal Server | Estimasi Beban Pengguna | Rekomendasi Provider |
+| :--- | :--- | :--- | :--- |
+| **Tier 1: Minimal (Starter / Budget Hemat)** | • **2 vCPU**<br>• **2 GB RAM** (+ Wajib 2 GB Swap)<br>• **25 GB SSD / NVMe** | 1 organisasi kecil (20–100 anggota), 10–25 pengguna aktif bersamaan (*concurrent*). | DigitalOcean Basic, Hetzner CX22, atau VPS Lokal (Biznet GIO / IDCloudHost / DomaiNesia). |
+| **Tier 2: Standar Rekomendasi (Sweet Spot Menengah)** | • **2–4 vCPU**<br>• **4 GB RAM** (+ 2 GB Swap)<br>• **50 GB NVMe Storage** | BEM Fakultas, Ormawa Kampus, Karang Taruna, OKP (100–500 anggota). Aman saat rapat serentak atau ekspor dokumen massal. | Hetzner CPX31, DigitalOcean Standard, Contabo Cloud VPS S. |
+| **Tier 3: Skala Besar / Institusi (Kampus / Nasional)** | • **4–8 vCPU**<br>• **8 GB–16 GB RAM**<br>• **Managed MySQL Terpisah** | Ormawa Universitas, Organisasi Kemasyarakatan Nasional (>1.000 anggota, ribuan berkas arsip). | AWS EC2 / Lightsail, Google Cloud Compute Engine, atau Alibaba Cloud. |
 
-### Surat Masuk/Keluar
-- Template surat yang bisa dikustomisasi
-- Form dinamis per jenis surat
-- Generate surat otomatis
-- Penomoran otomatis (format: {prefix}/{kode}/{tahun}/{nomor})
-- QR code autentikasi surat
-- Approval flow sekretaris
-- Halaman verifikasi publik
+### Praktik Konfigurasi Wajib agar Tidak Lambat & Patah-patah:
 
-### Mini Library
-- Upload buku (PDF/EPUB)
-- Kategori dan tags
-- PDF reader built-in
-- View count & download count
+1. **Aktifkan Swap Memory (Minimal 2 GB - 4 GB):**
+   Pada VPS Linux, swap bertindak sebagai bantalan ketika pemrosesan PDF/Excel memuncak sehingga server tidak mati mendadak akibat *OOM Killer*.
+2. **Gunakan Next.js Standalone Build di Docker:**
+   Gunakan mode `output: 'standalone'` pada `next.config.js` untuk memangkas ukuran container dan menghemat pemakaian memori server.
+3. **Optimasi Buffer Pool MySQL (`my.cnf`):**
+   Atur `innodb_buffer_pool_size` sesuai kapasitas RAM (misal 512MB pada server 2GB, atau 1.5GB pada server 4GB) agar pembacaan relasi data proker dan keuangan langsung dari cache RAM.
+4. **Nginx Caching untuk Aset Statis:**
+   Pastikan reverse proxy Nginx meng-cache folder `/_next/static/` dan file gambar publik dengan `Cache-Control: public, max-age=31536000, immutable`.
+5. **Gunakan Object Storage untuk Berkas Upload:**
+   Untuk bukti transfer, proposal, dan nota fisik, sambungkan ke cloud storage S3-compatible seperti Cloudflare R2 (gratis 10GB dan tanpa biaya egress bandwidth) atau AWS S3/MinIO/AList agar disk server tidak cepat penuh.
 
-### Website Builder
-- Multiple themes (organ2-style, default)
-- Drag & drop page builder
-- WYSIWYG editor (Tiptap)
-- Section-based design
-- Customizable colors
+---
 
-### Fitur Tambahan
-- Proposal Dana dengan approval workflow
-- Notifikasi real-time
-- Audit log system
-- Soft deletes untuk keamanan data
-- Responsive design (mobile-friendly)
+## Panduan Instalasi Cepat (Quick Start)
 
-## Cara Kerja & Arsitektur Sistem
+### Opsi 1: Menggunakan Docker Compose (Direkomendasikan)
 
-HubbHQ dibangun dengan arsitektur modern berbasis Next.js App Router, Prisma ORM, dan NextAuth v5. Sistem memisahkan antara portal publik yang ramah mesin pencari (SEO-friendly) dan dashboard internal terproteksi yang dilengkapi Role-Based Access Control (RBAC).
+```bash
+# 1. Clone repository
+git clone https://github.com/ibnuasyi/HubbHQ.git
+cd HubbHQ
 
-### 1. Diagram Arsitektur Tingkat Tinggi
+# 2. Siapkan file environment
+cp .env.example .env
+
+# 3. Jalankan container di background
+docker-compose up -d
+
+# 4. Buka browser di http://localhost:3000/setup
+```
+
+### Opsi 2: Instalasi Manual
+
+```bash
+# 1. Install dependencies
+npm install
+
+# 2. Konfigurasi environment
+cp .env.example .env
+
+# 3. Sinkronisasi database
+npm run db:generate
+npm run db:push
+npm run db:seed
+
+# 4. Jalankan development server
+npm run dev
+```
+
+Buka [http://localhost:3000](http://localhost:3000) di peramban Anda.
+
+---
+
+## Akun Bawaan (Default Credentials)
+
+Setelah menjalankan `npm run db:seed`, Anda dapat masuk menggunakan akun default berikut:
+
+| Peran (Role) | Email | Password | Hak Akses |
+| :--- | :--- | :--- | :--- |
+| **Administrator** | `admin@siop.local` | `admin123` | Akses penuh ke seluruh konfigurasi, master data, dan modul sistem |
+| **Anggota** | `ahmad@siop.local` | `password123` | Akses dashboard anggota, profil, dan agenda kegiatan |
+
+---
+
+## Arsitektur Sistem
 
 ```mermaid
 flowchart TD
@@ -135,311 +149,52 @@ flowchart TD
         AuthCheck["NextAuth v5 Session & Token Validator"]
     end
 
-    subgraph Inti["3. Logika Aplikasi & App Router"]
+    subgraph Inti["3. Logika Aplikasi & Modul"]
         PublicRoutes["Portal Publik (/berita, /galeri, /tentang, /verify)"]
         DashboardApp["Dashboard Organisasi (/dashboard)"]
-        CMSBuilder["Website & Theme Builder Engine"]
-        APILayer["REST API Endpoints (/api/*)"]
-    end
-
-    subgraph Modul["4. Modul Fungsional"]
+        ModProker["Proker, Proposal & LPJ 3 Kantong Dana"]
         ModSurat["Persuratan & QR HMAC Verification"]
-        ModKeuangan["Keuangan, Kas Anggota & Approval"]
-        ModProker["Program Kerja & Checkpoints"]
-        ModAnggota["Direktori Anggota & Struktur Organisasi"]
-        ModKalender["Kalender Agenda & FullCalendar Sync"]
+        ModKeuangan["Keuangan, Kas Anggota & Transaksi"]
     end
 
-    subgraph DataStore["5. Lapisan Data & Penyimpanan"]
+    subgraph DataStore["4. Lapisan Data & Penyimpanan"]
         PrismaORM["Prisma ORM 5.x"]
         Database[("MySQL 8.x Database")]
-        StorageSystem["Storage Provider (Local / S3 / R2)"]
+        StorageSystem["Storage Provider (Local / S3 / R2 / MinIO)"]
     end
 
-    PublicUser -->|Akses Halaman Terbuka| Middleware
-    MemberUser -->|Login & Autentikasi| Middleware
-    AdminUser -->|Kelola Konfigurasi| Middleware
+    PublicUser --> Middleware
+    MemberUser --> Middleware
+    AdminUser --> Middleware
 
-    Middleware --> RateLimiter
-    RateLimiter --> AuthCheck
+    Middleware --> RateLimiter --> AuthCheck
+    AuthCheck --> PublicRoutes
+    AuthCheck --> DashboardApp
+    DashboardApp --> ModProker
+    DashboardApp --> ModSurat
+    DashboardApp --> ModKeuangan
 
-    AuthCheck -->|Publik / Terverifikasi| PublicRoutes
-    AuthCheck -->|Sesi Login Valid| DashboardApp
-    AuthCheck -->|Akses API Terproteksi| APILayer
-
-    DashboardApp --> Modul
-    CMSBuilder --> PublicRoutes
-    APILayer --> Modul
-
-    Modul --> PrismaORM
-    Modul --> StorageSystem
+    ModProker --> PrismaORM
+    ModSurat --> PrismaORM
+    ModKeuangan --> PrismaORM
+    DashboardApp --> StorageSystem
     PrismaORM --> Database
 ```
 
-### 2. Diagram Alur Autentikasi & Otorisasi Berjenjang (RBAC)
+---
 
-```mermaid
-flowchart TD
-    A["Pengguna Masuk ke /login"] --> B["Kirim Email & Password"]
-    B --> C{"Pemeriksaan Rate Limit"}
-    C -->|"Percobaan > 5 Kali"| D["Kunci Sementara 15 Menit"]
-    C -->|"Aman"| E["Verifikasi Kredensial via Prisma & Bcrypt"]
-    E -->|"Kredensial Salah"| F["Tampilkan Pesan Error"]
-    E -->|"Kredensial Valid"| G["Generate Sesi NextAuth"]
-    G --> H["Pengalihan ke /dashboard"]
-    H --> I{"Pemeriksaan Hak Akses (RBAC)"}
-    I -->|"Role: Administrator"| J["Akses Penuh: Master Data, CMS, Persetujuan & Log"]
-    I -->|"Role: Pengurus / BPH"| K["Akses Terbatas: Persuratan, Keuangan, & Program Kerja"]
-    I -->|"Role: Anggota"| L["Akses Personal: Profil, Iuran Kas, & Agenda Kegiatan"]
-```
+## Roadmap & Perubahan
 
-### 3. Diagram Alur Persuratan & Verifikasi QR Code
-
-```mermaid
-flowchart LR
-    A["Pemohon / Anggota"] -->|"1. Isi Form Dinamis"| B["Sistem Persuratan"]
-    B -->|"2. Antrean Masuk"| C["Sekretaris Organisasi"]
-    C -->|"3. Review & Setujui"| D["Penomoran Otomatis"]
-    D -->|"4. Beri Tanda Tangan"| E["Generate QR HMAC Signature"]
-    E -->|"5. Render PDF Resmi"| F["Dokumen Terbit"]
-    F -->|"6. Scan QR Code"| G["Halaman Verifikasi Publik"]
-    G -->|"7. Cek Hash Kriptografi"| H["Status: Dokumen Asli & Valid"]
-```
-
-### 4. Diagram Alur Manajemen Keuangan & Kas Anggota
-
-```mermaid
-flowchart TD
-    M["Anggota Organisasi"] -->|"1. Bayar Iuran Bulanan / Donasi"| U["Unggah Bukti Transfer"]
-    U -->|"2. Simpan Catatan (Status: PENDING)"| T["Buku Kas & Transaksi"]
-    T -->|"3. Notifikasi Antrean Transaksi"| B["Bendahara Organisasi"]
-    B -->|"4. Verifikasi Bukti Transfer"| Decision{"Pemeriksaan Bendahara"}
-    Decision -->|"Sesuai"| App["Status: APPROVED"]
-    Decision -->|"Tidak Sesuai"| Rej["Status: REJECTED (Beri Catatan)"]
-    App -->|"5. Perbarui Saldo Otomatis"| Saldo["Rekapitulasi Saldo Kas"]
-    Saldo -->|"6. Cetak Laporan"| Rep["Laporan Keuangan (Excel / PDF)"]
-```
-
-## Panduan Cepat (Quick Start)
-
-### Prerequisites
-
-- Node.js 20.x atau lebih tinggi
-- npm atau yarn
-- MySQL 8.x atau MariaDB
-- Docker (opsional)
-
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/ibnuasyi/HubbHQ.git
-cd HubbHQ
-```
-
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Setup Environment
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` sesuai konfigurasi database Anda:
-
-```env
-DATABASE_URL="mysql://user:password@localhost:3306/hubbhq"
-NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-### 4. Setup Database
-
-```bash
-# Generate Prisma Client
-npm run db:generate
-
-# Push schema ke database
-npm run db:push
-
-# Setup awal (membuat admin, role, permission)
-# Buka browser dan akses http://localhost:3000/setup
-npm run dev
-```
-
-### 5. Jalankan Development Server
-
-```bash
-npm run dev
-```
-
-Buka [http://localhost:3000](http://localhost:3000) di browser.
-
-## Deployment Cloud - cicem.net
-
-Jika Anda ingin mendeploy aplikasi secara gratis untuk organisasi Anda, gunakan **[cicem.net](https://cicem.net)** - Platform hosting gratis untuk organisasi Indonesia.
-
-Keuntungan menggunakan cicem.net:
-- Gratis untuk organisasi nirlaba
-- Easy deployment dengan integrasi GitHub
-- Sertifikat SSL otomatis
-- Dukungan database MySQL
-- CDN global untuk performa optimal
-
-### Deploy ke cicem.net
-
-```bash
-# 1. Push kode ke GitHub
-git push origin main
-
-# 2. Buka https://cicem.net
-# 3. Connect dengan GitHub repo Anda
-# 4. Deploy otomatis!
-```
-
-## Deployment Docker
-
-### Menggunakan Docker Compose
-
-```bash
-# Build dan jalankan
-docker-compose up -d
-
-# Lihat logs
-docker-compose logs -f
-
-# Stop
-docker-compose down
-```
-
-### Manual Docker Build
-
-```bash
-# Build image
-docker build -t hubbhq .
-
-# Jalankan container
-docker run -d \
-  --name hubbhq \
-  -p 3000:3000 \
-  -e DATABASE_URL="mysql://host:3306/hubbhq" \
-  -e NEXTAUTH_SECRET="your-secret" \
-  hubbhq
-```
-
-## Struktur Project
-
-```
-hubbhq/
-├── prisma/
-│   ├── schema.prisma          # Database schema
-│   ├── seed.ts               # Basic seed data
-│   └── seed-full.ts          # Full seed data
-├── src/
-│   ├── app/
-│   │   ├── (public)/        # Public pages (website)
-│   │   ├── api/              # API routes
-│   │   ├── dashboard/        # Admin dashboard
-│   │   ├── login/            # Login page
-│   │   ├── setup/            # First-time setup
-│   │   └── layout.tsx        # Root layout
-│   ├── components/
-│   │   ├── ui/               # Shadcn/UI components
-│   │   └── layout/           # Layout components
-│   ├── lib/                  # Utilities & helpers
-│   ├── themes/               # Website themes
-│   └── hooks/                # Custom React hooks
-├── scripts/                  # Utility scripts
-├── docker-compose.yml        # Docker Compose config
-├── Dockerfile                # Docker build
-└── package.json
-```
-
-## Konfigurasi
-
-### Environment Variables
-
-| Variable | Deskripsi | Default |
-|----------|----------|---------|
-| `DATABASE_URL` | MySQL connection string | - |
-| `NEXTAUTH_SECRET` | Secret untuk NextAuth | - |
-| `NEXTAUTH_URL` | URL aplikasi | `http://localhost:3000` |
-| `UPLOAD_DIR` | Direktori upload | `./uploads` |
-
-### Roles & Permissions
-
-Sistem menggunakan RBAC dengan roles berikut:
-
-| Role | Akses |
-|------|-------|
-| `admin` | Akses penuh ke semua fitur |
-| `ketua` | Kepengurusan organisasi |
-| `sekretaris` | Manajemen surat & dokumen |
-| `bendahara` | Keuangan & kas |
-| `anggota` | Akses dasar |
-
-## Pengembangan (Development)
-
-### Perintah yang Tersedia
-
-```bash
-npm run dev          # Development server
-npm run build        # Production build
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run db:generate   # Generate Prisma Client
-npm run db:push      # Push schema ke database
-npm run db:migrate   # Run migrations
-npm run db:studio    # Open Prisma Studio
-npm run db:seed      # Run basic seed
-```
-
-### Standar Kode
-
-Project menggunakan:
-- ESLint untuk linting
-- Prettier untuk formatting
-- Husky + lint-staged untuk pre-commit hooks
-
-## Lisensi
-
-Project ini dilisensikan di bawah **GNU Affero General Public License v3.0 (AGPL-3.0)**.
-
-Lihat file [LICENSE](LICENSE) untuk detail lengkap.
-
-### Implikasi Lisensi AGPL-3.0
-
-- Anda bebas menggunakan, memodifikasi, dan mendistribusikan project ini
-- Anda harus membuka source code modifikasi Anda
-- Anda harus mencantumkan atribusi ke pembuat asli
-- Modifikasi harus juga dilisensikan di bawah AGPL-3.0
-- Anda **tidak boleh** menggunakan project ini untuk software proprietary tertutup
-
-### Pembuat
-
-Dikembangkan oleh **Ibnu Batuthah** - All Rights Reserved
-
-## Kontribusi
-
-Kontribusi sangat diterima! Silakan baca [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan berkontribusi.
-
-## Dokumentasi
-
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Panduan berkontribusi
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Kode etik
-- [CHANGELOG.md](CHANGELOG.md) - Riwayat perubahan
-
-## Dukungan
-
-Jika Anda menemukan bug atau memiliki pertanyaan:
-1. Buat Issue baru di GitHub
-2. Hubungi tim pengembang
+- [ROADMAP.md](ROADMAP.md) - Rencana pengembangan fitur organisasi selanjutnya (Presensi QR, KTA Digital, Inventaris Logistik, E-Voting PEMIRA, Kas QRIS).
+- [CHANGELOG.md](CHANGELOG.md) - Riwayat pembaruan dan rilis versi.
 
 ---
 
+## Lisensi & Kontribusi
+
+Project ini dilisensikan di bawah **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+Silakan baca [LICENSE](LICENSE) dan [CONTRIBUTING.md](CONTRIBUTING.md) untuk panduan berkontribusi.
+
 <p align="center">
-  HubbHQ - Dikembangkan oleh <strong>Ibnu Batuthah</strong>
+  Dikembangkan dengan dedikasi untuk kemajuan organisasi di Indonesia oleh <strong>Ibnu Batuthah</strong>
 </p>

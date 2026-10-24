@@ -16,11 +16,22 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { memberId } = await params
+    const { id, memberId } = await params
 
     const hasAccess = await hasPermission(session.user.id, 'divisi.edit')
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const existing = await prisma.divisiMember.findFirst({
+      where: { id: memberId, divisiId: id },
+    })
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Anggota tidak ditemukan pada divisi ini' },
+        { status: 404 }
+      )
     }
 
     await prisma.divisiMember.delete({

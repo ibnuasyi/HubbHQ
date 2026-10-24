@@ -33,6 +33,15 @@ import {
   Images,
   HelpCircle,
   Settings,
+  CreditCard,
+  Boxes,
+  Vote,
+  GraduationCap,
+  HeartHandshake,
+  Scale,
+  MessageSquareQuote,
+  UserPlus,
+  Award,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -86,6 +95,11 @@ const navigationItems: NavSection[] = [
         icon: Users,
       },
       {
+        title: 'KTA Digital',
+        href: '/dashboard/kta',
+        icon: CreditCard,
+      },
+      {
         title: 'Divisi',
         href: '/dashboard/divisi',
         icon: FolderKanban,
@@ -109,6 +123,46 @@ const navigationItems: NavSection[] = [
         title: 'Keuangan',
         href: '/dashboard/keuangan',
         icon: Wallet,
+      },
+      {
+        title: 'Inventaris & Aset',
+        href: '/dashboard/inventaris',
+        icon: Boxes,
+      },
+      {
+        title: 'E-Voting Musyawarah',
+        href: '/dashboard/voting',
+        icon: Vote,
+      },
+      {
+        title: 'Open Recruitment (Oprec)',
+        href: '/dashboard/oprec',
+        icon: UserPlus,
+      },
+      {
+        title: 'Studio E-Sertifikat',
+        href: '/dashboard/sertifikat',
+        icon: Award,
+      },
+      {
+        title: 'Kotak Aspirasi & Advokasi',
+        href: '/dashboard/aspirasi',
+        icon: MessageSquareQuote,
+      },
+      {
+        title: 'Diklat & Kaderisasi',
+        href: '/dashboard/kaderisasi',
+        icon: GraduationCap,
+      },
+      {
+        title: 'Jejaring Alumni',
+        href: '/dashboard/alumni',
+        icon: HeartHandshake,
+      },
+      {
+        title: 'Persidangan & TAP Mubes',
+        href: '/dashboard/sidang',
+        icon: Scale,
       },
       {
         title: 'Surat',

@@ -1,10 +1,13 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { Header } from '@/components/layout/header'
 import { ProfileForm } from '@/components/profile-form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { CreditCard } from 'lucide-react'
 import { DivisiMemberBadge } from './_components/divisi-member-badge'
 
 export default async function ProfilePage() {
@@ -60,6 +63,12 @@ export default async function ProfilePage() {
                       {user.jabatan.name}
                     </Badge>
                   )}
+                  <Button size="sm" variant="outline" asChild className="h-7 text-xs">
+                    <Link href="/dashboard/kta">
+                      <CreditCard className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                      KTA Digital
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </CardHeader>

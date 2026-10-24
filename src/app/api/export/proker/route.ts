@@ -2,22 +2,55 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, hasPermission } from '@/lib/auth'
 import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 import ExcelJS from 'exceljs'
+import {
+  EXPORT_CONFIG,
+  validateExportRequest,
+  validateExportParams,
+  sanitizeExportFilename,
+  getExportTimestamp,
+} from '@/lib/export-utils'
 
 // GET /api/export/proker?format=pdf|excel&year=2024
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
-    if (!session) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canExportProker =
+      ['admin', 'ketua', 'sekretaris', 'bendahara'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'proker.view'))
+
+    if (!canExportProker) {
+      return NextResponse.json(
+        { error: 'Forbidden: Anda tidak memiliki akses untuk mengekspor data program kerja' },
+        { status: 403 }
+      )
+    }
+
+    const validation = await validateExportRequest(session.user.id, 'proker')
+    if (!validation.allowed) {
+      return validation.response!
+    }
+
     const { searchParams } = new URL(request.url)
-    const format = searchParams.get('format') || 'pdf'
-    const year = searchParams.get('year') || new Date().getFullYear().toString()
+    const params = validateExportParams({
+      year: searchParams.get('year'),
+      format: searchParams.get('format'),
+    })
+
+    if (!params.valid) {
+      return NextResponse.json({ error: params.error }, { status: 400 })
+    }
+
+    const year = params.year
+    const format = params.format
     const divisiId = searchParams.get('divisiId')
 
     // Fetch proker with checkpoints
@@ -26,9 +59,12 @@ export async function GET(request: NextRequest) {
       where.divisiId = divisiId
     }
 
+    const maxRecords = EXPORT_CONFIG.MAX_RECORDS.proker || 5000
+
     const proker = await prisma.programKerja.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      take: maxRecords,
       include: {
         divisi: true,
         pic: {
@@ -104,7 +140,7 @@ export async function GET(request: NextRequest) {
       })
 
       const buffer = await workbook.xlsx.writeBuffer()
-      const filename = `laporan-proker-${year}.xlsx`
+      const filename = sanitizeExportFilename(`laporan-proker-${year}-${getExportTimestamp()}`) + '.xlsx'
 
       return new NextResponse(Buffer.from(buffer), {
         headers: {
@@ -174,7 +210,7 @@ export async function GET(request: NextRequest) {
     // Generate buffer
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
 
-    const filename = `laporan-proker-${year}.pdf`
+    const filename = sanitizeExportFilename(`laporan-proker-${year}-${getExportTimestamp()}`) + '.pdf'
 
     return new NextResponse(pdfBuffer, {
       headers: {

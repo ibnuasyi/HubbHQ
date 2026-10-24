@@ -3,26 +3,44 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import QRCode from 'qrcode'
+import { checkRateLimitByIP, getClientIP } from '@/lib/rate-limit'
 
 // GET /api/qrcode?text=hello&size=200&format=png|svg
 export async function GET(request: NextRequest) {
   try {
+    const clientIp = getClientIP(request)
+    const rateCheck = checkRateLimitByIP(clientIp, 'qrcode_generate', { maxRequests: 60, windowMs: 60 * 1000 })
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: 'Terlalu banyak permintaan pembuatan QR code' }, { status: 429 })
+    }
+
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(request.url)
-    const text = searchParams.get('text')
-    const size = parseInt(searchParams.get('size') || '200')
+    const rawText = searchParams.get('text')
+    const rawSize = parseInt(searchParams.get('size') || '200')
     const format = searchParams.get('format') || 'png'
 
-    if (!text) {
+    if (!rawText) {
       return NextResponse.json(
         { error: 'Parameter text diperlukan' },
         { status: 400 }
       )
     }
+
+    if (rawText.length > 2048) {
+      return NextResponse.json(
+        { error: 'Teks QR code terlalu panjang (maksimal 2048 karakter)' },
+        { status: 400 }
+      )
+    }
+
+    // Bound size to prevent memory exhaustion (min 50px, max 1000px)
+    const size = Math.min(Math.max(isNaN(rawSize) ? 200 : rawSize, 50), 1000)
+    const text = rawText.trim()
 
     const options: QRCode.QRCodeToBufferOptions = {
       width: size,

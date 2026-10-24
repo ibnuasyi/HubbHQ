@@ -270,18 +270,53 @@ export async function hasPermission(userId: string, permission: string): Promise
 
   if (!user?.role) return false;
 
-  // Admin punya semua permission
-  if (user.role.name === "admin") return true;
+  // Admin punya semua permission (case-insensitive)
+  if (user.role.name?.toLowerCase() === "admin") return true;
 
   return user.role.permissions.some((p: { name: string }) => p.name === permission);
 }
 
 // Helper untuk check multiple permissions
 export async function hasAnyPermission(userId: string, permissions: string[]): Promise<boolean> {
-  return permissions.some((p) => hasPermission(userId, p));
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: {
+        include: { permissions: true },
+      },
+    },
+  });
+
+  if (!user?.role) return false;
+  if (user.role.name?.toLowerCase() === "admin") return true;
+
+  const userPermNames = new Set(user.role.permissions.map((p: { name: string }) => p.name));
+  return permissions.some((p) => userPermNames.has(p));
 }
 
 // Helper untuk check semua permissions
 export async function hasAllPermissions(userId: string, permissions: string[]): Promise<boolean> {
-  return permissions.every((p) => hasPermission(userId, p));
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      role: {
+        include: { permissions: true },
+      },
+    },
+  });
+
+  if (!user?.role) return false;
+  if (user.role.name?.toLowerCase() === "admin") return true;
+
+  const userPermNames = new Set(user.role.permissions.map((p: { name: string }) => p.name));
+  return permissions.every((p) => userPermNames.has(p));
+}
+
+// Helper untuk check role admin
+export async function isAdmin(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { role: true },
+  });
+  return user?.role?.name?.toLowerCase() === "admin";
 }

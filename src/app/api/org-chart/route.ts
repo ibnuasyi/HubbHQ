@@ -15,7 +15,11 @@ export async function GET() {
     // Get all users with their role, jabatan, and divisi
     const users = await prisma.user.findMany({
       where: { isActive: true },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
         role: true,
         jabatan: true,
         divisiMembers: {

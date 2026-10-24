@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { checkRateLimitByIP, getClientIP } from '@/lib/rate-limit'
 
 /**
  * First Time Setup API
@@ -11,6 +12,15 @@ import { prisma } from '@/lib/db'
  */
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIP(request)
+    const rateCheck = checkRateLimitByIP(clientIp, 'setup_install', { maxRequests: 5, windowMs: 60 * 1000 })
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak permintaan setup. Silakan coba beberapa saat lagi.' },
+        { status: 429 }
+      )
+    }
+
     // Check if setup already completed
     const userCount = await prisma.user.count()
 
@@ -222,14 +232,12 @@ export async function GET() {
     const userCount = await prisma.user.count()
     return NextResponse.json({
       needsSetup: userCount === 0,
-      userCount
     })
   } catch (error) {
     console.error('Error checking setup status:', error)
     return NextResponse.json({
-      needsSetup: true,
-      userCount: -1,
+      needsSetup: false,
       error: 'Could not connect to database'
-    })
+    }, { status: 500 })
   }
 }

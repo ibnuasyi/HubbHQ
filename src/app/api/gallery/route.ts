@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // GET /api/gallery - List all gallery items (public)
 export async function GET(request: NextRequest) {
@@ -48,12 +46,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate URL format
-    try {
-      new URL(imageUrl)
-    } catch {
+    // Validate image URL format and prevent javascript: XSS
+    const trimmedUrl = String(imageUrl).trim()
+    if (trimmedUrl.toLowerCase().startsWith('javascript:')) {
       return NextResponse.json(
         { error: 'Invalid image URL format' },
+        { status: 400 }
+      )
+    }
+
+    if (!trimmedUrl.startsWith('/') && !/^https?:\/\//i.test(trimmedUrl)) {
+      return NextResponse.json(
+        { error: 'Image URL must be a valid relative path or http/https URL' },
         { status: 400 }
       )
     }

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isAdmin } from '@/lib/auth'
 
 // PATCH /api/wilayah/[id] - Update wilayah
 export async function PATCH(
@@ -17,12 +17,8 @@ export async function PATCH(
     }
 
     // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { role: true },
-    })
-
-    if (user?.role?.name !== 'admin') {
+    const admin = await isAdmin(session.user.id)
+    if (!admin) {
       return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 })
     }
 
@@ -84,12 +80,8 @@ export async function DELETE(
     }
 
     // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: { role: true },
-    })
-
-    if (user?.role?.name !== 'admin') {
+    const admin = await isAdmin(session.user.id)
+    if (!admin) {
       return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 })
     }
 

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { canManageProker } from '@/lib/proker-auth'
 
 // Recalculate totals helper
 async function recalculateLpjTotals(lpjId: string) {
@@ -81,9 +81,21 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, prokerId)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki akses ke LPJ proker ini' }, { status: 403 })
+    }
+
+    // Check if LPJ already approved
+    const existingLpj = await prisma.lpjProker.findUnique({
+      where: { programKerjaId: prokerId },
+    })
+    if (existingLpj && existingLpj.status === 'APPROVED' && !['admin', 'ketua'].includes(roleName)) {
+      return NextResponse.json(
+        { error: 'LPJ sudah disetujui (APPROVED) dan terkunci dari penambahan item baru.' },
+        { status: 400 }
+      )
     }
 
     const body = await request.json()
@@ -158,14 +170,27 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: prokerId } = await params
     const session = await auth()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'proker.edit')
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const hasAccess = await canManageProker(session.user.id, roleName, prokerId)
     if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Forbidden: Anda tidak memiliki akses ke LPJ proker ini' }, { status: 403 })
+    }
+
+    // Check if LPJ already approved
+    const existingLpj = await prisma.lpjProker.findUnique({
+      where: { programKerjaId: prokerId },
+    })
+    if (existingLpj && existingLpj.status === 'APPROVED' && !['admin', 'ketua'].includes(roleName)) {
+      return NextResponse.json(
+        { error: 'LPJ sudah disetujui (APPROVED) dan terkunci dari penambahan item baru.' },
+        { status: 400 }
+      )
     }
 
     const { searchParams } = new URL(request.url)
@@ -177,10 +202,11 @@ export async function DELETE(
 
     const item = await prisma.lpjItem.findUnique({
       where: { id: itemId },
+      include: { lpj: true },
     })
 
-    if (!item) {
-      return NextResponse.json({ error: 'Item tidak ditemukan' }, { status: 404 })
+    if (!item || item.lpj.programKerjaId !== prokerId) {
+      return NextResponse.json({ error: 'Item realisasi tidak ditemukan pada proker ini' }, { status: 404 })
     }
 
     const lpjId = item.lpjId

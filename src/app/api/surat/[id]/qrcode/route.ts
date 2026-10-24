@@ -35,6 +35,13 @@ export async function POST(
       return NextResponse.json({ error: 'Surat tidak ditemukan' }, { status: 404 })
     }
 
+    if (surat.status !== 'APPROVED') {
+      return NextResponse.json(
+        { error: 'QR Code tanda tangan verifikasi resmi hanya dapat diterbitkan untuk surat yang telah berstatus Disetujui (APPROVED).' },
+        { status: 400 }
+      )
+    }
+
     // Generate signed verification URL (prevents spoofing)
     const { token, expiresAt, verifyUrl } = generateSignedVerificationUrl(
       id,

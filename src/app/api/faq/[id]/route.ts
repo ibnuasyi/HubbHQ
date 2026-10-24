@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // PATCH /api/faq/[id] - Update FAQ item (admin only)
 export async function PATCH(
@@ -18,18 +16,33 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
+    const { question, answer, category, order, isPublished } = body
 
-    // Validate required fields
-    if (body.question === '' || body.answer === '') {
+    // Validate required fields if updated
+    if (question !== undefined && !question.trim()) {
       return NextResponse.json(
-        { error: 'Question and answer cannot be empty' },
+        { error: 'Question cannot be empty' },
         { status: 400 }
       )
     }
 
+    if (answer !== undefined && !answer.trim()) {
+      return NextResponse.json(
+        { error: 'Answer cannot be empty' },
+        { status: 400 }
+      )
+    }
+
+    const updateData: any = {}
+    if (question !== undefined) updateData.question = question.trim()
+    if (answer !== undefined) updateData.answer = answer.trim()
+    if (category !== undefined) updateData.category = category ? category.trim() : null
+    if (order !== undefined) updateData.order = Number(order)
+    if (isPublished !== undefined) updateData.isPublished = Boolean(isPublished)
+
     const item = await prisma.faq.update({
       where: { id },
-      data: body
+      data: updateData,
     })
 
     return NextResponse.json(item)

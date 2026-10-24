@@ -96,6 +96,22 @@ export async function POST(request: NextRequest) {
     let fileSize = 0
 
     if (file) {
+      if (file.size > 50 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'Ukuran berkas buku melebihi batas maksimum 50 MB' },
+          { status: 400 }
+        )
+      }
+
+      const rawExt = file.name.split('.').pop()?.toLowerCase() || ''
+      const allowedExts = ['pdf', 'epub', 'doc', 'docx']
+      if (!allowedExts.includes(rawExt)) {
+        return NextResponse.json(
+          { error: 'Ekstensi berkas tidak diizinkan. Hanya berkas PDF, EPUB, DOC, dan DOCX yang diperbolehkan.' },
+          { status: 400 }
+        )
+      }
+
       // Ensure upload directory exists
       const uploadDir = join(process.cwd(), 'public', 'uploads', 'library')
       if (!existsSync(uploadDir)) {
@@ -103,8 +119,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Generate unique filename
-      const ext = file.name.split('.').pop()
-      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(7)}.${rawExt}`
       const filepath = join(uploadDir, filename)
 
       // Save file
@@ -113,7 +128,7 @@ export async function POST(request: NextRequest) {
       await writeFile(filepath, buffer)
 
       fileUrl = `/uploads/library/${filename}`
-      fileType = file.type
+      fileType = file.type || `application/${rawExt}`
       fileSize = buffer.length
     }
 

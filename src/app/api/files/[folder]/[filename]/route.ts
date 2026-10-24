@@ -2,121 +2,106 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { storageService, isPublicFolder, STORAGE_CONFIG } from '@/lib/storage'
+import { storageService, isPublicFolder, sanitizeFolder } from '@/lib/storage'
 import path from 'path'
-import fs from 'fs'
-import { existsSync } from 'fs'
 
 /**
- * Protected File Download Endpoint
- * Only serves files that are NOT in public folders
+ * Protected File Access Endpoint
+ * Melayani file yang berada di folder terlindungi setelah verifikasi autentikasi.
+ * Bekerja secara universal di local disk, S3 (AWS/R2/MinIO/AList), maupun WebDAV.
  *
  * URL Pattern: /api/files/[folder]/[filename]
- * Example: /api/files/avatars/user-123-abc.png
- *
- * This endpoint:
- * - Checks if file is in protected folder
- * - Requires valid session/authentication
- * - Serves the file with proper headers
  */
 
-const LOCAL_BASE_DIR = path.resolve(process.cwd(), STORAGE_CONFIG.local.baseDir)
+const MIME_TYPES: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+}
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ folder: string; filename: string }> }
 ) {
   try {
     const { folder, filename } = await context.params
 
-    // Security: Check if folder is protected
+    // Security: Check if folder is public
     if (isPublicFolder(folder)) {
       return NextResponse.json(
-        { error: 'This file is publicly accessible. Use direct URL instead.' },
+        { error: 'Berkas ini dapat diakses secara publik secara langsung.' },
         { status: 403 }
       )
     }
 
-    // Security: Prevent path traversal
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    // Security: Prevent path traversal on folder and filename
+    if (
+      folder.includes('..') ||
+      folder.includes('/') ||
+      folder.includes('\\') ||
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
       return NextResponse.json(
-        { error: 'Invalid filename' },
+        { error: 'Nama folder atau berkas tidak valid.' },
         { status: 400 }
       )
     }
+
+    const safeFolder = sanitizeFolder(folder)
 
     // Auth check
     const session = await auth()
     if (!session) {
       return NextResponse.json(
-        { error: 'Unauthorized - Authentication required' },
+        { error: 'Akses ditolak: Autentikasi diperlukan.' },
         { status: 401 }
       )
     }
 
-    // Check if using local storage
-    if (storageService.getProvider() !== 'local') {
-      // For S3/R2, redirect to signed URL or return error
-      return NextResponse.json(
-        { error: 'Protected file access for S3/R2 requires signed URLs. Please contact admin.' },
-        { status: 501 }
-      )
+    // Jika menggunakan S3/R2 dan mendukung signed URL, alihkan ke signed URL
+    const provider = storageService.getProvider()
+    if (provider === 's3' || provider === 'r2') {
+      const signedUrl = await storageService.getSignedUrl(safeFolder, filename, 3600)
+      if (signedUrl) {
+        return NextResponse.redirect(signedUrl)
+      }
     }
 
-    // Build file path
-    const filePath = path.join(LOCAL_BASE_DIR, folder, filename)
-
-    // Security: Ensure path is within base directory
-    if (!filePath.startsWith(LOCAL_BASE_DIR)) {
+    // Fallback baca berkas langsung (Local, WebDAV, atau S3 proxy)
+    const fileBuffer = await storageService.read(safeFolder, filename)
+    if (!fileBuffer) {
       return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      )
-    }
-
-    // Check if file exists
-    if (!existsSync(filePath)) {
-      return NextResponse.json(
-        { error: 'File not found' },
+        { error: 'Berkas tidak ditemukan.' },
         { status: 404 }
       )
     }
 
-    // Get file extension for MIME type
     const ext = path.extname(filename).toLowerCase()
-    const mimeTypes: Record<string, string> = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.svg': 'image/svg+xml',
-      '.pdf': 'application/pdf',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.ppt': 'application/vnd.ms-powerpoint',
-      '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      '.mp4': 'video/mp4',
-      '.webm': 'video/webm',
-      '.mp3': 'audio/mpeg',
-      '.wav': 'audio/wav',
-    }
+    const mimeType = MIME_TYPES[ext] || 'application/octet-stream'
 
-    const mimeType = mimeTypes[ext] || 'application/octet-stream'
-
-    // Read and serve file
-    const fileBuffer = fs.readFileSync(filePath)
-    const stat = fs.statSync(filePath)
-
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': mimeType,
-        'Content-Length': stat.size.toString(),
+        'Content-Length': fileBuffer.length.toString(),
         'Content-Disposition': `inline; filename="${encodeURIComponent(filename)}"`,
-        'Cache-Control': 'private, max-age=3600', // Cache for 1 hour, but private
+        'Cache-Control': 'private, max-age=3600',
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
       },
@@ -124,7 +109,7 @@ export async function GET(
   } catch (error) {
     console.error('[STORAGE] Error serving protected file:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Terjadi kesalahan server saat memproses berkas.' },
       { status: 500 }
     )
   }

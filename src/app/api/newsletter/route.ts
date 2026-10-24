@@ -1,15 +1,32 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth'
+import { checkPublicRateLimit, checkRateLimitByIP, getClientIP } from '@/lib/rate-limit'
 
 // POST /api/newsletter - Subscribe to newsletter
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIP(request)
+    const rate = checkPublicRateLimit(clientIp, 'newsletter')
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak permintaan langganan. Silakan coba lagi nanti.' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
-    const { email } = body
+    const { email, website, _hp } = body
+
+    // Honeypot anti-bot
+    if (website || _hp) {
+      return NextResponse.json({
+        success: true,
+        message: 'Successfully subscribed to newsletter!'
+      })
+    }
 
     if (!email) {
       return NextResponse.json(
@@ -50,16 +67,10 @@ export async function POST(request: NextRequest) {
         }
       })
     } else {
-      // Create new subscription
-      // Get IP address from request headers
-      const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0] ||
-                       request.headers.get('x-real-ip') ||
-                       'unknown'
-
       await prisma.newsletterSubscriber.create({
         data: {
           email: email.toLowerCase(),
-          ipAddress
+          ipAddress: clientIp
         }
       })
     }
@@ -80,11 +91,11 @@ export async function POST(request: NextRequest) {
 // GET /api/newsletter - Get subscribers (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // Simple auth check - in production, use proper authentication
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
+    const session = await auth()
+    const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
+    if (!session?.user?.id || roleName !== 'admin') {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized: Admin access required' },
         { status: 401 }
       )
     }
@@ -109,6 +120,15 @@ export async function GET(request: NextRequest) {
 // DELETE /api/newsletter - Unsubscribe
 export async function DELETE(request: NextRequest) {
   try {
+    const clientIp = getClientIP(request)
+    const rate = checkRateLimitByIP(clientIp, 'newsletter_unsub', { windowMs: 60 * 1000, maxRequests: 5 })
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Terlalu banyak permintaan berhenti langganan.' },
+        { status: 429 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const email = searchParams.get('email')
 

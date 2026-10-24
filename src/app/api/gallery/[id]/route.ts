@@ -1,10 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
 
 // GET /api/gallery/[id] - Get single gallery item (public)
 export async function GET(
@@ -47,22 +45,29 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
+    const { title, album, imageUrl, caption, order } = body
+
+    const updateData: any = {}
 
     // Validate URL if provided
-    if (body.imageUrl) {
-      try {
-        new URL(body.imageUrl)
-      } catch {
+    if (imageUrl !== undefined) {
+      if (typeof imageUrl !== 'string' || imageUrl.trim().toLowerCase().startsWith('javascript:')) {
         return NextResponse.json(
           { error: 'Invalid image URL format' },
           { status: 400 }
         )
       }
+      updateData.imageUrl = imageUrl.trim()
     }
+
+    if (title !== undefined) updateData.title = title.trim()
+    if (album !== undefined) updateData.album = album ? album.trim() : null
+    if (caption !== undefined) updateData.caption = caption ? caption.trim() : null
+    if (order !== undefined) updateData.order = Number(order)
 
     const item = await prisma.gallery.update({
       where: { id },
-      data: body
+      data: updateData,
     })
 
     return NextResponse.json(item)

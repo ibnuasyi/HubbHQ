@@ -1,10 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { requireAuth } from '@/lib/api-auth'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
+import { auth, hasPermission } from '@/lib/auth'
+import { isValidId, sanitizeInput } from '@/lib/api-security'
 
 // GET /api/events - List calendar events (public for public events)
 export async function GET(request: NextRequest) {
@@ -15,8 +14,14 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate')
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100)
 
+    const session = await auth()
     const where: Record<string, unknown> = {}
-    if (publicOnly === 'true') where.isPublic = true
+
+    // Force publicOnly if requester is not authenticated
+    if (!session?.user?.id || publicOnly === 'true') {
+      where.isPublic = true
+    }
+
     if (startDate) where.startDate = { gte: new Date(startDate) }
     if (endDate) where.endDate = { lte: new Date(endDate) }
 
@@ -47,12 +52,25 @@ export async function GET(request: NextRequest) {
 // POST /api/events - Create a new event (authenticated users)
 export async function POST(request: NextRequest) {
   try {
-    // Require authentication
-    const { authorized, response } = await requireAuth(request)
-    if (!authorized) return response!
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    const canCreateEvent =
+      ['admin', 'ketua'].includes(roleName) ||
+      (await hasPermission(session.user.id, 'kalender.create'))
+
+    if (!canCreateEvent) {
+      return NextResponse.json(
+        { error: 'Forbidden: Anda tidak memiliki akses untuk membuat agenda kegiatan' },
+        { status: 403 }
+      )
+    }
 
     const body = await request.json()
-    const { title, description, startDate, endDate, allDay, location, programKerjaId, creatorId, color, isPublic } = body
+    const { title, description, startDate, endDate, allDay, location, programKerjaId, color, isPublic } = body
 
     // Validate required fields
     if (!title || !startDate) {
@@ -62,18 +80,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const sanitizedTitle = sanitizeInput(title, 200)
+    const sanitizedDescription = description ? sanitizeInput(description, 5000) : null
+    const sanitizedLocation = location ? sanitizeInput(location, 200) : null
+
+    // Validate date range
+    const start = new Date(startDate)
+    const end = endDate ? new Date(endDate) : null
+
+    if (isNaN(start.getTime())) {
+      return NextResponse.json(
+        { error: 'Format tanggal mulai tidak valid' },
+        { status: 400 }
+      )
+    }
+
+    const colorRegex = /^#[0-9a-fA-F]{3,8}$/
+    const sanitizedColor = color && colorRegex.test(color) ? color : '#6366f1'
+
     const event = await prisma.calendarEvent.create({
       data: {
-        title,
-        description,
-        startDate: new Date(startDate),
-        endDate: endDate ? new Date(endDate) : null,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        startDate: start,
+        endDate: end,
         allDay: allDay !== false,
-        location,
-        programKerjaId,
-        creatorId,
-        color: color || '#6366f1',
-        isPublic: isPublic !== false
+        location: sanitizedLocation,
+        programKerjaId: programKerjaId && isValidId(programKerjaId) ? programKerjaId : null,
+        creatorId: session.user.id,
+        color: sanitizedColor,
+        isPublic: Boolean(isPublic)
       }
     })
 
