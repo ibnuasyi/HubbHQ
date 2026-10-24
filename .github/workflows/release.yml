@@ -1,0 +1,92 @@
+name: Automated GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine Release Type (Latest vs Pre-release)
+        id: determine_type
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          CLEAN_VERSION="${TAG#v}"
+          echo "Processing tag: $TAG (version: $CLEAN_VERSION)"
+
+          # Parse Major, Minor, Patch
+          IFS='.' read -r MAJOR MINOR PATCH_RAW <<< "$CLEAN_VERSION"
+          PATCH=$(echo "$PATCH_RAW" | grep -oE '^[0-9]+' || echo "0")
+
+          # Jika angka ketiga (PATCH) bukan 0 atau terdapat sufiks (seperti -rc, -beta)
+          if [ "$PATCH" != "0" ] || [[ "$PATCH_RAW" =~ [^0-9] ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+            echo "make_latest=false" >> $GITHUB_OUTPUT
+            echo "type_label=Pre-release (Patch: $PATCH_RAW)" >> $GITHUB_OUTPUT
+            echo "### Release Type: Pre-release" >> $GITHUB_STEP_SUMMARY
+            echo "Tag ini ($TAG) diklasifikasikan sebagai **Pre-release** karena angka ketiga berubah ($PATCH_RAW)." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+            echo "make_latest=true" >> $GITHUB_OUTPUT
+            echo "type_label=Latest Release" >> $GITHUB_OUTPUT
+            echo "### Release Type: Latest Production Release" >> $GITHUB_STEP_SUMMARY
+            echo "Tag ini ($TAG) diklasifikasikan sebagai **Latest Release**." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Extract Changelog Section
+        id: changelog
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          
+          # Ekstrak deskripsi dari CHANGELOG.md jika ada seksi untuk versi ini
+          if [ -f CHANGELOG.md ]; then
+            python3 -c "
+import re, sys
+try:
+    with open('CHANGELOG.md', 'r', encoding='utf-8') as f:
+        content = f.read()
+    pattern = r'## \[' + re.escape('$VERSION') + r'\][^\n]*\n(.*?)(?=\n## \[|\Z)'
+    match = re.search(pattern, content, re.DOTALL)
+    if match and match.group(1).strip():
+        with open('release_body.md', 'w', encoding='utf-8') as out:
+            out.write(match.group(1).strip())
+        print('FOUND=true')
+        sys.exit(0)
+except Exception as e:
+    pass
+print('FOUND=false')
+" > changelog_status.txt || true
+          fi
+
+          if [ -f release_body.md ]; then
+            echo "has_custom_body=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_custom_body=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: HubbHQ ${{ github.ref_name }}
+          prerelease: ${{ steps.determine_type.outputs.is_prerelease == 'true' }}
+          make_latest: ${{ steps.determine_type.outputs.make_latest }}
+          generate_release_notes: true
+          body_path: ${{ steps.changelog.outputs.has_custom_body == 'true' && 'release_body.md' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
