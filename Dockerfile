@@ -26,6 +26,10 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
+LABEL org.opencontainers.image.source="https://github.com/ibnuasyi/HubbHQ"
+LABEL org.opencontainers.image.description="HubbHQ - Sistem Informasi Organisasi Modern"
+LABEL org.opencontainers.image.licenses="MIT"
+
 ENV NODE_ENV=production
 
 # Create non-root user
@@ -37,10 +41,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/uploads ./uploads
 
-# Set permissions
-RUN chown -R nextjs:nodejs /app/uploads && chmod -R 755 /app/uploads
+# Create uploads directory with appropriate permissions
+RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads && chmod -R 755 /app/uploads
 
 USER nextjs
 

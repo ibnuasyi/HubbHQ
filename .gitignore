@@ -5,6 +5,7 @@ node_modules/
 
 # Testing
 coverage/
+release_body.md
 
 # Next.js
 .next/
