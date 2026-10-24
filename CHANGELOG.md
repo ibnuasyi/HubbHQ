@@ -5,6 +5,53 @@ Semua perubahan signifikan dari project ini akan didokumentasikan di file ini.
 Format ini berdasarkan [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 Project ini mematuhi [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.1.0] - 2026-10-24
+
+### Added
+
+#### Tata Kelola Program Kerja (Proker) & Alur Organisasi
+- **Halaman Mandiri Program Kerja** (`/dashboard/proker/[id]`) dengan navigasi terintegrasi, visualisasi progress dinamis, dan matriks organisasi lengkap (sasaran audiens, indikator KPI, anggaran RAB, sumber dana, lokasi, dan tanggal pelaksanaan).
+- **Halaman Mandiri Proposal Dana** (`/dashboard/proposal/[id]`) untuk peninjauan dan evaluasi anggaran oleh BPH/Bendahara.
+- **Sistem Checkpoint & Pelacakan Progres** dengan pewarnaan kontras tinggi yang nyaman dibaca pada Mode Terang maupun Mode Gelap (Dark Mode).
+- **Manajemen Susunan Panitia Pelaksana (OC)** dengan penetapan peran jabatan teknis kegiatan dan informasi kontak.
+
+#### Proposal Dana Terpadu & Audit Trail Versi (Git-Like)
+- **Pengajuan Berbasis PIC:** Proposal dana hanya dapat dinaikkan langsung dari halaman proker setelah penanggung jawab (PIC) ditetapkan.
+- **Persetujuan & Penolakan dengan Evaluasi:** BPH/Bendahara dapat menyetujui (ACC) atau menolak proposal dengan melampirkan catatan evaluasi perbaikan.
+- **Riwayat Versi Terdistribusi (Git-Like Versioning):** Seluruh versi proposal yang pernah diajukan beserta catatan penolakan disimpan permanen dalam riwayat versi (`proposal_history`) sebagai sarana pembelajaran kepanitiaan.
+
+#### Sistem LPJ Terpadu & 3 Kantong Dana (Fund Separation)
+- **Master Template LPJ Organisasi:** Bendahara atau Sekretaris dapat mengunggah berkas template resmi organisasi (`.docx`, `.xlsx`, atau `.pdf` pedoman baku) yang dapat diunduh oleh panitia proker dengan 1-klik.
+- **Pemisahan 3 Kantong Anggaran:** Membedakan sumber dana realisasi belanja ke dalam 3 kategori:
+  - `DANA_AJUAN`: Dana subsidi dari kas umum organisasi berdasarkan proposal yang di-ACC.
+  - `KAS_PROKER`: Kas mandiri panitia hasil iuran sukarela/wajib atau laba usaha mandiri (danus).
+  - `DANA_LUAR`: Kemitraan sponsorship, donatur, hibah, serta penjualan tiket/HTM peserta.
+- **Rekonsiliasi Surplus Kas Fleksibel:** Opsi resmi pembukuan sisa dana saat LPJ disahkan:
+  - Setor kembali ke kas umum BPH (otomatis mencatat transaksi penerimaan di modul Keuangan).
+  - Alokasi syukuran / apresiasi pembubaran panitia (otomatis mencatat pos pengeluaran penutup dengan saldo akhir balance Rp 0).
+  - Simpan sebagai tabungan modal kas cadangan divisi untuk kegiatan berikutnya.
+- **Checklist Kelaikan Berkas Fisik Pra-Sidang (Audit Compliance Gate):** Verifikasi berkas fisik (nota kuitansi asli, presensi & notula rapat, dokumentasi foto, dan berita acara) sebelum pengesahan resmi.
+- **Unggah Dokumen Final LPJ:** Fasilitas melampirkan berkas buku LPJ utuh bertanda tangan scan lengkap.
+- **Ekspor Otomatis LPJ:** Menghasilkan laporan pertanggungjawaban dalam format PDF dan Excel spreadsheet.
+
+#### E-Sertifikat Kepanitiaan Proker
+- **Template Desain Kustom per Proker:** Dukungan template desain blanko piagam dan konfigurasi penandatangan (Ketua Pelaksana & Ketua Umum) per kegiatan.
+- **Penomoran Baku Otomatis:** Generator nomor sertifikat terstruktur per program kerja (contoh: `001/SERT-OC/INTI/LDKO/X/2026`).
+- **Pratinjau & Cetak Piagam Digital:** Piagam penghargaan interaktif berbingkai resmi yang siap cetak langsung.
+
+#### Modul Divisi & Bank Evaluasi Organisasi
+- **Kumpulan LPJ per Divisi:** Tab arsip untuk melihat seluruh riwayat LPJ proker di bawah naungan divisi bersangkutan beserta dokumen finalnya.
+- **Bank Evaluasi Organisasi (Knowledge Management):** Pengindeksan kendala, solusi sukses, dan rekomendasi mitigasi dari LPJ sebelumnya untuk pembelajaran pengurus periode berikutnya.
+
+### Changed
+- **Pembersihan Branding:** Menghapus seluruh nama instansi pihak ketiga (KPRI) dari antarmuka dan basis data, mengubah nama default menjadi **HubbHQ** yang dapat dikonfigurasi secara dinamis.
+- **Migrasi Spreadsheet:** Migrasi penuh pustaka pengolah lembar sebar ke `exceljs` yang lebih aman dan terbebas dari kerentanan keamanan.
+- **Peningkatan Kontras Dark Mode:** Optimalisasi styling Tailwind untuk memastikan keterbacaan teks yang sangat tajam pada komponen checkpoint, badge, dan modal.
+
+### Security
+- Patch dependensi terhadap potensi kerentanan CVE pada pustaka utilitas pemrosesan dokumen.
+- Validasi hak akses RBAC (Role-Based Access Control) yang diperketat pada seluruh API endpoint program kerja, proposal, dan LPJ.
+
 ## [1.0.0] - 2026-07-12
 
 ### Added

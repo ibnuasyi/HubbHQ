@@ -433,7 +433,7 @@ export function Sidebar() {
         {/* Fixed footer */}
         <div className="flex-shrink-0 border-t p-3 flex items-center justify-between">
           <div className="text-xs text-muted-foreground">
-            {!isCollapsed && 'HubbHQ v1.0.0'}
+            {!isCollapsed && 'HubbHQ v1.1.0'}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -593,7 +593,7 @@ export function Sidebar() {
             </nav>
             <div className="flex-shrink-0 border-t p-3 flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
-                HubbHQ v1.0.0
+                HubbHQ v1.1.0
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
