@@ -22,9 +22,9 @@ RUN npx prisma generate
 
 # Build the application with standalone output
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy"
-ENV NEXTAUTH_SECRET="build_secret_dummy_minimum_32_characters_long"
-RUN npm run build
+RUN DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy" \
+    NEXTAUTH_SECRET="build_dummy_secret_not_real_key_32c" \
+    npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner

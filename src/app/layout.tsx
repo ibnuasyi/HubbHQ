@@ -3,6 +3,8 @@ import { Providers } from '@/components/providers'
 import { prisma } from '@/lib/db'
 import './globals.css'
 
+export const dynamic = 'force-dynamic'
+
 // Dynamic metadata based on website config
 export async function generateMetadata(): Promise<Metadata> {
   try {

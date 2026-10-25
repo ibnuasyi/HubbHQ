@@ -3,13 +3,20 @@ import { auth } from '@/lib/auth'
 import { Sidebar } from '@/components/layout/sidebar'
 import { prisma } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   // Check if database is empty (needs setup)
-  const userCount = await prisma.user.count()
+  let userCount: number | null = null
+  try {
+    userCount = await prisma.user.count()
+  } catch (error) {
+    console.warn('DashboardLayout: Database connection unavailable, skipping setup check:', error)
+  }
 
   if (userCount === 0) {
     redirect('/setup')

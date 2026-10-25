@@ -8,6 +8,8 @@ import SanitizedHtml from '@/components/SanitizedHtml'
 import { Calendar, Tag, User, ArrowLeft, Share2, Clock, Twitter, MessageCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
+export const dynamic = 'force-dynamic'
+
 interface Props {
   params: Promise<{ slug: string }>
 }
