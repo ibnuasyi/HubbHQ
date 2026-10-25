@@ -1,13 +1,14 @@
 # Dockerfile
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies with Prisma schema available for postinstall hook
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma/
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -19,7 +20,10 @@ COPY . .
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build the application
+# Build the application with standalone output
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL="mysql://dummy:dummy@localhost:3306/dummy"
+ENV NEXTAUTH_SECRET="build_secret_dummy_minimum_32_characters_long"
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -31,6 +35,7 @@ LABEL org.opencontainers.image.description="HubbHQ - Sistem Informasi Organisasi
 LABEL org.opencontainers.image.licenses="MIT"
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
@@ -40,7 +45,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Create uploads directory with appropriate permissions
 RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads && chmod -R 755 /app/uploads
