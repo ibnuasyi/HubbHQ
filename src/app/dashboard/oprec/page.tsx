@@ -140,7 +140,7 @@ export default function DashboardOprecPage() {
   const totalPelamar = oprecs.reduce((acc, o) => acc + (o._count?.pendaftar || 0), 0);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

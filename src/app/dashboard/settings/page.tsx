@@ -94,7 +94,7 @@ const settingSections = [
 
 export default function SettingsHubPage() {
   return (
-    <div className="space-y-8">
+    <div className="p-6 space-y-8">
       <div>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">

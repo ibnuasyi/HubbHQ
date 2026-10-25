@@ -150,7 +150,7 @@ export default function DetailAspirasiDashboard() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <Link
