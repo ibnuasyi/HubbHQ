@@ -96,7 +96,41 @@ masterplan.md
 
 # Audit and security notes (keep if internal)
 audit.md
+*audit*.md
 risk-report.md
+*vuln*.md
+*vulnerability*.md
+*pentest*.md
+*security-report*.md
+
+# Confidential roadmaps and product strategy
+ROADMAP.md
+roadmap.md
+*roadmap*.md
+
+# Confidential credentials and secrets
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.jks
+*.keystore
+credentials.json
+service-account*.json
+serviceAccount*.json
+firebase-adminsdk*.json
+*.secret
+*.secrets
+*.token
+*.tokens
+auth_tokens/
+secrets/
+private/
+confidential/
+ssl/
+certs/
 
 # Backup files
 *.backup
@@ -109,10 +143,15 @@ backups/
 *.local.js
 config.local.*
 
-# Database dumps (local)
+# Database dumps (local and sensitive exports)
+*.sql
+*.sql.gz
 *.sql.bak
 *.dump
 dumps/
+db_dumps/
+*.sqlite
+*.sqlite3
 
 # Session/logs (local dev)
 *.log
