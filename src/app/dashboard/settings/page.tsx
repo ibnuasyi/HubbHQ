@@ -13,6 +13,8 @@ import {
   Globe,
   ArrowRight,
   Settings,
+  HardDrive,
+  QrCode,
 } from 'lucide-react'
 import {
   Card,
@@ -87,6 +89,25 @@ const settingSections = [
         href: '/dashboard/settings/categories',
         icon: Tag,
         color: 'text-teal-500 bg-teal-500/10',
+      },
+    ],
+  },
+  {
+    title: 'Infrastruktur & Keuangan',
+    items: [
+      {
+        title: 'Penyimpanan Berkas (Object Storage)',
+        description: 'Konfigurasi backend Local Disk, AWS S3, Cloudflare R2, MinIO, atau WebDAV untuk media dan dokumen.',
+        href: '/dashboard/settings/storage',
+        icon: HardDrive,
+        color: 'text-cyan-500 bg-cyan-500/10',
+      },
+      {
+        title: 'Pembayaran QRIS & Bank',
+        description: 'Pengaturan QRIS Statis/Dinamis mandiri, rekening kas bendahara, atau integrasi Payment Gateway.',
+        href: '/dashboard/settings/qris',
+        icon: QrCode,
+        color: 'text-emerald-500 bg-emerald-500/10',
       },
     ],
   },

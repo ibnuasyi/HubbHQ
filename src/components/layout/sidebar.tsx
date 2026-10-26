@@ -42,6 +42,8 @@ import {
   MessageSquareQuote,
   UserPlus,
   Award,
+  HardDrive,
+  QrCode,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -253,6 +255,16 @@ const navigationItems: NavSection[] = [
         title: 'Jenis Surat',
         href: '/dashboard/settings/jenis-surat',
         icon: FileText,
+      },
+      {
+        title: 'Penyimpanan Berkas',
+        href: '/dashboard/settings/storage',
+        icon: HardDrive,
+      },
+      {
+        title: 'Pembayaran QRIS',
+        href: '/dashboard/settings/qris',
+        icon: QrCode,
       },
     ],
   },

@@ -81,19 +81,43 @@ export async function saveQrisConfig(
   config: Partial<QrisConfig>
 ): Promise<QrisConfig> {
   const current = await getQrisConfig()
+
+  // Pertahankan kunci rahasia jika dikirim dalam bentuk mask (********)
+  let apiKey = config.gateway?.apiKey
+  if (apiKey === undefined || apiKey === '********' || apiKey.includes('***')) {
+    apiKey = current.gateway.apiKey
+  }
+
+  let webhookSecret = config.gateway?.webhookSecret
+  if (webhookSecret === undefined || webhookSecret === '********' || webhookSecret.includes('***')) {
+    webhookSecret = current.gateway.webhookSecret
+  }
+
   const updated: QrisConfig = {
     ...current,
     ...config,
-    gateway: { ...current.gateway, ...(config.gateway || {}) },
+    gateway: {
+      ...current.gateway,
+      ...(config.gateway || {}),
+      apiKey,
+      webhookSecret,
+    },
     mandiri: { ...current.mandiri, ...(config.mandiri || {}) },
   }
 
   await prisma.websiteConfig.upsert({
     where: { key: 'qris_payment_config' },
-    update: { value: updated as any },
+    update: {
+      value: updated as any,
+      isPublic: false,
+      category: 'keuangan',
+    },
     create: {
       key: 'qris_payment_config',
       value: updated as any,
+      isPublic: false,
+      category: 'keuangan',
+      description: 'Konfigurasi pembayaran QRIS dan rekening bank penampung organisasi',
     },
   })
 

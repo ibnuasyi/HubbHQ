@@ -1,12 +1,14 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 import { getQrisConfig, saveQrisConfig } from '@/lib/qris'
 
 async function canManageQrisConfig(session: any): Promise<boolean> {
   if (!session?.user?.id) return false
-  const roleName = session.user?.role?.name?.toLowerCase() || ''
+  const role = session.user?.role
+  const roleName = (typeof role === 'string' ? role : role?.name || '').toLowerCase()
+  if (isSuperAdminRole(role || roleName)) return true
   if (['admin', 'bendahara', 'ketua'].includes(roleName)) return true
   if (await hasPermission(session.user.id, 'keuangan.edit')) return true
   if (await hasPermission(session.user.id, 'settings.edit')) return true

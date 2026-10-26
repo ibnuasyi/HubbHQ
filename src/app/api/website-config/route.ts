@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden: Konfigurasi bersifat rahasia' }, { status: 403 })
       }
 
-      // Mask sensitive credentials if accessing payment configs without treasurer/admin privileges
+      // Mask sensitive credentials if accessing payment or storage configs
       let safeValue = config.value
       if (key === 'qris_payment_config' && !isTreasurer && safeValue && typeof safeValue === 'object') {
         const val = safeValue as any
@@ -42,6 +42,14 @@ export async function GET(request: NextRequest) {
             apiKey: val.gateway?.apiKey ? '********' : '',
             webhookSecret: '********',
           },
+        }
+      } else if (key === 'storage_settings' && safeValue && typeof safeValue === 'object') {
+        const val = safeValue as any
+        safeValue = {
+          ...val,
+          s3: { ...(val.s3 || {}), secretAccessKey: val.s3?.secretAccessKey ? '********' : '' },
+          r2: { ...(val.r2 || {}), secretAccessKey: val.r2?.secretAccessKey ? '********' : '' },
+          webdav: { ...(val.webdav || {}), password: val.webdav?.password ? '********' : '' },
         }
       }
 
@@ -79,6 +87,14 @@ export async function GET(request: NextRequest) {
             apiKey: val.gateway?.apiKey ? '********' : '',
             webhookSecret: '********',
           },
+        }
+      } else if (config.key === 'storage_settings' && safeValue && typeof safeValue === 'object') {
+        const val = safeValue as any
+        safeValue = {
+          ...val,
+          s3: { ...(val.s3 || {}), secretAccessKey: val.s3?.secretAccessKey ? '********' : '' },
+          r2: { ...(val.r2 || {}), secretAccessKey: val.r2?.secretAccessKey ? '********' : '' },
+          webdav: { ...(val.webdav || {}), password: val.webdav?.password ? '********' : '' },
         }
       }
       configData[config.key] = safeValue

@@ -14,8 +14,10 @@ import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { prisma } from '@/lib/db'
 
 // =====================================================
 // Storage Interface
@@ -37,43 +39,70 @@ export interface IStorageProvider {
 }
 
 // =====================================================
-// Configuration
+// Configuration & Types
 // =====================================================
 
-export const STORAGE_CONFIG = {
-  // Provider: 'local' | 's3' | 'r2' | 'webdav'
-  provider: (process.env.STORAGE_PROVIDER || 'local').toLowerCase(),
+export type StorageProviderType = 'local' | 's3' | 'r2' | 'webdav'
 
-  // Local storage
+export interface StorageSettings {
+  provider: StorageProviderType
+  local: {
+    baseDir: string
+    publicFolders: string[]
+    protectedFolders: string[]
+  }
+  s3: {
+    endpoint?: string
+    region: string
+    bucket: string
+    accessKeyId: string
+    secretAccessKey: string
+    forcePathStyle: boolean
+    publicUrl?: string
+    publicPrefixes: string[]
+  }
+  r2: {
+    accountId: string
+    bucket: string
+    accessKeyId: string
+    secretAccessKey: string
+    publicUrl?: string
+    publicPrefixes: string[]
+  }
+  webdav: {
+    url: string
+    username: string
+    password: string
+    basePath?: string
+    publicUrl?: string
+  }
+}
+
+export const DEFAULT_STORAGE_SETTINGS: StorageSettings = {
+  provider: (process.env.STORAGE_PROVIDER || 'local').toLowerCase() as StorageProviderType,
   local: {
     baseDir: process.env.STORAGE_LOCAL_DIR || './uploads',
-    publicFolders: (process.env.STORAGE_PUBLIC_FOLDERS || 'images,documents,gallery,banners,post-images,library,sertifikat').split(','),
-    protectedFolders: (process.env.STORAGE_PROTECTED_FOLDERS || 'avatars,signatures,attachments,private,user-files,lpj,proposals').split(','),
+    publicFolders: (process.env.STORAGE_PUBLIC_FOLDERS || 'images,documents,gallery,banners,post-images,library,sertifikat').split(',').map((s) => s.trim()),
+    protectedFolders: (process.env.STORAGE_PROTECTED_FOLDERS || 'avatars,signatures,attachments,private,user-files,lpj,proposals').split(',').map((s) => s.trim()),
   },
-
-  // S3 / S3-compatible (MinIO, R2, Wasabi, AList S3)
   s3: {
-    endpoint: process.env.S3_ENDPOINT,
+    endpoint: process.env.S3_ENDPOINT || '',
     region: process.env.S3_REGION || 'us-east-1',
     bucket: process.env.S3_BUCKET || 'hubbhq',
     accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
     forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true' || Boolean(process.env.S3_ENDPOINT),
     publicUrl: process.env.S3_PUBLIC_URL || '',
-    publicPrefixes: (process.env.S3_PUBLIC_PREFIXES || 'images,documents,gallery,banners,post-images,library,sertifikat').split(','),
+    publicPrefixes: (process.env.S3_PUBLIC_PREFIXES || 'images,documents,gallery,banners,post-images,library,sertifikat').split(',').map((s) => s.trim()),
   },
-
-  // Cloudflare R2
   r2: {
     accountId: process.env.R2_ACCOUNT_ID || '',
     bucket: process.env.R2_BUCKET || 'hubbhq',
     accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
     publicUrl: process.env.R2_PUBLIC_URL || '',
-    publicPrefixes: (process.env.R2_PUBLIC_PREFIXES || 'images,documents,gallery,banners,post-images,library,sertifikat').split(','),
+    publicPrefixes: (process.env.R2_PUBLIC_PREFIXES || 'images,documents,gallery,banners,post-images,library,sertifikat').split(',').map((s) => s.trim()),
   },
-
-  // WebDAV (AList WebDAV, Nextcloud, OwnCloud)
   webdav: {
     url: (process.env.WEBDAV_URL || '').replace(/\/$/, ''),
     username: process.env.WEBDAV_USERNAME || '',
@@ -81,16 +110,16 @@ export const STORAGE_CONFIG = {
     basePath: (process.env.WEBDAV_BASE_PATH || '').replace(/^\/|\/$/g, ''),
     publicUrl: (process.env.WEBDAV_PUBLIC_URL || '').replace(/\/$/, ''),
   },
+}
 
-  // Max file sizes (bytes)
+export const STORAGE_CONFIG = {
+  ...DEFAULT_STORAGE_SETTINGS,
   maxFileSize: {
     image: 10 * 1024 * 1024,      // 10MB
     document: 25 * 1024 * 1024,   // 25MB
     video: 100 * 1024 * 1024,     // 100MB
     default: 10 * 1024 * 1024,    // 10MB
   },
-
-  // Allowed MIME types
   allowedTypes: {
     image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
     document: [
@@ -106,6 +135,58 @@ export const STORAGE_CONFIG = {
     audio: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'],
     default: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'],
   },
+}
+
+/**
+ * Validasi keamanan URL untuk mencegah SSRF (Server-Side Request Forgery)
+ */
+export function isSafeStorageUrl(urlString?: string): { safe: boolean; error?: string } {
+  if (!urlString || urlString.trim() === '') return { safe: true }
+
+  let parsed: URL
+  try {
+    parsed = new URL(urlString)
+  } catch {
+    return { safe: false, error: 'Format URL tidak valid.' }
+  }
+
+  // Wajib protokol HTTP atau HTTPS
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return { safe: false, error: 'Protokol URL harus HTTP atau HTTPS.' }
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  // Blokir Cloud Provider Metadata Services
+  const blockedHostnames = [
+    '169.254.169.254',
+    '169.254.169.253',
+    '169.254.170.2',
+    '100.100.100.200',
+    'metadata.google.internal',
+    'instance-data',
+    'metadata',
+    'fd00:ec2::254',
+  ]
+
+  if (blockedHostnames.includes(hostname) || hostname.startsWith('169.254.')) {
+    return { safe: false, error: 'Akses ke alamat IP atau metadata cloud dilarang untuk alasan keamanan.' }
+  }
+
+  return { safe: true }
+}
+
+/**
+ * Validasi path direktori lokal untuk mencegah Directory Traversal
+ */
+export function isSafeLocalDir(baseDir: string): { safe: boolean; error?: string } {
+  if (!baseDir || typeof baseDir !== 'string') {
+    return { safe: false, error: 'Direktori penyimpanan lokal tidak boleh kosong.' }
+  }
+  if (baseDir.includes('..') || baseDir.includes('\0')) {
+    return { safe: false, error: 'Nama direktori tidak boleh mengandung karakter traversal (..) atau null byte.' }
+  }
+  return { safe: true }
 }
 
 // =====================================================
@@ -176,9 +257,10 @@ export function isPathSecure(filePath: string, baseDir: string): boolean {
   return resolved.startsWith(resolvedBase)
 }
 
-export function isPublicFolder(folder: string): boolean {
+export function isPublicFolder(folder: string, customList?: string[]): boolean {
   const normalizedFolder = folder.toLowerCase().trim()
-  return STORAGE_CONFIG.local.publicFolders.some(
+  const list = customList || STORAGE_CONFIG.local.publicFolders
+  return list.some(
     f => normalizedFolder === f.toLowerCase() || normalizedFolder.startsWith(f.toLowerCase() + '/')
   )
 }
@@ -190,9 +272,14 @@ export function isPublicFolder(folder: string): boolean {
 export class LocalStorage implements IStorageProvider {
   name = 'local'
   private baseDir: string
+  private relativeBaseDir: string
+  private publicFolders: string[]
 
-  constructor() {
-    this.baseDir = path.resolve(process.cwd(), STORAGE_CONFIG.local.baseDir)
+  constructor(customConfig?: StorageSettings['local']) {
+    const rawDir = customConfig?.baseDir || STORAGE_CONFIG.local.baseDir
+    this.relativeBaseDir = rawDir.replace(/^\.\//, '')
+    this.baseDir = path.resolve(process.cwd(), rawDir)
+    this.publicFolders = customConfig?.publicFolders || STORAGE_CONFIG.local.publicFolders
   }
 
   private getFilePath(folder: string, filename: string): string {
@@ -223,8 +310,8 @@ export class LocalStorage implements IStorageProvider {
 
     await writeFile(filePath, buffer)
 
-    const url = isPublicFolder(safeFolder)
-      ? `/${STORAGE_CONFIG.local.baseDir.replace(/^\.\//, '')}/${safeFolder}/${filename}`
+    const url = isPublicFolder(safeFolder, this.publicFolders)
+      ? `/${this.relativeBaseDir}/${safeFolder}/${filename}`
       : `/api/files/${safeFolder}/${filename}`
 
     return {
@@ -281,27 +368,39 @@ export class S3Storage implements IStorageProvider {
   private client: S3Client
   private bucket: string
   private publicUrl: string
+  private endpoint?: string
+  private region: string
+  private publicPrefixes: string[]
 
-  constructor(isR2 = false) {
+  constructor(isR2 = false, customConfig?: StorageSettings['s3'] | StorageSettings['r2']) {
     if (isR2) {
-      const config = STORAGE_CONFIG.r2
+      this.name = 'r2'
+      const config = (customConfig as StorageSettings['r2']) || STORAGE_CONFIG.r2
       this.bucket = config.bucket
-      this.publicUrl = config.publicUrl
+      this.publicUrl = config.publicUrl || ''
+      this.region = 'auto'
+      this.publicPrefixes = config.publicPrefixes || STORAGE_CONFIG.r2.publicPrefixes
+      const endpoint = `https://${config.accountId}.r2.cloudflarestorage.com`
+      this.endpoint = endpoint
       this.client = new S3Client({
         region: 'auto',
-        endpoint: `https://${config.accountId}.r2.cloudflarestorage.com`,
+        endpoint,
         credentials: {
           accessKeyId: config.accessKeyId,
           secretAccessKey: config.secretAccessKey,
         },
       })
     } else {
-      const config = STORAGE_CONFIG.s3
+      this.name = 's3'
+      const config = (customConfig as StorageSettings['s3']) || STORAGE_CONFIG.s3
       this.bucket = config.bucket
-      this.publicUrl = config.publicUrl
+      this.publicUrl = config.publicUrl || ''
+      this.region = config.region || 'us-east-1'
+      this.endpoint = config.endpoint || undefined
+      this.publicPrefixes = config.publicPrefixes || STORAGE_CONFIG.s3.publicPrefixes
       this.client = new S3Client({
-        region: config.region,
-        endpoint: config.endpoint || undefined,
+        region: this.region,
+        endpoint: this.endpoint,
         forcePathStyle: config.forcePathStyle,
         credentials: {
           accessKeyId: config.accessKeyId,
@@ -343,12 +442,11 @@ export class S3Storage implements IStorageProvider {
     let url: string
     if (this.publicUrl) {
       url = `${this.publicUrl.replace(/\/$/, '')}/${key}`
-    } else if (isPublicFolder(safeFolder)) {
-      const endpoint = STORAGE_CONFIG.s3.endpoint
-      if (endpoint) {
-        url = `${endpoint.replace(/\/$/, '')}/${this.bucket}/${key}`
+    } else if (isPublicFolder(safeFolder, this.publicPrefixes)) {
+      if (this.endpoint) {
+        url = `${this.endpoint.replace(/\/$/, '')}/${this.bucket}/${key}`
       } else {
-        url = `https://${this.bucket}.s3.${STORAGE_CONFIG.s3.region}.amazonaws.com/${key}`
+        url = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`
       }
     } else {
       url = `/api/files/${safeFolder}/${filename}`
@@ -431,14 +529,14 @@ export class WebDAVStorage implements IStorageProvider {
   private authHeader: string
   private publicUrl: string
 
-  constructor() {
-    const config = STORAGE_CONFIG.webdav
+  constructor(customConfig?: StorageSettings['webdav']) {
+    const config = customConfig || STORAGE_CONFIG.webdav
     let base = config.url
     if (config.basePath) {
-      base += `/${config.basePath}`
+      base += `/${config.basePath.replace(/^\/|\/$/g, '')}`
     }
     this.baseUrl = base
-    this.publicUrl = config.publicUrl
+    this.publicUrl = config.publicUrl || ''
 
     const credentials = `${config.username}:${config.password}`
     this.authHeader = `Basic ${Buffer.from(credentials).toString('base64')}`
@@ -460,7 +558,7 @@ export class WebDAVStorage implements IStorageProvider {
         headers: { Authorization: this.authHeader },
       })
     } catch {
-      // Ignore if folder exists
+      // Abaikan jika folder sudah ada
     }
   }
 
@@ -491,12 +589,12 @@ export class WebDAVStorage implements IStorageProvider {
     })
 
     if (!res.ok && res.status !== 201 && res.status !== 204) {
-      throw new Error(`WebDAV upload failed: ${res.status} ${res.statusText}`)
+      throw new Error(`WebDAV upload gagal: ${res.status} ${res.statusText}`)
     }
 
     let url: string
     if (this.publicUrl) {
-      url = `${this.publicUrl}/${safeFolder}/${filename}`
+      url = `${this.publicUrl.replace(/\/$/, '')}/${safeFolder}/${filename}`
     } else if (isPublicFolder(safeFolder)) {
       url = fileUrl
     } else {
@@ -556,27 +654,346 @@ export class WebDAVStorage implements IStorageProvider {
 // Factory & Service
 // =====================================================
 
-export type StorageProviderType = 'local' | 's3' | 'r2' | 'webdav'
+export function createStorageFromConfig(config: StorageSettings): IStorageProvider {
+  switch (config.provider) {
+    case 's3':
+      return new S3Storage(false, config.s3)
+    case 'r2':
+      return new S3Storage(true, config.r2)
+    case 'webdav':
+      return new WebDAVStorage(config.webdav)
+    case 'local':
+    default:
+      return new LocalStorage(config.local)
+  }
+}
 
 export function createStorage(): IStorageProvider {
-  const provider = STORAGE_CONFIG.provider
-  if (provider === 's3') {
-    return new S3Storage(false)
+  return createStorageFromConfig(DEFAULT_STORAGE_SETTINGS)
+}
+
+/**
+ * Mengambil konfigurasi penyimpanan dari database WebsiteConfig atau fallback env
+ */
+export async function getStorageSettings(): Promise<StorageSettings> {
+  try {
+    const config = await prisma.websiteConfig.findUnique({
+      where: { key: 'storage_settings' },
+    })
+
+    if (config?.value && typeof config.value === 'object') {
+      const val = config.value as any
+      return {
+        provider: val.provider || DEFAULT_STORAGE_SETTINGS.provider,
+        local: { ...DEFAULT_STORAGE_SETTINGS.local, ...(val.local || {}) },
+        s3: { ...DEFAULT_STORAGE_SETTINGS.s3, ...(val.s3 || {}) },
+        r2: { ...DEFAULT_STORAGE_SETTINGS.r2, ...(val.r2 || {}) },
+        webdav: { ...DEFAULT_STORAGE_SETTINGS.webdav, ...(val.webdav || {}) },
+      }
+    }
+  } catch (err) {
+    console.error('Error loading storage settings from DB:', err)
   }
-  if (provider === 'r2') {
-    return new S3Storage(true)
+
+  return DEFAULT_STORAGE_SETTINGS
+}
+
+/**
+ * Menyimpan konfigurasi penyimpanan ke database WebsiteConfig dan me-reload provider aktif
+ */
+export async function saveStorageSettings(
+  settings: Partial<StorageSettings>
+): Promise<StorageSettings> {
+  const current = await getStorageSettings()
+
+  // Secret preservation: cegah penimpaan kredensial rahasia dengan mask (********)
+  let s3Secret = settings.s3?.secretAccessKey
+  if (!s3Secret || s3Secret === '********' || s3Secret.includes('***')) {
+    s3Secret = current.s3.secretAccessKey
   }
-  if (provider === 'webdav') {
-    return new WebDAVStorage()
+
+  let r2Secret = settings.r2?.secretAccessKey
+  if (!r2Secret || r2Secret === '********' || r2Secret.includes('***')) {
+    r2Secret = current.r2.secretAccessKey
   }
-  return new LocalStorage()
+
+  let webdavPassword = settings.webdav?.password
+  if (!webdavPassword || webdavPassword === '********' || webdavPassword.includes('***')) {
+    webdavPassword = current.webdav.password
+  }
+
+  // SSRF Protection
+  if (settings.s3?.endpoint) {
+    const check = isSafeStorageUrl(settings.s3.endpoint)
+    if (!check.safe) throw new Error(`S3 Endpoint tidak aman: ${check.error}`)
+  }
+  if (settings.webdav?.url) {
+    const check = isSafeStorageUrl(settings.webdav.url)
+    if (!check.safe) throw new Error(`WebDAV URL tidak aman: ${check.error}`)
+  }
+
+  // Path Traversal Protection
+  if (settings.local?.baseDir) {
+    const check = isSafeLocalDir(settings.local.baseDir)
+    if (!check.safe) throw new Error(`Direktori lokal tidak aman: ${check.error}`)
+  }
+
+  const updated: StorageSettings = {
+    ...current,
+    ...settings,
+    local: { ...current.local, ...(settings.local || {}) },
+    s3: {
+      ...current.s3,
+      ...(settings.s3 || {}),
+      secretAccessKey: s3Secret,
+    },
+    r2: {
+      ...current.r2,
+      ...(settings.r2 || {}),
+      secretAccessKey: r2Secret,
+    },
+    webdav: {
+      ...current.webdav,
+      ...(settings.webdav || {}),
+      password: webdavPassword,
+    },
+  }
+
+  await prisma.websiteConfig.upsert({
+    where: { key: 'storage_settings' },
+    update: {
+      value: updated as any,
+      isPublic: false,
+      category: 'storage',
+    },
+    create: {
+      key: 'storage_settings',
+      value: updated as any,
+      isPublic: false,
+      category: 'storage',
+      description: 'Konfigurasi backend penyimpanan berkas (Local, S3, Cloudflare R2, WebDAV)',
+    },
+  })
+
+  // Perbarui instance penyimpanan aktif secara langsung di memori
+  const newProvider = createStorageFromConfig(updated)
+  storageService.setProvider(newProvider)
+
+  return updated
+}
+
+/**
+ * Uji konektivitas ke provider penyimpanan berkas
+ */
+export async function testStorageConnection(
+  config: StorageSettings
+): Promise<{ success: boolean; message: string }> {
+  try {
+    switch (config.provider) {
+      case 'local': {
+        const check = isSafeLocalDir(config.local.baseDir)
+        if (!check.safe) {
+          return { success: false, message: check.error || 'Direktori tidak aman' }
+        }
+        const targetDir = path.resolve(process.cwd(), config.local.baseDir)
+        if (!existsSync(targetDir)) {
+          await mkdir(targetDir, { recursive: true })
+        }
+        const testFile = path.join(targetDir, `.healthcheck_${Date.now()}.tmp`)
+        await writeFile(testFile, 'hubbhq-storage-healthcheck')
+        if (existsSync(testFile)) {
+          await unlink(testFile)
+        }
+        return {
+          success: true,
+          message: `Penyimpanan lokal siap digunakan di: ${targetDir}`,
+        }
+      }
+
+      case 's3': {
+        if (!config.s3.bucket) {
+          return { success: false, message: 'Nama bucket S3 wajib diisi.' }
+        }
+        if (config.s3.endpoint) {
+          const check = isSafeStorageUrl(config.s3.endpoint)
+          if (!check.safe) return { success: false, message: check.error || 'Endpoint tidak aman' }
+        }
+
+        const client = new S3Client({
+          region: config.s3.region || 'us-east-1',
+          endpoint: config.s3.endpoint || undefined,
+          forcePathStyle: config.s3.forcePathStyle,
+          credentials: {
+            accessKeyId: config.s3.accessKeyId,
+            secretAccessKey: config.s3.secretAccessKey,
+          },
+        })
+
+        const abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController.abort(), 5000)
+
+        try {
+          await client.send(
+            new HeadBucketCommand({ Bucket: config.s3.bucket }),
+            { abortSignal: abortController.signal }
+          )
+          clearTimeout(timeoutId)
+          return {
+            success: true,
+            message: `Koneksi S3 ke bucket "${config.s3.bucket}" berhasil diverifikasi.`,
+          }
+        } catch (err: any) {
+          clearTimeout(timeoutId)
+          if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+            return { success: false, message: 'Batas waktu koneksi habis (Timeout 5 detik).' }
+          }
+          return {
+            success: false,
+            message: `Gagal mengakses bucket S3: ${err.message || 'Periksa bucket dan kredensial Anda.'}`,
+          }
+        }
+      }
+
+      case 'r2': {
+        if (!config.r2.accountId || !config.r2.bucket) {
+          return { success: false, message: 'Account ID dan Nama Bucket Cloudflare R2 wajib diisi.' }
+        }
+        const endpoint = `https://${config.r2.accountId}.r2.cloudflarestorage.com`
+        const check = isSafeStorageUrl(endpoint)
+        if (!check.safe) return { success: false, message: check.error || 'Endpoint tidak aman' }
+
+        const client = new S3Client({
+          region: 'auto',
+          endpoint,
+          credentials: {
+            accessKeyId: config.r2.accessKeyId,
+            secretAccessKey: config.r2.secretAccessKey,
+          },
+        })
+
+        const abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController.abort(), 5000)
+
+        try {
+          await client.send(
+            new HeadBucketCommand({ Bucket: config.r2.bucket }),
+            { abortSignal: abortController.signal }
+          )
+          clearTimeout(timeoutId)
+          return {
+            success: true,
+            message: `Koneksi Cloudflare R2 ke bucket "${config.r2.bucket}" berhasil terhubung.`,
+          }
+        } catch (err: any) {
+          clearTimeout(timeoutId)
+          if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+            return { success: false, message: 'Batas waktu koneksi Cloudflare R2 habis (Timeout 5 detik).' }
+          }
+          return {
+            success: false,
+            message: `Gagal terhubung ke Cloudflare R2: ${err.message || 'Periksa Account ID dan API Token R2.'}`,
+          }
+        }
+      }
+
+      case 'webdav': {
+        if (!config.webdav.url) {
+          return { success: false, message: 'URL WebDAV wajib diisi.' }
+        }
+        const check = isSafeStorageUrl(config.webdav.url)
+        if (!check.safe) return { success: false, message: check.error || 'URL WebDAV tidak aman' }
+
+        const credentials = `${config.webdav.username}:${config.webdav.password}`
+        const authHeader = `Basic ${Buffer.from(credentials).toString('base64')}`
+
+        let targetUrl = config.webdav.url
+        if (config.webdav.basePath) {
+          targetUrl = `${targetUrl.replace(/\/$/, '')}/${config.webdav.basePath.replace(/^\/|\/$/g, '')}`
+        }
+
+        try {
+          const res = await fetch(targetUrl, {
+            method: 'PROPFIND',
+            headers: {
+              Authorization: authHeader,
+              Depth: '0',
+            },
+            signal: AbortSignal.timeout(5000),
+          }).catch(async () => {
+            return await fetch(targetUrl, {
+              method: 'HEAD',
+              headers: { Authorization: authHeader },
+              signal: AbortSignal.timeout(5000),
+            })
+          })
+
+          if (res.ok || res.status === 207) {
+            return {
+              success: true,
+              message: `Koneksi WebDAV berhasil terhubung (Status: ${res.status} ${res.statusText}).`,
+            }
+          } else if (res.status === 401 || res.status === 403) {
+            return {
+              success: false,
+              message: `Otentikasi WebDAV gagal (Status: ${res.status}). Periksa username dan password.`,
+            }
+          } else {
+            return {
+              success: false,
+              message: `Server WebDAV merespons dengan status: ${res.status} ${res.statusText}`,
+            }
+          }
+        } catch (err: any) {
+          if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+            return { success: false, message: 'Batas waktu koneksi WebDAV habis (Timeout 5 detik).' }
+          }
+          return {
+            success: false,
+            message: `Gagal menghubungi server WebDAV: ${err.message || 'Periksa URL dan jaringan.'}`,
+          }
+        }
+      }
+
+      default:
+        return { success: false, message: 'Provider tidak dikenali.' }
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      message: `Uji koneksi gagal: ${err.message || 'Terjadi kesalahan sistem'}`,
+    }
+  }
 }
 
 export class StorageService {
   private storage: IStorageProvider
+  private initialized = false
+  private initPromise: Promise<void> | null = null
 
   constructor() {
     this.storage = createStorage()
+  }
+
+  async ensureInitialized(): Promise<void> {
+    if (this.initialized) return
+    if (!this.initPromise) {
+      this.initPromise = (async () => {
+        try {
+          const config = await getStorageSettings()
+          this.storage = createStorageFromConfig(config)
+        } catch (err) {
+          console.error('StorageService init error:', err)
+        } finally {
+          this.initialized = true
+        }
+      })()
+    }
+    return this.initPromise
+  }
+
+  setProvider(provider: IStorageProvider) {
+    this.storage = provider
+    this.initialized = true
   }
 
   getProvider(): string {
@@ -593,6 +1010,8 @@ export class StorageService {
     originalName: string,
     mimeType: string
   ): Promise<{ url: string; filename: string }> {
+    await this.ensureInitialized()
+
     const detectedType = detectFileType(buffer)
     if (!detectedType) {
       throw new Error('Format isi berkas tidak valid atau tidak dikenali.')
@@ -620,6 +1039,7 @@ export class StorageService {
   }
 
   async delete(url: string): Promise<boolean> {
+    await this.ensureInitialized()
     const parts = url.split('/')
     if (parts.length >= 2) {
       const filename = parts[parts.length - 1]
@@ -630,14 +1050,17 @@ export class StorageService {
   }
 
   async read(folder: string, filename: string): Promise<Buffer | null> {
+    await this.ensureInitialized()
     return this.storage.read(folder, filename)
   }
 
   async exists(folder: string, filename: string): Promise<boolean> {
+    await this.ensureInitialized()
     return this.storage.exists(folder, filename)
   }
 
   async getSignedUrl(folder: string, filename: string, expiresInSeconds = 3600): Promise<string | null> {
+    await this.ensureInitialized()
     if (this.storage.getSignedUrl) {
       return this.storage.getSignedUrl(folder, filename, expiresInSeconds)
     }
