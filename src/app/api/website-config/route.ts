@@ -2,15 +2,15 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 
 // GET /api/website-config - Get all config or single key
 export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
-    const isAdmin = roleName === 'admin'
-    const isTreasurer = ['admin', 'bendahara', 'ketua'].includes(roleName)
+    const isAdmin = isSuperAdminRole(roleName) || roleName === 'admin'
+    const isTreasurer = isSuperAdminRole(roleName) || ['admin', 'bendahara', 'ketua'].includes(roleName)
 
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     // Check if role exists and is admin
     const roleName = user.role?.name?.toLowerCase()
 
-    if (roleName !== 'admin') {
+    if (!isSuperAdminRole(user.role) && roleName !== 'admin') {
       return NextResponse.json(
         { error: 'Forbidden - Admin only' },
         { status: 403 }
@@ -194,7 +194,7 @@ export async function PATCH(request: NextRequest) {
     // Check if role exists and is admin
     const roleName = user.role?.name?.toLowerCase()
 
-    if (roleName !== 'admin') {
+    if (!isSuperAdminRole(user.role) && roleName !== 'admin') {
       return NextResponse.json(
         { error: 'Forbidden - Admin only' },
         { status: 403 }

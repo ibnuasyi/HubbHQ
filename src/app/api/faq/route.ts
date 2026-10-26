@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 
 // GET /api/faq - List all FAQ items (public for published FAQs)
 export async function GET(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const session = await auth()
     const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
-    const isAdmin = roleName === 'admin' || roleName === 'ketua'
+    const isAdmin = isSuperAdminRole(roleName) || roleName === 'admin' || roleName === 'ketua'
 
     const where: Record<string, unknown> = {}
     if (category) where.category = category

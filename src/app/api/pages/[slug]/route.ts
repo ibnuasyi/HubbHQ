@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 
 // GET /api/pages/[slug] - Get single page (public for published pages)
 export async function GET(
@@ -35,7 +35,7 @@ export async function GET(
     if (!page.isPublished) {
       const session = await auth()
       const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
-      if (roleName !== 'admin' && roleName !== 'ketua') {
+      if (!isSuperAdminRole(roleName) && roleName !== 'admin' && roleName !== 'ketua') {
         return NextResponse.json(
           { error: 'Page not found' },
           { status: 404 }

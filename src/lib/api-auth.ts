@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 
 /**
  * Auth middleware for API routes
@@ -22,7 +22,7 @@ export async function requireAuth(request: NextRequest): Promise<{ authorized: b
 }
 
 /**
- * Auth middleware that also checks for admin role
+ * Auth middleware that also checks for admin / super admin role
  */
 export async function requireAdmin(request: NextRequest): Promise<{ authorized: boolean; session?: any; response?: NextResponse }> {
   const { authorized, session, response } = await requireAuth(request)
@@ -31,9 +31,10 @@ export async function requireAdmin(request: NextRequest): Promise<{ authorized: 
     return { authorized: false, response }
   }
 
-  // Check if user has admin role
+  // Check if user has super admin / admin role
   const userRole = session.user?.role?.name?.toLowerCase()
-  if (userRole !== 'admin' && userRole !== 'ketua') {
+  const isSuper = isSuperAdminRole(session.user?.role) || isSuperAdminRole(userRole)
+  if (!isSuper && userRole !== 'admin' && userRole !== 'ketua') {
     return {
       authorized: false,
       response: NextResponse.json(

@@ -49,7 +49,7 @@ interface CurrentUser {
   id: string
   name: string
   email: string
-  role: { name: string }
+  role: { name: string; displayName?: string }
 }
 
 export default function RolesPage() {
@@ -105,7 +105,15 @@ export default function RolesPage() {
       .catch(console.error)
   }, [fetchData])
 
-  const isAdmin = currentUser?.role?.name === 'admin'
+  const roleName = currentUser?.role?.name?.toLowerCase() || ''
+  const roleDisplay = currentUser?.role?.displayName?.toLowerCase() || ''
+  const isAdmin =
+    roleName === 'admin' ||
+    roleName === 'superadmin' ||
+    roleName === 'super_admin' ||
+    roleName === 'super admin' ||
+    roleName === 'administrator' ||
+    roleDisplay.includes('admin')
 
   const groupedPermissions = React.useMemo(() => {
     const groups: Record<string, Permission[]> = {}

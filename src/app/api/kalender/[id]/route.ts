@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 import { isValidId, sanitizeInput } from '@/lib/api-security'
 
 // GET /api/kalender/[id] - Get single event
@@ -54,7 +53,7 @@ export async function GET(
       include: { role: true },
     })
 
-    const isAdmin = user?.role?.name === 'admin'
+    const isAdmin = isSuperAdminRole(user?.role)
     const canViewAll = await hasPermission(session.user.id, 'kalender.view_all')
 
     // Allow if: admin, has view_all permission, event is public, or user is creator
@@ -115,7 +114,7 @@ export async function PATCH(
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name !== 'admin') {
+      if (!isSuperAdminRole(user?.role)) {
         return NextResponse.json(
           { error: 'Anda tidak memiliki akses untuk mengedit acara ini' },
           { status: 403 }
@@ -231,7 +230,7 @@ export async function DELETE(
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name !== 'admin') {
+      if (!isSuperAdminRole(user?.role)) {
         return NextResponse.json(
           { error: 'Anda tidak memiliki akses untuk menghapus acara ini' },
           { status: 403 }

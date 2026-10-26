@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 import { canReviewProkerFinance } from '@/lib/proker-auth'
 
 // PATCH /api/proker/[id]/lpj/review - Approve or Reject LPJ
@@ -67,7 +67,7 @@ export async function PATCH(
     }
 
     // Separation of Duties: PIC of proker cannot approve their own LPJ unless admin/ketua
-    if (lpj.programKerja?.picId === session.user.id && !['admin', 'ketua'].includes(roleName)) {
+    if (lpj.programKerja?.picId === session.user.id && !isSuperAdminRole(roleName) && !['admin', 'ketua'].includes(roleName)) {
       return NextResponse.json(
         { error: 'Konflik Kepentingan: Sebagai PIC pelaksana kegiatan, Anda tidak dapat mengesahkan LPJ Anda sendiri.' },
         { status: 403 }

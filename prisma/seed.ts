@@ -85,14 +85,35 @@ async function main() {
     // Modul Lanjutan Organisasi
     { name: 'inventaris.view', label: 'Lihat Inventaris', group: 'Inventaris' },
     { name: 'inventaris.manage', label: 'Kelola Logistik & Aset', group: 'Inventaris' },
+    { name: 'inventaris.edit', label: 'Edit & Verifikasi Logistik', group: 'Inventaris' },
     { name: 'presensi.manage', label: 'Kelola Presensi & Notula', group: 'Presensi' },
     { name: 'voting.manage', label: 'Kelola E-Voting Mubes', group: 'Voting' },
+    { name: 'voting.admin', label: 'Administrasi Penuh Bilik Suara Mubes', group: 'Voting' },
     { name: 'aspirasi.manage', label: 'Kelola Advokasi & Aspirasi', group: 'Aspirasi' },
     { name: 'kaderisasi.manage', label: 'Kelola Diklat & Kaderisasi', group: 'Kaderisasi' },
     { name: 'alumni.manage', label: 'Kelola Alumni & Donasi', group: 'Alumni' },
     { name: 'sidang.manage', label: 'Kelola Risalah & TAP Sidang', group: 'Sidang' },
     { name: 'oprec.manage', label: 'Kelola Open Recruitment', group: 'Oprec' },
     { name: 'sertifikat.manage', label: 'Kelola Studio E-Sertifikat', group: 'Sertifikat' },
+    { name: 'surat.delete', label: 'Hapus Berkas Surat', group: 'Surat' },
+
+    // Kalender & Agenda
+    { name: 'kalender.view_all', label: 'Lihat Semua Agenda Kalender', group: 'Kalender' },
+    { name: 'kalender.create', label: 'Tambah Agenda Kalender', group: 'Kalender' },
+    { name: 'kalender.edit', label: 'Edit Agenda Kalender', group: 'Kalender' },
+    { name: 'kalender.delete', label: 'Hapus Agenda Kalender', group: 'Kalender' },
+
+    // Proposal & Validasi Keuangan
+    { name: 'proposal.review', label: 'Review & Validasi Proposal Keuangan', group: 'Keuangan' },
+
+    // CMS Artikel & Publikasi Berita
+    { name: 'posts.create', label: 'Tulis Artikel', group: 'Website' },
+    { name: 'posts.read', label: 'Baca Draf Artikel', group: 'Website' },
+    { name: 'posts.edit', label: 'Edit Artikel', group: 'Website' },
+    { name: 'posts.delete', label: 'Hapus Artikel', group: 'Website' },
+    { name: 'posts.review', label: 'Review & Moderasi Artikel', group: 'Website' },
+    { name: 'posts.publish', label: 'Publikasikan Artikel', group: 'Website' },
+    { name: 'posts.manage', label: 'Kelola Penuh CMS Artikel', group: 'Website' },
   ]
 
   for (const perm of permissionsData) {
@@ -113,8 +134,8 @@ async function main() {
   const rolesData = [
     {
       name: 'admin',
-      displayName: 'Administrator Utama',
-      description: 'Akses penuh tanpa batas ke seluruh modul sistem',
+      displayName: 'Super Admin',
+      description: 'Akses penuh tanpa batas ke seluruh modul sistem (Super Admin)',
       color: '#ef4444',
       permissionIds: allPermIds,
     },

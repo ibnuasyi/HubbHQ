@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/db'
-import { hasPermission } from '@/lib/auth'
+import { hasPermission, isSuperAdminRole } from '@/lib/auth'
 
 /**
  * Check if a user can manage or edit a specific program kerja
- * (admin, ketua, sekretaris, holder of proker.edit, PIC of the proker, or active committee member)
+ * (super admin, admin, ketua, sekretaris, holder of proker.edit, PIC of the proker, or active committee member)
  */
 export async function canManageProker(
   userId: string,
@@ -11,7 +11,7 @@ export async function canManageProker(
   prokerId: string
 ): Promise<boolean> {
   const normalizedRole = (roleName || '').toLowerCase()
-  if (['admin', 'ketua', 'sekretaris'].includes(normalizedRole)) {
+  if (isSuperAdminRole(normalizedRole) || ['admin', 'ketua', 'sekretaris'].includes(normalizedRole)) {
     return true
   }
 
@@ -37,14 +37,14 @@ export async function canManageProker(
 
 /**
  * Check if a user can approve/review financial proposals or LPJ
- * Only admin, ketua, bendahara, or holder of proposal.review / keuangan.approve
+ * Super Admin, admin, ketua, bendahara, or holder of proposal.review / keuangan.approve
  */
 export async function canReviewProkerFinance(
   userId: string,
   roleName: string
 ): Promise<boolean> {
   const normalizedRole = (roleName || '').toLowerCase()
-  if (['admin', 'ketua', 'bendahara'].includes(normalizedRole)) {
+  if (isSuperAdminRole(normalizedRole) || ['admin', 'ketua', 'bendahara'].includes(normalizedRole)) {
     return true
   }
 

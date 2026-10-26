@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 import { checkPublicRateLimit, checkRateLimitByIP, getClientIP } from '@/lib/rate-limit'
 
 // POST /api/newsletter - Subscribe to newsletter
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     const roleName = (session?.user as any)?.role?.name?.toLowerCase() || ''
-    if (!session?.user?.id || roleName !== 'admin') {
+    if (!session?.user?.id || (!isSuperAdminRole(roleName) && roleName !== 'admin')) {
       return NextResponse.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 401 }

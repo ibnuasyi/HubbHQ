@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth, hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 
 // PATCH /api/proposal/[id] - Update proposal status or submit revision
 export async function PATCH(
@@ -96,7 +96,7 @@ export async function PATCH(
         const userRole = (session.user as any)?.role?.name?.toLowerCase() || ''
         const isRequester = proposal.requester.id === session.user.id
         const isPic = proposal.programKerja?.picId === session.user.id
-        const isAdminOrLead = ['admin', 'ketua'].includes(userRole)
+        const isAdminOrLead = isSuperAdminRole(userRole) || ['admin', 'ketua'].includes(userRole)
 
         if (!isRequester && !isPic && !isAdminOrLead) {
           return NextResponse.json(

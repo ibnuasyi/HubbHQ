@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth, hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 import { isValidId, sanitizeInput } from '@/lib/api-security'
 import {
   updateTransactionAtomic,
@@ -97,7 +97,7 @@ export async function PATCH(
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name?.toLowerCase() !== 'admin') {
+      if (!isSuperAdminRole(user?.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
@@ -252,7 +252,7 @@ export async function DELETE(
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name?.toLowerCase() !== 'admin') {
+      if (!isSuperAdminRole(user?.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

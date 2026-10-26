@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 import { canManageProker } from '@/lib/proker-auth'
 
 // GET /api/proker/[id]/lpj - Get LPJ details
@@ -56,7 +56,7 @@ export async function POST(
     const existingLpj = await prisma.lpjProker.findUnique({
       where: { programKerjaId: prokerId },
     })
-    if (existingLpj && existingLpj.status === 'APPROVED' && !['admin', 'ketua'].includes(roleName)) {
+    if (existingLpj && existingLpj.status === 'APPROVED' && !isSuperAdminRole(roleName) && !['admin', 'ketua'].includes(roleName)) {
       return NextResponse.json(
         { error: 'Laporan Pertanggungjawaban (LPJ) sudah disetujui (APPROVED) dan terkunci dari perubahan.' },
         { status: 400 }

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { checkRateLimitByIP, getClientIP, RATE_LIMITS } from '@/lib/rate-limit'
@@ -83,7 +83,7 @@ export async function PATCH(
     // Check permissions
     const isSelf = session.user.id === userId
     const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
-    const isAdmin = roleName === 'admin' || (session.user as any)?.role === 'admin'
+    const isAdmin = isSuperAdminRole(roleName) || roleName === 'admin' || (session.user as any)?.role === 'admin'
 
     if (!isSelf && !isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })

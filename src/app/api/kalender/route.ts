@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 import { isValidId, sanitizeInput } from '@/lib/api-security'
 
 // GET /api/kalender - List all events
@@ -77,7 +76,7 @@ export async function GET(request: NextRequest) {
       include: { role: true },
     })
 
-    const isAdmin = user?.role?.name === 'admin'
+    const isAdmin = isSuperAdminRole(user?.role)
     const canViewAll = await hasPermission(session.user.id, 'kalender.view_all')
 
     if (!isAdmin && !canViewAll) {
@@ -133,7 +132,7 @@ export async function POST(request: NextRequest) {
         where: { id: session.user.id },
         include: { role: true },
       })
-      if (user?.role?.name !== 'admin') {
+      if (!isSuperAdminRole(user?.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

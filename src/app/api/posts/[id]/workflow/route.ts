@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 import { createAuditLog } from '@/lib/audit-log'
 
 // =====================================================
@@ -42,8 +42,8 @@ async function checkPermission(
 
   if (!user) return false
 
-  // Admin has all permissions
-  if (user.role?.name === 'admin') return true
+  // Admin and Super Admin have all permissions
+  if (isSuperAdminRole(user.role)) return true
 
   const permissionMap: Record<string, string[]> = {
     submit_review: ['posts.create', 'posts.manage', 'posts.edit'],

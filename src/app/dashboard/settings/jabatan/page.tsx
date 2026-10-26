@@ -33,7 +33,7 @@ interface CurrentUser {
   id: string
   name: string
   email: string
-  role: { name: string }
+  role: { name: string; displayName?: string }
 }
 
 interface Jabatan {
@@ -87,7 +87,15 @@ export default function JabatanPage() {
       .catch(console.error)
   }, [fetchJabatan])
 
-  const isAdmin = currentUser?.role?.name === 'admin'
+  const roleName = currentUser?.role?.name?.toLowerCase() || ''
+  const roleDisplay = currentUser?.role?.displayName?.toLowerCase() || ''
+  const isAdmin =
+    roleName === 'admin' ||
+    roleName === 'superadmin' ||
+    roleName === 'super_admin' ||
+    roleName === 'super admin' ||
+    roleName === 'administrator' ||
+    roleDisplay.includes('admin')
 
   const handleSubmit = async () => {
     if (!formName) return

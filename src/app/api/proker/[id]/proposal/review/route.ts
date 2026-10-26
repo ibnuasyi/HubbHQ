@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 import { canReviewProkerFinance } from '@/lib/proker-auth'
 
 // PATCH /api/proker/[id]/proposal/review - Approve or Reject proposal
@@ -58,7 +58,7 @@ export async function PATCH(
     }
 
     // Separation of Duties: Requester cannot approve their own proposal unless admin/ketua
-    if (proposal.requesterId === session.user.id && !['admin', 'ketua'].includes(roleName)) {
+    if (proposal.requesterId === session.user.id && !isSuperAdminRole(roleName) && !['admin', 'ketua'].includes(roleName)) {
       return NextResponse.json(
         { error: 'Konflik Kepentingan: Anda tidak dapat menyetujui proposal yang Anda ajukan sendiri.' },
         { status: 403 }

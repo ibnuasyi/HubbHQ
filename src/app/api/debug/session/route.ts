@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, isSuperAdminRole } from '@/lib/auth'
 
 // Debug endpoint to check session and user (Disabled in production & restricted to Admin)
 export async function GET(request: NextRequest) {
@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     const isAdmin =
+      isSuperAdminRole((session.user as any)?.role) ||
       (session.user as any)?.role?.name?.toLowerCase() === 'admin' ||
       (session.user as any)?.role === 'admin'
 

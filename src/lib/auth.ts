@@ -243,6 +243,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           | undefined;
         // Pass mustChangePassword to client
         (session.user as any).mustChangePassword = token.mustChangePassword as boolean;
+        (session.user as any).isAdmin = isSuperAdminRole(token.role as any);
       }
       return session;
     },
@@ -257,7 +258,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 });
 
-// Helper untuk check permission
+/**
+ * Helper to identify if a role or role name represents Super Admin / Administrator
+ * Case-insensitive match on 'admin', 'superadmin', 'super_admin', 'super admin', 'administrator', or display names containing 'admin'
+ */
+export function isSuperAdminRole(
+  role?: { name?: string | null; displayName?: string | null } | string | null
+): boolean {
+  if (!role) return false;
+  if (typeof role === "string") {
+    const r = role.toLowerCase().trim();
+    return (
+      r === "admin" ||
+      r === "superadmin" ||
+      r === "super_admin" ||
+      r === "super admin" ||
+      r === "administrator" ||
+      r === "administrator utama"
+    );
+  }
+  const name = role.name?.toLowerCase().trim() || "";
+  const display = role.displayName?.toLowerCase().trim() || "";
+  return (
+    name === "admin" ||
+    name === "superadmin" ||
+    name === "super_admin" ||
+    name === "super admin" ||
+    name === "administrator" ||
+    display === "super admin" ||
+    display === "administrator" ||
+    display === "administrator utama" ||
+    display.toLowerCase().includes("super admin") ||
+    display.toLowerCase().includes("administrator utama")
+  );
+}
+
+// Helper untuk check permission (Super Admin selalu memiliki akses penuh tanpa batas)
 export async function hasPermission(userId: string, permission: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -270,8 +306,8 @@ export async function hasPermission(userId: string, permission: string): Promise
 
   if (!user?.role) return false;
 
-  // Admin punya semua permission (case-insensitive)
-  if (user.role.name?.toLowerCase() === "admin") return true;
+  // Super Admin punya akses tanpa batas ke seluruh izin sistem
+  if (isSuperAdminRole(user.role)) return true;
 
   return user.role.permissions.some((p: { name: string }) => p.name === permission);
 }
@@ -288,7 +324,7 @@ export async function hasAnyPermission(userId: string, permissions: string[]): P
   });
 
   if (!user?.role) return false;
-  if (user.role.name?.toLowerCase() === "admin") return true;
+  if (isSuperAdminRole(user.role)) return true;
 
   const userPermNames = new Set(user.role.permissions.map((p: { name: string }) => p.name));
   return permissions.some((p) => userPermNames.has(p));
@@ -306,17 +342,17 @@ export async function hasAllPermissions(userId: string, permissions: string[]): 
   });
 
   if (!user?.role) return false;
-  if (user.role.name?.toLowerCase() === "admin") return true;
+  if (isSuperAdminRole(user.role)) return true;
 
   const userPermNames = new Set(user.role.permissions.map((p: { name: string }) => p.name));
   return permissions.every((p) => userPermNames.has(p));
 }
 
-// Helper untuk check role admin
+// Helper untuk check role admin / super admin
 export async function isAdmin(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { role: true },
   });
-  return user?.role?.name?.toLowerCase() === "admin";
+  return isSuperAdminRole(user?.role);
 }
