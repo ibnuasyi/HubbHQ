@@ -432,16 +432,18 @@ function FieldEditor({ field, onChange, onCancel }: FieldEditorProps) {
         </Label>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="multiple"
-          checked={localField.multiple}
-          onCheckedChange={(checked) => setLocalField({ ...localField, multiple: !!checked })}
-        />
-        <Label htmlFor="multiple" className="font-normal">
-         允许多个文件 (Multiple file upload)
-        </Label>
-      </div>
+      {localField.type === 'file' && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="multiple"
+            checked={localField.multiple}
+            onCheckedChange={(checked) => setLocalField({ ...localField, multiple: !!checked })}
+          />
+          <Label htmlFor="multiple" className="font-normal">
+            Izinkan unggah banyak berkas sekaligus (Multiple file upload)
+          </Label>
+        </div>
+      )}
 
       <DialogFooter>
         <Button variant="outline" onClick={onCancel}>

@@ -34,7 +34,7 @@ export default function AboutPage() {
             subtitle: 'Sistem Informasi Organisasi Profesional',
             content: `
               <p><strong>SIOP</strong> (Sistem Informasi Organisasi Profesional) adalah organisasi yang bergerak di bidang sosial dan kemanusiaan yang berdiri sejak tahun 2014.</p>
-              <p>Kami berkomitmen untuk membangun masyarakat yang lebih baik melalui勾結, profesionalisme, dan inovasi dalam setiap program kerja yang kami jalankan.</p>
+              <p>Kami berkomitmen untuk membangun masyarakat yang lebih baik melalui kolaborasi, profesionalisme, dan inovasi dalam setiap program kerja yang kami jalankan.</p>
               <p>Dengan dukungan dari berbagai pihak, kami telah berhasil menjalankan puluhan program kerja yang memberikan manfaat nyata bagi masyarakat.</p>
             `,
             image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800',
@@ -52,7 +52,7 @@ export default function AboutPage() {
           config={{
             variant: 'default',
             title: 'Visi & Misi Kami',
-            vision: 'Menjadi organisasi profesional yang memberikan kontribusi nyata bagi kemajuan masyarakat dan bangsa melalui勾結, inovasi, dan keberlanjutan.',
+            vision: 'Menjadi organisasi profesional yang memberikan kontribusi nyata bagi kemajuan masyarakat dan bangsa melalui kolaborasi, inovasi, dan keberlanjutan.',
             missionTitle: 'Misi Kami',
             missions: [
               { number: '1', text: 'Meningkatkan kesejahteraan masyarakat melalui program-program sosial yang berkelanjutan' },
