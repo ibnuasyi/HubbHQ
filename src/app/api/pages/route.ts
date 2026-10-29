@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin, requireAuth } from '@/lib/api-auth'
+import { requireAdmin } from '@/lib/api-auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 
 // GET /api/pages - List all pages
 export async function GET(request: NextRequest) {
@@ -11,9 +12,25 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
     const published = searchParams.get('published')
 
+    const session = await auth()
+    let canViewDrafts = false
+    if (session?.user?.id) {
+      const role = (session.user as any)?.role
+      const roleName = (typeof role === 'string' ? role : role?.name || '').toLowerCase()
+      canViewDrafts =
+        isSuperAdminRole(role) ||
+        ['admin', 'superadmin', 'ketua'].includes(roleName) ||
+        (await hasPermission(session.user.id, 'content.view')) ||
+        (await hasPermission(session.user.id, 'content.edit'))
+    }
+
     const where: Record<string, unknown> = {}
     if (type) where.type = type
-    if (published !== null) where.isPublished = published === 'true'
+    if (!canViewDrafts) {
+      where.isPublished = true
+    } else if (published !== null) {
+      where.isPublished = published === 'true'
+    }
 
     const pages = await prisma.page.findMany({
       where,

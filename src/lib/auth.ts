@@ -110,7 +110,7 @@ if (typeof setInterval !== "undefined") {
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: "jwt", // ✅ Database sessions for instant revocation
+    strategy: "jwt", // Encrypted JWE session token strategy
   },
   pages: {
     signIn: "/login",

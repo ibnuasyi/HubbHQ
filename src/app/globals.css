@@ -104,3 +104,41 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* Print CSS Media Query for A4/F4 Document Printing */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print\:hidden,
+  nav,
+  aside,
+  header,
+  [data-radix-focus-guard],
+  [aria-hidden="true"] {
+    display: none !important;
+  }
+  /* Remove dark backdrop overlay on modal dialogs */
+  [data-radix-portal] > div:first-child:not([role="dialog"]) {
+    display: none !important;
+  }
+  /* Normalize dialog content to full printed page */
+  [role="dialog"] {
+    position: static !important;
+    transform: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+}

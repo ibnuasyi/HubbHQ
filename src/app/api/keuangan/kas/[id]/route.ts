@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isAdmin } from '@/lib/auth'
 
 // PATCH /api/keuangan/kas/[id] - Approve/reject kas payment
 export async function PATCH(
@@ -33,6 +32,14 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'Kas payment tidak ditemukan' },
         { status: 404 }
+      )
+    }
+
+    const callerIsAdmin = await isAdmin(session.user.id)
+    if (kasPayment.userId === session.user.id && !callerIsAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden: Tidak dapat memverifikasi pembayaran kas milik sendiri (Self-Approval)' },
+        { status: 403 }
       )
     }
 

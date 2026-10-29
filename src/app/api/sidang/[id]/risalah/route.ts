@@ -2,13 +2,18 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth, hasPermission } from "@/lib/auth";
+import { auth, hasPermission, isSuperAdminRole } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
     const risalah = await prisma.sidangRisalah.findMany({
       where: { sidangId: id },
@@ -34,7 +39,8 @@ export async function POST(
 
     const roleName = (session.user as any)?.role?.name?.toLowerCase() || '';
     const canRecordRisalah =
-      ['admin', 'ketua', 'sekretaris'].includes(roleName) ||
+      isSuperAdminRole((session.user as any)?.role) ||
+      ['admin', 'superadmin', 'ketua', 'sekretaris'].includes(roleName) ||
       (await hasPermission(session.user.id, 'proker.edit'));
 
     if (!canRecordRisalah) {

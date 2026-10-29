@@ -117,16 +117,41 @@ export async function POST(request: NextRequest) {
     // Get next letter number for KELUAR type
     let finalLetterNumber = letterNumber
     if (type === 'KELUAR' && !letterNumber) {
-      const lastSurat = await prisma.surat.findFirst({
-        where: { type: 'KELUAR' },
-        orderBy: { createdAt: 'desc' },
+      let jenisSurat = null
+      if (jenisSuratId) {
+        jenisSurat = await prisma.jenisSurat.findUnique({
+          where: { id: jenisSuratId },
+        })
+      }
+
+      const romanMonths = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
+      const currentMonthRoman = romanMonths[new Date().getMonth()]
+      const currentYear = new Date().getFullYear().toString()
+
+      // Hitung urutan surat keluar pada tahun berjalan (reset otomatis setiap tahun)
+      const startOfYear = new Date(new Date().getFullYear(), 0, 1)
+      const countYear = await prisma.surat.count({
+        where: {
+          type: 'KELUAR',
+          createdAt: { gte: startOfYear },
+        },
       })
 
-      // Simple counter - in production would be more sophisticated
-      const lastNumber = lastSurat?.letterNumber?.match(/\/(\d+)\//)?.[1] || '0'
-      const nextNumber = parseInt(lastNumber) + 1
-      const year = new Date().getFullYear()
-      finalLetterNumber = `${nextNumber}/${year}`
+      const nextNumber = (countYear + 1).toString().padStart(3, '0')
+      const code = jenisSurat?.code || 'SU'
+      const prefix = jenisSurat?.numberPrefix || 'BPH'
+      const customFormat = jenisSurat?.numberFormat
+
+      if (customFormat && customFormat.includes('{number}')) {
+        finalLetterNumber = customFormat
+          .replace('{number}', nextNumber)
+          .replace('{code}', code)
+          .replace('{prefix}', prefix)
+          .replace('{month}', currentMonthRoman)
+          .replace('{year}', currentYear)
+      } else {
+        finalLetterNumber = `${nextNumber}/${code}/${prefix}/${currentMonthRoman}/${currentYear}`
+      }
     }
 
     const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''

@@ -64,6 +64,8 @@ uploads/
 # ============================================
 
 # Private notes and documentation
+jawaban.md
+*jawaban*.md
 *.notes.md
 *notes.md
 memo.md

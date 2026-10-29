@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isAdmin } from '@/lib/auth'
 
 // GET /api/surat/[id] - Get single surat
 export async function GET(
@@ -68,9 +67,21 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const hasAccess = await hasPermission(session.user.id, 'surat.edit')
-    if (!hasAccess) {
+    const hasEditAccess = await hasPermission(session.user.id, 'surat.edit')
+    const hasApproveAccess = await hasPermission(session.user.id, 'surat.approve')
+    if (!hasEditAccess && !hasApproveAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const existingSurat = await prisma.surat.findUnique({
+      where: { id },
+    })
+
+    if (!existingSurat) {
+      return NextResponse.json(
+        { error: 'Surat tidak ditemukan' },
+        { status: 404 }
+      )
     }
 
     const body = await request.json()
@@ -81,8 +92,6 @@ export async function PATCH(
       senderContact,
       receivedDate,
       status,
-      approverId,
-      approvedAt,
     } = body
 
     const updateData: any = {}
@@ -93,6 +102,23 @@ export async function PATCH(
     if (senderContact !== undefined) updateData.senderContact = senderContact
     if (receivedDate !== undefined) updateData.receivedDate = receivedDate ? new Date(receivedDate) : null
     if (status !== undefined) {
+      if (status === 'APPROVED' || status === 'REJECTED') {
+        if (!hasApproveAccess) {
+          return NextResponse.json(
+            { error: 'Forbidden: Anda memerlukan izin surat.approve untuk menyetujui atau menolak surat' },
+            { status: 403 }
+          )
+        }
+
+        const callerIsAdmin = await isAdmin(session.user.id)
+        if (existingSurat.requesterId === session.user.id && !callerIsAdmin) {
+          return NextResponse.json(
+            { error: 'Forbidden: Pemohon tidak dapat menyetujui surat yang diajukan sendiri (Self-Approval)' },
+            { status: 403 }
+          )
+        }
+      }
+
       updateData.status = status
       if (status === 'APPROVED') {
         updateData.approverId = session.user.id

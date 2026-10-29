@@ -52,6 +52,7 @@ import { DynamicForm } from '@/components/dynamic-form'
 import { DisposisiModal, DisposisiData } from '@/components/surat/disposisi-modal'
 import { LembarDisposisiPrint } from '@/components/surat/lembar-disposisi-print'
 import { TindakLanjutDialog } from '@/components/surat/tindak-lanjut-dialog'
+import { SuratDocumentModal } from '@/components/surat/surat-document-modal'
 
 interface Surat {
   id: string
@@ -119,6 +120,10 @@ export default function SuratPage() {
   const [selectedDisposisiPrint, setSelectedDisposisiPrint] = React.useState<DisposisiData | null>(null)
   const [showTindakLanjut, setShowTindakLanjut] = React.useState(false)
   const [selectedDisposisiTindakLanjut, setSelectedDisposisiTindakLanjut] = React.useState<DisposisiData | null>(null)
+
+  // Document preview and download modal state
+  const [showDocumentModal, setShowDocumentModal] = React.useState(false)
+  const [selectedSuratDocument, setSelectedSuratDocument] = React.useState<Surat | null>(null)
 
   // Form state
   const [formType, setFormType] = React.useState<'MASUK' | 'KELUAR'>('MASUK')
@@ -540,15 +545,29 @@ export default function SuratPage() {
                                     </Button>
                                   </div>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleShowQrCode(s)}
-                                  className="text-muted-foreground hover:text-indigo-600"
-                                >
-                                  <QrCode className="h-4 w-4 mr-1" />
-                                  QR
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedSuratDocument(s)
+                                      setShowDocumentModal(true)
+                                    }}
+                                    className="h-7 text-xs border-primary/40 text-primary hover:bg-primary/10"
+                                  >
+                                    <FileText className="h-3.5 w-3.5 mr-1" />
+                                    Naskah
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleShowQrCode(s)}
+                                    className="h-7 text-xs text-muted-foreground hover:text-indigo-600"
+                                  >
+                                    <QrCode className="h-3.5 w-3.5 mr-1" />
+                                    QR
+                                  </Button>
+                                </div>
                               </div>
                             </div>
 
@@ -993,7 +1012,7 @@ export default function SuratPage() {
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setShowDetail(false)}>
               Tutup
             </Button>
@@ -1007,9 +1026,29 @@ export default function SuratPage() {
               <QrCode className="h-4 w-4 mr-2" />
               Lihat QR
             </Button>
+            <Button
+              className="bg-primary text-primary-foreground"
+              onClick={() => {
+                setShowDetail(false)
+                if (detailSurat) {
+                  setSelectedSuratDocument(detailSurat)
+                  setShowDocumentModal(true)
+                }
+              }}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Naskah Surat Resmi
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Pratinjau Naskah & Unduh Surat (Word & PDF) */}
+      <SuratDocumentModal
+        open={showDocumentModal}
+        onOpenChange={setShowDocumentModal}
+        surat={selectedSuratDocument}
+      />
 
       {/* Modal Disposisi Surat Masuk */}
       <DisposisiModal

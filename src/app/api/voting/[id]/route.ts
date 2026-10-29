@@ -1,8 +1,17 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+
+async function canManageElection(userId: string, role?: any): Promise<boolean> {
+  if (isSuperAdminRole(role)) return true
+  const roleName = (typeof role === 'string' ? role : role?.name || '').toLowerCase()
+  if (['admin', 'superadmin', 'ketua'].includes(roleName)) return true
+  if (await hasPermission(userId, 'settings.edit')) return true
+  if (await hasPermission(userId, 'voting.admin')) return true
+  return false
+}
 
 export async function GET(
   _request: NextRequest,
@@ -10,6 +19,9 @@ export async function GET(
 ) {
   try {
     const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const { id } = await context.params
 
     const event = await prisma.votingEvent.findFirst({
@@ -89,8 +101,16 @@ export async function PATCH(
 ) {
   try {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const canManage = await canManageElection(session.user.id, (session.user as any)?.role)
+    if (!canManage) {
+      return NextResponse.json(
+        { error: 'Forbidden: Hanya Panitia Musyawarah atau Admin yang dapat mengubah sesi pemilihan' },
+        { status: 403 }
+      )
     }
 
     const { id } = await context.params
@@ -152,8 +172,16 @@ export async function DELETE(
 ) {
   try {
     const session = await auth()
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const canManage = await canManageElection(session.user.id, (session.user as any)?.role)
+    if (!canManage) {
+      return NextResponse.json(
+        { error: 'Forbidden: Hanya Panitia Musyawarah atau Admin yang dapat menghapus sesi pemilihan' },
+        { status: 403 }
+      )
     }
 
     const { id } = await context.params

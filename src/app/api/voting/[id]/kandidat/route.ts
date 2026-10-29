@@ -9,6 +9,11 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id: votingEventId } = await context.params
 
     const kandidat = await prisma.votingKandidat.findMany({

@@ -2,22 +2,53 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { auth, hasPermission, isSuperAdminRole } from "@/lib/auth";
+
+async function canManageOprec(userId: string, role?: any): Promise<boolean> {
+  if (isSuperAdminRole(role)) return true;
+  const roleName = (typeof role === "string" ? role : role?.name || "").toLowerCase();
+  if (["admin", "superadmin", "ketua", "sekretaris"].includes(roleName)) return true;
+  if (await hasPermission(userId, "members.create")) return true;
+  if (await hasPermission(userId, "members.edit")) return true;
+  if (await hasPermission(userId, "proker.edit")) return true;
+  return false;
+}
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await context.params;
+    const isManager = await canManageOprec(session.user.id, (session.user as any)?.role);
 
     const oprec = await prisma.oprecEvent.findUnique({
       where: { id },
       include: {
         programKerja: true,
-        pendaftar: {
-          orderBy: { createdAt: "desc" },
-        },
+        pendaftar: isManager
+          ? {
+              orderBy: { createdAt: "desc" },
+            }
+          : {
+              select: {
+                id: true,
+                nomorRegistrasi: true,
+                namaLengkap: true,
+                divisiPilihan1: true,
+                divisiPilihan2: true,
+                statusTahap: true,
+                divisiDiterima: true,
+                jabatanDiterima: true,
+                createdAt: true,
+              },
+              orderBy: { createdAt: "desc" },
+            },
       },
     });
 
@@ -38,8 +69,16 @@ export async function PATCH(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const canManage = await canManageOprec(session.user.id, (session.user as any)?.role);
+    if (!canManage) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Pengurus SDM, Panitia Oprec, atau Admin yang berwenang mengubah agenda oprec" },
+        { status: 403 }
+      );
     }
 
     const { id } = await context.params;
@@ -78,8 +117,16 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const canManage = await canManageOprec(session.user.id, (session.user as any)?.role);
+    if (!canManage) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Pengurus SDM, Panitia Oprec, atau Admin yang berwenang menghapus agenda oprec" },
+        { status: 403 }
+      );
     }
 
     const { id } = await context.params;

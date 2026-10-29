@@ -56,10 +56,15 @@ export async function GET(
     // Generate token dynamic HMAC
     const tokenInfo = generateDynamicQrToken(sesi.id, sesi.qrSecret, sesi.tokenTtlSeconds)
 
-    // Build scan URL
-    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000'
-    const proto = request.headers.get('x-forwarded-proto') || 'http'
-    const scanUrl = `${proto}://${host}/presensi/${sesi.id}?t=${tokenInfo.token}`
+    // Build scan URL safely (prevent Host Header Injection)
+    let baseOrigin = process.env.NEXTAUTH_URL?.trim().replace(/\/+$/, '') || ''
+    if (!baseOrigin) {
+      const rawHost = request.headers.get('host') || 'localhost:3000'
+      const safeHost = rawHost.replace(/[^a-zA-Z0-9.\-:]/g, '') || 'localhost:3000'
+      const proto = request.nextUrl.protocol === 'https:' ? 'https' : 'http'
+      baseOrigin = `${proto}://${safeHost}`
+    }
+    const scanUrl = `${baseOrigin}/presensi/${sesi.id}?t=${tokenInfo.token}`
 
     return NextResponse.json({
       success: true,

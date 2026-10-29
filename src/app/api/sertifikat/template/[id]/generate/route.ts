@@ -65,23 +65,43 @@ export async function POST(
     for (const r of recipients) {
       if (!r.nama?.trim()) continue;
 
-      const formattedNo = String(counter).padStart(3, "0");
-      const nomorSertifikat = pattern
-        .replace("[NO]", formattedNo)
-        .replace("[YEAR]", String(year));
+      let cert = null;
+      let attempts = 0;
 
-      const cert = await prisma.sertifikatGenerated.create({
-        data: {
-          templateId: id,
-          nomorSertifikat,
-          namaPenerima: r.nama.trim(),
-          sebagai: r.sebagai || "Peserta",
-          keterangan: r.keterangan || null,
-        },
-      });
+      while (!cert && attempts < 20) {
+        const formattedNo = String(counter).padStart(3, "0");
+        let nomorSertifikat = pattern
+          .replace("[NO]", formattedNo)
+          .replace("[YEAR]", String(year));
 
-      createdList.push(cert);
-      counter++;
+        if (!pattern.includes("[NO]")) {
+          nomorSertifikat = `${nomorSertifikat}-${formattedNo}`;
+        }
+
+        try {
+          cert = await prisma.sertifikatGenerated.create({
+            data: {
+              templateId: id,
+              nomorSertifikat,
+              namaPenerima: r.nama.trim(),
+              sebagai: r.sebagai || "Peserta",
+              keterangan: r.keterangan || null,
+            },
+          });
+        } catch (err: any) {
+          if (err?.code === "P2002") {
+            counter++;
+            attempts++;
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      if (cert) {
+        createdList.push(cert);
+        counter++;
+      }
     }
 
     return NextResponse.json({

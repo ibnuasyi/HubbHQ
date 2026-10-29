@@ -34,11 +34,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Role not found' }, { status: 404 })
     }
 
-    // Prevent editing admin role name
-    if (existingRole.name === 'admin' && body.name) {
+    // Prevent editing system admin/superadmin role name
+    const isProtectedRole =
+      existingRole.name === 'admin' || existingRole.name === 'superadmin'
+
+    if (isProtectedRole && body.name && body.name !== existingRole.name) {
       return NextResponse.json(
-        { error: 'Cannot change admin role name' },
+        { error: 'Cannot change protected system role name' },
         { status: 400 }
+      )
+    }
+
+    // Only superadmin can modify the superadmin role
+    const callerRoleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+    if (existingRole.name === 'superadmin' && callerRoleName !== 'superadmin') {
+      return NextResponse.json(
+        { error: 'Forbidden - Only Super Admin can modify the Super Admin role' },
+        { status: 403 }
       )
     }
 
@@ -101,10 +113,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Role not found' }, { status: 404 })
     }
 
-    // Prevent deleting admin role
-    if (existingRole.name === 'admin') {
+    // Prevent deleting admin or superadmin role
+    if (existingRole.name === 'admin' || existingRole.name === 'superadmin') {
       return NextResponse.json(
-        { error: 'Cannot delete admin role' },
+        { error: 'Cannot delete protected system role' },
         { status: 400 }
       )
     }

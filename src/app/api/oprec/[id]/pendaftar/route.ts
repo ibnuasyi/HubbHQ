@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { auth, hasPermission, isSuperAdminRole } from "@/lib/auth";
 
 export async function GET(
   req: NextRequest,
@@ -10,8 +10,26 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const role = (session.user as any)?.role;
+    const roleName = (typeof role === "string" ? role : role?.name || "").toLowerCase();
+    const canViewPendaftar =
+      isSuperAdminRole(role) ||
+      ["admin", "superadmin", "ketua", "sekretaris"].includes(roleName) ||
+      (await hasPermission(session.user.id, "members.view")) ||
+      (await hasPermission(session.user.id, "members.create")) ||
+      (await hasPermission(session.user.id, "members.edit")) ||
+      (await hasPermission(session.user.id, "proker.view")) ||
+      (await hasPermission(session.user.id, "proker.edit"));
+
+    if (!canViewPendaftar) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Panitia Oprec, Pengurus, atau Admin yang dapat mengakses daftar pelamar lengkap" },
+        { status: 403 }
+      );
     }
 
     const { id } = await context.params;

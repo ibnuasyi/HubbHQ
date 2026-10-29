@@ -13,6 +13,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const canView =
+      (await hasPermission(session.user.id, 'keuangan.view')) ||
+      (await hasPermission(session.user.id, 'keuangan.create')) ||
+      (await hasPermission(session.user.id, 'keuangan.approve'))
+
+    if (!canView) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')

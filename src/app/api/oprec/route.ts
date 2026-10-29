@@ -2,10 +2,25 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { auth, hasPermission, isSuperAdminRole } from "@/lib/auth";
+
+async function canManageOprec(userId: string, role?: any): Promise<boolean> {
+  if (isSuperAdminRole(role)) return true;
+  const roleName = (typeof role === "string" ? role : role?.name || "").toLowerCase();
+  if (["admin", "superadmin", "ketua", "sekretaris"].includes(roleName)) return true;
+  if (await hasPermission(userId, "members.create")) return true;
+  if (await hasPermission(userId, "members.edit")) return true;
+  if (await hasPermission(userId, "proker.edit")) return true;
+  return false;
+}
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const oprecs = await prisma.oprecEvent.findMany({
       include: {
         programKerja: {
@@ -28,8 +43,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const canManage = await canManageOprec(session.user.id, (session.user as any)?.role);
+    if (!canManage) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Pengurus SDM, Panitia Oprec, atau Admin yang dapat membuat agenda oprec" },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();

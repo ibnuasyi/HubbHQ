@@ -3,8 +3,9 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 
-// GET /api/pages/[slug]/sections - Get sections for a page (public)
+// GET /api/pages/[slug]/sections - Get sections for a page (public for published pages)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -14,7 +15,7 @@ export async function GET(
 
     const page = await prisma.page.findUnique({
       where: { slug },
-      select: { id: true }
+      select: { id: true, isPublished: true }
     })
 
     if (!page) {
@@ -22,6 +23,26 @@ export async function GET(
         { error: 'Page not found' },
         { status: 404 }
       )
+    }
+
+    if (!page.isPublished) {
+      const session = await auth()
+      let canViewDrafts = false
+      if (session?.user?.id) {
+        const role = (session.user as any)?.role
+        const roleName = (typeof role === 'string' ? role : role?.name || '').toLowerCase()
+        canViewDrafts =
+          isSuperAdminRole(role) ||
+          ['admin', 'superadmin', 'ketua'].includes(roleName) ||
+          (await hasPermission(session.user.id, 'content.view')) ||
+          (await hasPermission(session.user.id, 'content.edit'))
+      }
+      if (!canViewDrafts) {
+        return NextResponse.json(
+          { error: 'Page not found' },
+          { status: 404 }
+        )
+      }
     }
 
     const sections = await prisma.pageSection.findMany({

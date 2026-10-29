@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { requireAdmin, requireAuth } from '@/lib/api-auth'
+import { requireAdmin } from '@/lib/api-auth'
+import { sanitizeCss } from '@/lib/sanitize'
 
 // GET /api/themes - List all themes
 export async function GET(request: NextRequest) {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
         author,
         thumbnail,
         config: config || {},
-        css,
+        css: css ? sanitizeCss(css) : null,
         isActive: false
       }
     })

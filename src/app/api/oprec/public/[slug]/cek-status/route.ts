@@ -2,18 +2,34 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { checkRateLimit } from "@/lib/api-security";
 
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const clientIp =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("x-real-ip") ||
+      "anonymous";
+    const rate = checkRateLimit(`oprec-cek-status:${clientIp}`, {
+      windowMs: 60000,
+      maxRequests: 15,
+    });
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan pengecekan status. Silakan tunggu 1 menit." },
+        { status: 429 }
+      );
+    }
+
     const { slug } = await context.params;
     const { searchKey } = await req.json();
 
-    if (!searchKey?.trim()) {
+    if (!searchKey?.trim() || String(searchKey).trim().length < 4) {
       return NextResponse.json(
-        { error: "Masukkan Nomor Registrasi atau NIM Anda" },
+        { error: "Masukkan Nomor Registrasi atau NIM lengkap Anda" },
         { status: 400 }
       );
     }

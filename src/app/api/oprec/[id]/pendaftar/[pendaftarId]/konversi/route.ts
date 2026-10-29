@@ -2,8 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { auth, hasPermission, isSuperAdminRole } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function POST(
   req: NextRequest,
@@ -11,8 +12,23 @@ export async function POST(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const role = (session.user as any)?.role;
+    const roleName = (typeof role === "string" ? role : role?.name || "").toLowerCase();
+    const canConvert =
+      isSuperAdminRole(role) ||
+      ["admin", "superadmin", "ketua", "sekretaris"].includes(roleName) ||
+      (await hasPermission(session.user.id, "members.create")) ||
+      (await hasPermission(session.user.id, "members.edit"));
+
+    if (!canConvert) {
+      return NextResponse.json(
+        { error: "Forbidden: Hanya Pengurus SDM, Pimpinan, atau Admin yang dapat mengonversi pendaftar menjadi akun anggota" },
+        { status: 403 }
+      );
     }
 
     const { id, pendaftarId } = await context.params;
@@ -22,8 +38,8 @@ export async function POST(
         where: { id },
         include: { programKerja: true },
       }),
-      prisma.oprecPendaftar.findUnique({
-        where: { id: pendaftarId },
+      prisma.oprecPendaftar.findFirst({
+        where: { id: pendaftarId, oprecId: id },
       }),
     ]);
 
@@ -45,7 +61,7 @@ export async function POST(
       );
     }
 
-    // 1. Cari atau buat akun User
+    // 1. Cari atau buat akun User dengan password sementara acak kriptografis
     let user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -55,12 +71,15 @@ export async function POST(
       },
     });
 
+    let temporaryPassword: string | undefined;
+
     if (!user) {
-      const defaultPassword = await bcrypt.hash("HubbHQ2026!", 10);
+      temporaryPassword = `Hubb-${crypto.randomBytes(6).toString("base64url")}!9`;
+      const hashedPassword = await bcrypt.hash(temporaryPassword, 12);
       user = await prisma.user.create({
         data: {
           email: pendaftar.email,
-          password: defaultPassword,
+          password: hashedPassword,
           name: pendaftar.namaLengkap,
           fullName: pendaftar.namaLengkap,
           phone: pendaftar.phone,
@@ -134,6 +153,7 @@ export async function POST(
       success: true,
       message: `Berhasil mengonversi ${pendaftar.namaLengkap} ke dalam sistem HubbHQ`,
       userId: user.id,
+      ...(temporaryPassword ? { temporaryPassword } : {}),
     });
   } catch (error: any) {
     console.error("Error converting pendaftar:", error);

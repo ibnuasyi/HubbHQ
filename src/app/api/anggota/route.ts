@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isAdmin, isSuperAdminRole } from '@/lib/auth'
 
 // GET /api/anggota - Get all members
 export async function GET(request: NextRequest) {
@@ -12,6 +11,11 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    const canViewSensitive =
+      (await isAdmin(session.user.id)) ||
+      (await hasPermission(session.user.id, 'members.view')) ||
+      (await hasPermission(session.user.id, 'members.edit'))
 
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -50,7 +54,7 @@ export async function GET(request: NextRequest) {
       where.isActive = isActive === 'true'
     }
 
-    const [members, total] = await Promise.all([
+    const [rawMembers, total] = await Promise.all([
       prisma.user.findMany({
         where,
         skip,
@@ -89,6 +93,20 @@ export async function GET(request: NextRequest) {
       }),
       prisma.user.count({ where }),
     ])
+
+    const members = rawMembers.map((m) => {
+      if (canViewSensitive || m.id === session.user.id) {
+        return m
+      }
+      return {
+        ...m,
+        signature: null,
+        address: null,
+        birthDate: null,
+        birthPlace: null,
+        emergencyContact: null,
+      }
+    })
 
     return NextResponse.json({
       data: members,
@@ -142,6 +160,22 @@ export async function POST(request: NextRequest) {
         { error: 'Nama, email, dan password diperlukan' },
         { status: 400 }
       )
+    }
+
+    // Prevent vertical privilege escalation: non-admin cannot assign admin / superadmin role
+    if (roleId) {
+      const targetRole = await prisma.role.findUnique({
+        where: { id: roleId },
+      })
+      if (targetRole && isSuperAdminRole(targetRole)) {
+        const callerIsAdmin = await isAdmin(session.user.id)
+        if (!callerIsAdmin) {
+          return NextResponse.json(
+            { error: 'Forbidden: Hanya Administrator / Super Admin yang dapat menetapkan role administrator' },
+            { status: 403 }
+          )
+        }
+      }
     }
 
     // Check if email already exists

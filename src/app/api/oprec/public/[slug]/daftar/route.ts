@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { checkRateLimit } from "@/lib/api-security";
+import crypto from "crypto";
 
 export async function POST(
   req: NextRequest,
@@ -81,13 +82,13 @@ export async function POST(
       );
     }
 
-    // Generate unique nomor registrasi (e.g. REG-2026-8291)
+    // Generate unique nomor registrasi dengan entropi kriptografis tinggi (e.g. REG-2026-A8F39C)
     const year = new Date().getFullYear();
     let nomorRegistrasi = "";
     let isUnique = false;
     while (!isUnique) {
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      nomorRegistrasi = `REG-${year}-${rand}`;
+      const randCode = crypto.randomBytes(3).toString("hex").toUpperCase();
+      nomorRegistrasi = `REG-${year}-${randCode}`;
       const duplicate = await prisma.oprecPendaftar.findUnique({
         where: { nomorRegistrasi },
       });

@@ -14,6 +14,7 @@ import {
   getSafeDateRange,
   getExportTimestamp,
   sanitizeExportFilename,
+  sanitizeExcelCell,
   withExportTimeout,
 } from '@/lib/export-utils'
 
@@ -128,8 +129,8 @@ export async function GET(request: NextRequest) {
         worksheet.addRow([
           new Date(t.date).toLocaleDateString('id-ID'),
           t.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
-          categoryLabels[t.category] || t.category,
-          t.description || '-',
+          sanitizeExcelCell(categoryLabels[t.category] || t.category),
+          sanitizeExcelCell(t.description || '-'),
           parseFloat(t.amount.toString()),
         ])
       })

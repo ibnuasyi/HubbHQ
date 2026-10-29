@@ -2,8 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isAdmin, isSuperAdminRole } from '@/lib/auth'
 
 // GET /api/anggota/[id] - Get single member
 export async function GET(
@@ -55,7 +54,24 @@ export async function GET(
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ data: member })
+    const canViewSensitive =
+      session.user.id === id ||
+      (await isAdmin(session.user.id)) ||
+      (await hasPermission(session.user.id, 'members.view')) ||
+      (await hasPermission(session.user.id, 'members.edit'))
+
+    const safeMember = canViewSensitive
+      ? member
+      : {
+          ...member,
+          signature: null,
+          address: null,
+          birthDate: null,
+          birthPlace: null,
+          emergencyContact: null,
+        }
+
+    return NextResponse.json({ data: safeMember })
   } catch (error) {
     console.error('Error fetching member:', error)
     return NextResponse.json(
@@ -77,13 +93,35 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const hasEditPerm = await hasPermission(session.user.id, 'members.edit')
+    const callerIsAdmin = await isAdmin(session.user.id)
+
     // Check permission (own profile or has edit permission)
-    const canEdit =
-      session.user.id === id ||
-      (await hasPermission(session.user.id, 'members.edit'))
+    const canEdit = session.user.id === id || hasEditPerm
 
     if (!canEdit) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const existingTarget = await prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    })
+
+    if (!existingTarget) {
+      return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+    }
+
+    // Prevent non-admin from modifying an admin/superadmin account belonging to someone else
+    if (
+      session.user.id !== id &&
+      isSuperAdminRole(existingTarget.role) &&
+      !callerIsAdmin
+    ) {
+      return NextResponse.json(
+        { error: 'Forbidden: Akun Administrator hanya dapat diubah oleh Administrator' },
+        { status: 403 }
+      )
     }
 
     const body = await request.json()
@@ -124,9 +162,32 @@ export async function PATCH(
     if (bloodType !== undefined) updateData.bloodType = bloodType?.trim() || null
     if (emergencyContact !== undefined) updateData.emergencyContact = emergencyContact?.trim() || null
 
-    // Only admin can change role, wilayah, active status, and manual NRA
-    if (await hasPermission(session.user.id, 'members.edit')) {
-      if (roleId !== undefined) updateData.roleId = roleId
+    // Only authorized editors can change role, wilayah, active status, and manual NRA
+    if (hasEditPerm) {
+      if (roleId !== undefined && roleId !== existingTarget.roleId) {
+        // Prevent self-escalation by non-admin
+        if (session.user.id === id && !callerIsAdmin) {
+          return NextResponse.json(
+            { error: 'Forbidden: Tidak dapat mengubah role akun sendiri' },
+            { status: 403 }
+          )
+        }
+
+        // Prevent non-admin from assigning admin/superadmin role
+        if (roleId) {
+          const targetRole = await prisma.role.findUnique({
+            where: { id: roleId },
+          })
+          if (targetRole && isSuperAdminRole(targetRole) && !callerIsAdmin) {
+            return NextResponse.json(
+              { error: 'Forbidden: Hanya Administrator / Super Admin yang dapat menetapkan role administrator' },
+              { status: 403 }
+            )
+          }
+        }
+
+        updateData.roleId = roleId
+      }
       if (wilayahId !== undefined) updateData.wilayahId = wilayahId
       if (jabatanId !== undefined) updateData.jabatanId = jabatanId
       if (isActive !== undefined) updateData.isActive = isActive
@@ -188,6 +249,21 @@ export async function DELETE(
         { error: 'Cannot delete your own account' },
         { status: 400 }
       )
+    }
+
+    const targetMember = await prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    })
+
+    if (targetMember && isSuperAdminRole(targetMember.role)) {
+      const callerIsAdmin = await isAdmin(session.user.id)
+      if (!callerIsAdmin) {
+        return NextResponse.json(
+          { error: 'Forbidden: Tidak dapat menghapus akun Administrator' },
+          { status: 403 }
+        )
+      }
     }
 
     await prisma.user.delete({

@@ -11,6 +11,7 @@ import {
   validateExportRequest,
   validateExportParams,
   sanitizeExportFilename,
+  sanitizeExcelCell,
   getExportTimestamp,
 } from '@/lib/export-utils'
 
@@ -130,10 +131,10 @@ export async function GET(request: NextRequest) {
 
         worksheet.addRow([
           (i + 1).toString(),
-          p.title,
-          p.divisi.name,
+          sanitizeExcelCell(p.title),
+          sanitizeExcelCell(p.divisi.name),
           statusLabels[p.status] || p.status,
-          p.pic?.name || '-',
+          sanitizeExcelCell(p.pic?.name || '-'),
           `${completedCheckpoints}/${totalCheckpoints}`,
           `${progress}%`,
         ])

@@ -83,3 +83,21 @@ export function stripHtml(html: string): string {
 
 // Alias for backward compatibility
 export const sanitize = sanitizeHtml
+
+/**
+ * Sanitize custom CSS to prevent Stored XSS (</style><script>) and dangerous CSS directives
+ */
+export function sanitizeCss(css: string | null | undefined): string | null {
+  if (css === null || css === undefined) return null
+  if (typeof css !== 'string') return ''
+
+  return css
+    .replace(/<\/?\s*style[^>]*>/gi, '')
+    .replace(/<\/?\s*script[^>]*>/gi, '')
+    .replace(/[<>]/g, '')
+    .replace(/expression\s*\(/gi, '/* blocked */(')
+    .replace(/javascript\s*:/gi, '')
+    .replace(/vbscript\s*:/gi, '')
+    .replace(/-moz-binding\s*:/gi, '/* blocked */:')
+    .replace(/@import\s+(?:url\s*\(\s*)?['"]?\s*https?:\/\/[^;)]+;?/gi, '/* external @import blocked */')
+}

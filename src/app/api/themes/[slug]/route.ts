@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/api-auth'
+import { sanitizeCss } from '@/lib/sanitize'
 
 // GET /api/themes/[slug] - Get single theme (public)
 export async function GET(
@@ -51,7 +52,11 @@ export async function PATCH(
 
     for (const key of allowedFields) {
       if (key in body) {
-        sanitizedBody[key] = body[key]
+        if (key === 'css') {
+          sanitizedBody[key] = body[key] ? sanitizeCss(String(body[key])) : null
+        } else {
+          sanitizedBody[key] = body[key]
+        }
       }
     }
 

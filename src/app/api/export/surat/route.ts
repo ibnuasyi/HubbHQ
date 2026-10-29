@@ -11,6 +11,7 @@ import {
   validateExportRequest,
   validateExportParams,
   sanitizeExportFilename,
+  sanitizeExcelCell,
   getExportTimestamp,
 } from '@/lib/export-utils'
 
@@ -127,13 +128,13 @@ export async function GET(request: NextRequest) {
         worksheet.addRow([
           (i + 1).toString(),
           new Date(s.createdAt).toLocaleDateString('id-ID'),
-          s.jenisSurat ? `${s.jenisSurat.name} (${s.jenisSurat.code})` : '-',
-          s.letterNumber || '-',
-          s.subject,
+          sanitizeExcelCell(s.jenisSurat ? `${s.jenisSurat.name} (${s.jenisSurat.code})` : '-'),
+          sanitizeExcelCell(s.letterNumber || '-'),
+          sanitizeExcelCell(s.subject),
           s.type === 'MASUK' ? 'Masuk' : 'Keluar',
           statusLabels[s.status] || s.status,
-          s.requester?.name || '-',
-          s.approver?.name || '-',
+          sanitizeExcelCell(s.requester?.name || '-'),
+          sanitizeExcelCell(s.approver?.name || '-'),
         ])
       })
 

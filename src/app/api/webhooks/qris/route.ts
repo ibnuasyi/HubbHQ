@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { settleKasPayment, getQrisConfig } from '@/lib/qris'
-import { auth, hasPermission } from '@/lib/auth'
+import { auth, hasPermission, isSuperAdminRole } from '@/lib/auth'
 
 function safeCompare(a: string, b: string): boolean {
   if (!a || !b) return false
@@ -80,31 +80,28 @@ export async function POST(request: NextRequest) {
       isSettled = body.status === 'PAID'
       amount = parseFloat(body.total_amount) || 0
     }
-    // Format Simulasi HubbHQ
+    // Format Simulasi HubbHQ (Hanya diizinkan bagi Bendahara / Admin / Webhook Secret Valid)
     else if (body.action === 'SIMULATE_PAY' || body.paymentRef) {
       let authorizedSimulate = hasValidHeaderSecret
 
       if (!authorizedSimulate) {
         const session = await auth()
         if (session?.user?.id) {
-          const roleName = (session.user as any)?.role?.name?.toLowerCase() || ''
+          const role = (session.user as any)?.role
+          const roleName = (typeof role === 'string' ? role : role?.name || '').toLowerCase()
           const isTreasurerOrAdmin =
-            ['admin', 'bendahara', 'ketua'].includes(roleName) ||
+            isSuperAdminRole(role) ||
+            ['admin', 'superadmin', 'bendahara', 'ketua'].includes(roleName) ||
             (await hasPermission(session.user.id, 'keuangan.approve')) ||
             (await hasPermission(session.user.id, 'keuangan.edit'))
 
-          const isSimModeActive =
-            config.mode === 'GATEWAY' &&
-            config.gateway.provider === 'simulation' &&
-            !config.gateway.isProduction
-
-          authorizedSimulate = isTreasurerOrAdmin || isSimModeActive
+          authorizedSimulate = isTreasurerOrAdmin
         }
       }
 
       if (!authorizedSimulate) {
         return NextResponse.json(
-          { error: 'Forbidden: Simulasi pembayaran tidak diizinkan tanpa otorisasi' },
+          { error: 'Forbidden: Simulasi pembayaran hanya dapat dijalankan oleh Bendahara atau Administrator' },
           { status: 403 }
         )
       }

@@ -328,3 +328,16 @@ export function sanitizeExportFilename(filename: string): string {
     .replace(/\s+/g, '-')
     .slice(0, 100)
 }
+
+/**
+ * Prevent CSV / Excel Formula Injection (DDE / Formula execution)
+ * Prefixes strings starting with =, +, -, @, tab, or carriage return with a single quote
+ */
+export function sanitizeExcelCell(value: unknown): string {
+  if (value === null || value === undefined) return '-'
+  const str = String(value)
+  if (/^[=+\-@\t\r]/.test(str)) {
+    return `'${str}`
+  }
+  return str
+}

@@ -73,6 +73,19 @@ export function checkRateLimit(
 }
 
 /**
+ * Extract normalized client IP address
+ */
+export function extractClientIp(request: NextRequest): string {
+  const raw =
+    request.headers.get('cf-connecting-ip') ||
+    request.headers.get('x-real-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'unknown'
+  const cleaned = raw.trim().slice(0, 64).replace(/[^a-fA-F0-9.:]/g, '')
+  return cleaned || 'unknown'
+}
+
+/**
  * Rate limit middleware for API routes
  */
 export async function withRateLimit(
@@ -83,7 +96,7 @@ export async function withRateLimit(
   const session = await auth()
   const key = session?.user?.id
     ? `user:${session.user.id}`
-    : `ip:${request.headers.get('x-forwarded-for') || 'unknown'}`
+    : `ip:${extractClientIp(request)}`
 
   const result = checkRateLimit(key, config)
 

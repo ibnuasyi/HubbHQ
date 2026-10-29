@@ -355,15 +355,17 @@ export function checkPublicRateLimit(
 // =====================================================
 
 /**
- * Get client IP from request
+ * Get client IP from request with format normalization
  */
 export function getClientIP(request: Request): string {
-  return (
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+  const rawIp =
+    request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-real-ip') ||
-    request.headers.get('cf-connecting-ip') || // Cloudflare
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     'unknown'
-  )
+
+  const sanitizedIp = rawIp.trim().slice(0, 64).replace(/[^a-fA-F0-9.:]/g, '')
+  return sanitizedIp || 'unknown'
 }
 
 /**

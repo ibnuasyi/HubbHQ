@@ -2,10 +2,15 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth, hasPermission } from "@/lib/auth";
+import { auth, hasPermission, isSuperAdminRole } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const sidangs = await prisma.sidangMusyawarah.findMany({
       include: {
         _count: {
@@ -31,7 +36,8 @@ export async function POST(req: NextRequest) {
 
     const roleName = (session.user as any)?.role?.name?.toLowerCase() || '';
     const canCreateSidang =
-      ['admin', 'ketua', 'sekretaris'].includes(roleName) ||
+      isSuperAdminRole((session.user as any)?.role) ||
+      ['admin', 'superadmin', 'ketua', 'sekretaris'].includes(roleName) ||
       (await hasPermission(session.user.id, 'proker.create')) ||
       (await hasPermission(session.user.id, 'proker.edit'));
 

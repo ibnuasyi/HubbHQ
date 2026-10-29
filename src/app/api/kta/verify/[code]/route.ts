@@ -3,12 +3,28 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getKtaConfig } from '@/lib/kta-config'
+import { checkRateLimit } from '@/lib/api-security'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ code: string }> }
 ) {
   try {
+    const clientIp =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'anonymous'
+    const rate = checkRateLimit(`kta-verify:${clientIp}`, {
+      windowMs: 60000,
+      maxRequests: 30,
+    })
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { isVerified: false, error: 'Terlalu banyak permintaan verifikasi KTA. Silakan coba lagi nanti.' },
+        { status: 429 }
+      )
+    }
+
     const { code } = await context.params
     const decodedCode = decodeURIComponent(code).trim()
 

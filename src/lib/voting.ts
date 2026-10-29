@@ -22,8 +22,12 @@ export function generateBallotVerificationHash(
   kandidatId: string | null,
   timestamp: Date
 ): string {
-  const secret = process.env.NEXTAUTH_SECRET || 'hubbhq-evoting-secret-key'
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('NEXTAUTH_SECRET or AUTH_SECRET must be configured for E-Voting integrity')
+  }
+  const effectiveSecret = secret || 'dev-only-evoting-fallback-secret'
   const payload = `${eventId}:${kandidatId || 'ABSTAIN'}:${timestamp.getTime()}:${crypto.randomBytes(16).toString('hex')}`
-  return crypto.createHmac('sha256', secret).update(payload).digest('hex')
+  return crypto.createHmac('sha256', effectiveSecret).update(payload).digest('hex')
 }
 

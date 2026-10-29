@@ -4,12 +4,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth, hasPermission } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-// Helper generate kode peminjaman unik
+// Helper generate kode peminjaman unik yang tahan race condition
 async function generateNextKodePeminjaman(): Promise<string> {
   const currentYear = new Date().getFullYear().toString()
   const total = await prisma.peminjamanBarang.count()
-  const nextNum = (total + 1).toString().padStart(4, '0')
-  return `PINJAM-${currentYear}-${nextNum}`
+  let counter = total + 1
+  for (let i = 0; i < 20; i++) {
+    const nextNum = counter.toString().padStart(4, '0')
+    const candidate = `PINJAM-${currentYear}-${nextNum}`
+    const exists = await prisma.peminjamanBarang.findUnique({
+      where: { kodePeminjaman: candidate },
+      select: { id: true },
+    })
+    if (!exists) return candidate
+    counter++
+  }
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000)
+  return `PINJAM-${currentYear}-${counter}-${randomSuffix}`
 }
 
 export async function GET(request: NextRequest) {

@@ -35,7 +35,7 @@ export const DEFAULT_QRIS_CONFIG: QrisConfig = {
     clientKey: '',
     merchantCode: '',
     isProduction: false,
-    webhookSecret: 'hubbhq-webhook-secret-key',
+    webhookSecret: process.env.QRIS_WEBHOOK_SECRET || '',
   },
   mandiri: {
     staticQrisString: '',
