@@ -6,16 +6,6 @@ import { checkRateLimit } from "@/lib/api-security";
 
 export async function POST(req: NextRequest) {
   try {
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-    // Batasi maksimal 5 percobaan per menit per IP untuk mencegah serangan brute-force PIN
-    const rate = checkRateLimit(`track-aspirasi:${clientIp}`, { windowMs: 60000, maxRequests: 5 });
-    if (!rate.allowed) {
-      return NextResponse.json(
-        { error: "Terlalu banyak percobaan pelacakan. Harap tunggu 1 menit sebelum mencoba kembali." },
-        { status: 429 }
-      );
-    }
-
     const { kodeTiket, pinPelacak } = await req.json();
 
     if (!kodeTiket || !pinPelacak) {
@@ -25,8 +15,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cleanKode = kodeTiket.trim().toUpperCase();
-    const cleanPin = pinPelacak.trim();
+    const cleanKode = String(kodeTiket).trim().toUpperCase();
+    const cleanPin = String(pinPelacak).trim();
+
+    // 1. Rate-limit per tiket: cegah serangan brute-force PIN terhadap tiket tertentu (maks 5 percobaan per 15 menit)
+    const ticketRate = checkRateLimit(`track-ticket:${cleanKode}`, { windowMs: 15 * 60 * 1000, maxRequests: 5 });
+    if (!ticketRate.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan untuk tiket ini. Harap tunggu 15 menit demi keamanan." },
+        { status: 429 }
+      );
+    }
+
+    // 2. Rate-limit per IP: prioritaskan header tepercaya reverse-proxy (x-real-ip / cf-connecting-ip)
+    const clientIp =
+      req.headers.get("x-real-ip")?.trim() ||
+      req.headers.get("cf-connecting-ip")?.trim() ||
+      req.headers.get("x-forwarded-for")?.split(",").pop()?.trim() ||
+      "anonymous";
+    const ipRate = checkRateLimit(`track-aspirasi-ip:${clientIp}`, { windowMs: 60000, maxRequests: 10 });
+    if (!ipRate.allowed) {
+      return NextResponse.json(
+        { error: "Terlalu banyak percobaan pelacakan dari perangkat ini. Harap tunggu 1 menit." },
+        { status: 429 }
+      );
+    }
 
     const aspirasi = await prisma.aspirasi.findFirst({
       where: {

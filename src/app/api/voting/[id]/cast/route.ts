@@ -89,6 +89,17 @@ export async function POST(
       )
     }
 
+    // Security: Jika entri DPT terikat ke akun anggota tertentu, hanya akun bersangkutan yang berhak mencoblos
+    if (dptEntry.userId && session?.user?.id && dptEntry.userId !== session.user.id) {
+      return NextResponse.json(
+        {
+          error:
+            'Token bilik suara ini terikat dengan akun pemilih lain. Anda hanya dapat menggunakan hak suara Anda sendiri.',
+        },
+        { status: 403 }
+      )
+    }
+
     if (dptEntry.hasVoted) {
       return NextResponse.json(
         {

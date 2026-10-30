@@ -169,5 +169,14 @@ $RECYCLE.BIN/
 *.tmp
 *.temp
 temp/
-temp/
 .cache/
+
+# Graphify & Audit Run Artifacts
+graphify-out/
+graphify-put/
+*graphify*
+.audit-run*/
+audit-run*/
+.audit-run/
+audit-run/
+

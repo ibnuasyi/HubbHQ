@@ -34,7 +34,6 @@ export async function GET(
         { nama: { contains: search } },
         { nraOrNim: { contains: search } },
         { emailOrPhone: { contains: search } },
-        { votingToken: { contains: search } },
       ]
     }
 

@@ -15,9 +15,18 @@ function safeCompare(a: string, b: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    const config = await getQrisConfig()
+
+    // 0. Keamanan: Pastikan gerbang QRIS tidak dalam status DISABLED
+    if (config.mode === 'DISABLED') {
+      return NextResponse.json(
+        { error: 'Gerbang pembayaran QRIS dinonaktifkan di pengaturan sistem' },
+        { status: 403 }
+      )
+    }
+
     const rawBody = await request.text()
     const body = rawBody ? JSON.parse(rawBody) : {}
-    const config = await getQrisConfig()
     const headerWebhookSecret = request.headers.get('x-webhook-secret') || ''
     const hasValidHeaderSecret =
       Boolean(config.gateway.webhookSecret) &&
@@ -43,7 +52,7 @@ export async function POST(request: NextRequest) {
         typeof body.signature_key === 'string' &&
         safeCompare(body.signature_key, expectedSig)
 
-      if (!validMidtransSig && !hasValidHeaderSecret) {
+      if (!validMidtransSig) {
         return NextResponse.json(
           { error: 'Unauthorized: Signature webhook Midtrans tidak valid' },
           { status: 401 }
@@ -53,7 +62,7 @@ export async function POST(request: NextRequest) {
       paymentRef = body.order_id
       isSettled =
         body.transaction_status === 'settlement' ||
-        body.transaction_status === 'capture'
+        (body.transaction_status === 'capture' && body.fraud_status === 'accept')
       amount = parseFloat(body.gross_amount) || 0
     }
     // Format Tripay
@@ -69,7 +78,7 @@ export async function POST(request: NextRequest) {
         Boolean(callbackSig) &&
         safeCompare(callbackSig, expectedHmac)
 
-      if (!validTripaySig && !hasValidHeaderSecret) {
+      if (!validTripaySig) {
         return NextResponse.json(
           { error: 'Unauthorized: Signature callback Tripay tidak valid' },
           { status: 401 }

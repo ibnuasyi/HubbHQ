@@ -5,6 +5,28 @@ Semua perubahan signifikan dari project ini akan didokumentasikan di file ini.
 Format ini berdasarkan [Keep a Changelog](https://keepachangelog.com/id-ID/1.0.0/).
 Project ini mematuhi [Semantic Versioning](https://semver.org/lang/id/).
 
+## [1.3.0] - 2026-10-31
+
+### Added
+
+#### Ekspor Naskah Surat Resmi Ganda (DOCX & PDF) & Pratinjau Cetak A4/F4
+- **Ekspor Dokumen Word (.docx):** Generator naskah surat dinamis berkecepatan tinggi berbasis `docxtemplater` dan `pizzip` (0 MB memory overhead di server, tanpa memerlukan LibreOffice/Gotenberg).
+- **Ekspor PDF & Pratinjau Dokumen:** Endpoint `/api/surat/[id]/download?format=pdf` dan modal pratinjau dokumen resmi A4 lengkap dengan kop surat ganda, stempel QR Code verifikasi HMAC, dan footer keabsahan.
+- **Cetak Presisi Browser (CSS @media print):** Tata letak cetak A4 otomatis yang menyembunyikan elemen navigasi dan tombol UI saat dialog cetak `window.print()` dipanggil.
+- **Standarisasi Penomoran Surat Organisasi:** Generator nomor surat otomatis mengikuti pola organisasi `${nomor}/${kode}/${prefix}/${bulan_romawi}/${tahun}` dengan reset counter otomatis setiap pergantian tahun kalender.
+
+### Security
+
+#### Audit Keamanan Mandiri & Penambalan Sistem (Security Hardening v1.3.0)
+- **Mitigasi Substring Oracle E-Voting:** Eliminasi field `votingToken` dari klausul pencarian teks DPT (`where.OR`) guna mencegah serangan enumerasi token pemilih lain.
+- **Pengikatan Hak Suara Akun Pemilih:** Validasi kepemilikan akun pada pencoblosan (`/api/voting/[id]/cast`); akun terdaftar tidak dapat dicoblos oleh pihak lain meskipun token diketahui.
+- **Isolasi Berkas Privat Nginx:** Pembatasan direktif `location /uploads` Nginx secara ketat hanya untuk direktori publik; berkas terproteksi (tanda tangan, LPJ, proposal) dilindungi di balik otorisasi Next.js (`HTTP 404`).
+- **Proteksi Brute-Force PIN Aspirasi Publik:** Penambahan rate-limiting berbasis nomor tiket (`track-ticket:<kode>`, maks 5 percobaan per 15 menit) dan pengamanan IP reverse-proxy (`X-Real-IP`).
+- **Otorisasi Granular Buku Induk Kaderisasi:** Penerapan proteksi RBAC dan izin eksplisit (`members.view`, `members.edit`, `proker.view`) pada `GET /api/kaderisasi/buku-induk`.
+- **Penegakan Tanda Tangan Kriptografis Webhook QRIS:** Penghapusan bypass shared secret statis; penegakan wajib tanda tangan resmi Midtrans (SHA512 dengan verifikasi fraud status) dan Tripay (HMAC-SHA256), serta penolakan otomatis saat gateway dinonaktifkan.
+- **Revalidasi Dinamis JWT Sesi:** Callback JWT secara otomatis memvalidasi ulang status akun (`isActive`) dan perubahan peran (`role`) langsung ke database pada setiap penyegaran token untuk pemutusan sesi seketika.
+- **Sanitasi Ekstensi Berkas & Anti-Stored XSS:** Pemaksaan ekstensi berkas mengikuti hasil deteksi magic bytes dan pemblokiran ekstensi skrip/eksekutabel berbahaya (`.html`, `.svg`, `.php`, dll) di level rute dan driver penyimpanan.
+
 ## [1.2.0] - 2026-10-25
 
 ### Added

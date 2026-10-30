@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
 import { auth } from '@/lib/auth'
 import sharp from 'sharp'
 import { storageService, sanitizeFolder } from '@/lib/storage'
@@ -149,11 +150,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Security: Gunakan basename aman dan paksa ekstensi berkas sesuai magic bytes terdeteksi
+    const clientExt = path.extname(file.name || '')
+    const rawBaseName = clientExt ? path.basename(file.name, clientExt) : (file.name || 'file')
+    const safeBaseName = rawBaseName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40) || 'upload'
+    const safeOriginalName = `${safeBaseName}${detectedType.ext}`
+
     // Upload using unified storage provider (local, s3, r2, webdav, alist)
     const uploadResult = await storageService.upload(
       finalBuffer,
       type,
-      file.name || `file${detectedType.ext}`,
+      safeOriginalName,
       detectedType.mime
     )
 

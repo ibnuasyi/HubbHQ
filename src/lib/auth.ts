@@ -216,21 +216,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.role = (user as any).role;
         token.mustChangePassword = (user as any).mustChangePassword || false;
+        token.isActive = (user as any).isActive ?? true;
       }
-      // Check if user needs to change password on regular refresh
-      if (trigger === "update" && token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { mustChangePassword: true },
-        });
-        if (dbUser) {
-          token.mustChangePassword = dbUser.mustChangePassword;
+
+      // Security: Revalidasi dinamis status akun & perubahan role dari database
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { isActive: true, role: true, mustChangePassword: true },
+          });
+
+          if (!dbUser || !dbUser.isActive) {
+            token.isActive = false;
+            token.role = null;
+          } else {
+            token.isActive = true;
+            token.role = dbUser.role as any;
+            token.mustChangePassword = dbUser.mustChangePassword;
+          }
+        } catch (dbErr) {
+          console.error("JWT revalidation error:", dbErr);
         }
       }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
+        if (token.isActive === false || !token.id) {
+          return {
+            ...session,
+            user: {
+              ...session.user,
+              id: "",
+              role: null,
+              isAdmin: false,
+              isActive: false,
+            },
+          } as any;
+        }
+
         session.user.id = token.id as string;
         session.user.role = token.role as
           | {
@@ -244,6 +270,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Pass mustChangePassword to client
         (session.user as any).mustChangePassword = token.mustChangePassword as boolean;
         (session.user as any).isAdmin = isSuperAdminRole(token.role as any);
+        (session.user as any).isActive = true;
       }
       return session;
     },

@@ -291,7 +291,7 @@ export class LocalStorage implements IStorageProvider {
     buffer: Buffer,
     folder: string,
     originalName: string,
-    _mimeType: string
+    mimeType: string
   ): Promise<{ url: string; filename: string; path: string }> {
     const safeFolder = sanitizeFolder(folder)
     const folderPath = path.join(this.baseDir, safeFolder)
@@ -300,10 +300,22 @@ export class LocalStorage implements IStorageProvider {
       await mkdir(folderPath, { recursive: true })
     }
 
-    const ext = path.extname(originalName) || ''
-    const baseName = path.basename(originalName, ext)
+    const dangerousExtensions = [
+      '.html', '.htm', '.svg', '.shtml', '.php', '.phtml', '.cgi',
+      '.pl', '.jsp', '.asp', '.aspx', '.exe', '.bat', '.cmd', '.sh',
+      '.vbs', '.js', '.mjs', '.phar'
+    ]
+    let ext = path.extname(originalName).toLowerCase() || ''
+    if (dangerousExtensions.includes(ext) || !ext) {
+      ext = mimeType === 'application/pdf' ? '.pdf' :
+            mimeType === 'image/jpeg' ? '.jpg' :
+            mimeType === 'image/webp' ? '.webp' :
+            mimeType === 'image/png' ? '.png' : '.bin'
+    }
+
+    const baseName = path.basename(originalName, path.extname(originalName))
       .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 40)
+      .substring(0, 40) || 'file'
     const uniqueSuffix = crypto.randomBytes(4).toString('hex')
     const filename = `${baseName}-${Date.now()}-${uniqueSuffix}${ext}`
     const filePath = this.getFilePath(safeFolder, filename)
@@ -422,10 +434,22 @@ export class S3Storage implements IStorageProvider {
     mimeType: string
   ): Promise<{ url: string; filename: string; path?: string }> {
     const safeFolder = sanitizeFolder(folder)
-    const ext = path.extname(originalName) || ''
-    const baseName = path.basename(originalName, ext)
+    const dangerousExtensions = [
+      '.html', '.htm', '.svg', '.shtml', '.php', '.phtml', '.cgi',
+      '.pl', '.jsp', '.asp', '.aspx', '.exe', '.bat', '.cmd', '.sh',
+      '.vbs', '.js', '.mjs', '.phar'
+    ]
+    let ext = path.extname(originalName).toLowerCase() || ''
+    if (dangerousExtensions.includes(ext) || !ext) {
+      ext = mimeType === 'application/pdf' ? '.pdf' :
+            mimeType === 'image/jpeg' ? '.jpg' :
+            mimeType === 'image/webp' ? '.webp' :
+            mimeType === 'image/png' ? '.png' : '.bin'
+    }
+
+    const baseName = path.basename(originalName, path.extname(originalName))
       .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 40)
+      .substring(0, 40) || 'file'
     const uniqueSuffix = crypto.randomBytes(4).toString('hex')
     const filename = `${baseName}-${Date.now()}-${uniqueSuffix}${ext}`
     const key = this.getKey(safeFolder, filename)
@@ -571,10 +595,22 @@ export class WebDAVStorage implements IStorageProvider {
     const safeFolder = sanitizeFolder(folder)
     await this.ensureFolder(safeFolder)
 
-    const ext = path.extname(originalName) || ''
-    const baseName = path.basename(originalName, ext)
+    const dangerousExtensions = [
+      '.html', '.htm', '.svg', '.shtml', '.php', '.phtml', '.cgi',
+      '.pl', '.jsp', '.asp', '.aspx', '.exe', '.bat', '.cmd', '.sh',
+      '.vbs', '.js', '.mjs', '.phar'
+    ]
+    let ext = path.extname(originalName).toLowerCase() || ''
+    if (dangerousExtensions.includes(ext) || !ext) {
+      ext = mimeType === 'application/pdf' ? '.pdf' :
+            mimeType === 'image/jpeg' ? '.jpg' :
+            mimeType === 'image/webp' ? '.webp' :
+            mimeType === 'image/png' ? '.png' : '.bin'
+    }
+
+    const baseName = path.basename(originalName, path.extname(originalName))
       .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 40)
+      .substring(0, 40) || 'file'
     const uniqueSuffix = crypto.randomBytes(4).toString('hex')
     const filename = `${baseName}-${Date.now()}-${uniqueSuffix}${ext}`
     const fileUrl = this.getFullUrl(safeFolder, filename)

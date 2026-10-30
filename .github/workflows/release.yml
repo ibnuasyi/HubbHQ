@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag atau Versi yang akan dirilis/dibuild (contoh: v1.2.0)'
+        description: 'Tag atau Versi yang akan dirilis/dibuild (contoh: v1.3.0)'
         required: false
-        default: 'v1.2.0'
+        default: 'v1.3.0'
 
 permissions:
   contents: write
