@@ -129,20 +129,20 @@ export default function DashboardAspirasiPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Kotak Aspirasi & Meja Advokasi
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Kelola pengaduan fasilitas, advokasi kebijakan, dan aspirasi mahasiswa/warga secara terstruktur.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/aspirasi" target="_blank">
-            <Button variant="outline" size="sm">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Link href="/aspirasi" target="_blank" className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
               <ExternalLink className="w-4 h-4 mr-2" /> Buka Portal Publik
             </Button>
           </Link>
@@ -153,34 +153,34 @@ export default function DashboardAspirasiPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Total Aduan</p>
-          <p className="text-2xl font-bold">{stats.TOTAL}</p>
+          <p className="text-2xl font-bold tabular-nums">{stats.TOTAL}</p>
         </Card>
         <Card className="p-3 border-amber-200 dark:border-amber-900 bg-amber-50/30 dark:bg-amber-950/20">
           <p className="text-xs text-amber-700 dark:text-amber-400">Menunggu</p>
-          <p className="text-2xl font-bold text-amber-800 dark:text-amber-300">{stats.MENUNGGU}</p>
+          <p className="text-2xl font-bold text-amber-800 dark:text-amber-300 tabular-nums">{stats.MENUNGGU}</p>
         </Card>
         <Card className="p-3 border-blue-200 dark:border-blue-900 bg-blue-50/30 dark:bg-blue-950/20">
           <p className="text-xs text-blue-700 dark:text-blue-400">Diverifikasi</p>
-          <p className="text-2xl font-bold text-blue-800 dark:text-blue-300">{stats.DIVERIFIKASI}</p>
+          <p className="text-2xl font-bold text-blue-800 dark:text-blue-300 tabular-nums">{stats.DIVERIFIKASI}</p>
         </Card>
         <Card className="p-3 border-purple-200 dark:border-purple-900 bg-purple-50/30 dark:bg-purple-950/20">
           <p className="text-xs text-purple-700 dark:text-purple-400">Dalam Advokasi</p>
-          <p className="text-2xl font-bold text-purple-800 dark:text-purple-300">{stats.DALAM_ADVOKASI}</p>
+          <p className="text-2xl font-bold text-purple-800 dark:text-purple-300 tabular-nums">{stats.DALAM_ADVOKASI}</p>
         </Card>
         <Card className="p-3 border-emerald-200 dark:border-emerald-900 bg-emerald-50/30 dark:bg-emerald-950/20">
           <p className="text-xs text-emerald-700 dark:text-emerald-400">Selesai</p>
-          <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300">{stats.SELESAI}</p>
+          <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300 tabular-nums">{stats.SELESAI}</p>
         </Card>
         <Card className="p-3 border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/20">
           <p className="text-xs text-red-700 dark:text-red-400">Ditolak</p>
-          <p className="text-2xl font-bold text-red-800 dark:text-red-300">{stats.DITOLAK}</p>
+          <p className="text-2xl font-bold text-red-800 dark:text-red-300 tabular-nums">{stats.DITOLAK}</p>
         </Card>
       </div>
 
       {/* Filter Bar */}
       <Card>
         <CardContent className="p-4">
-          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
               <Input

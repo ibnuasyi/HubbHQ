@@ -1,9 +1,16 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Providers } from '@/components/providers'
 import { prisma } from '@/lib/db'
 import './globals.css'
 
 export const dynamic = 'force-dynamic'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+}
 
 // Dynamic metadata based on website config
 export async function generateMetadata(): Promise<Metadata> {

@@ -112,27 +112,27 @@ export default function MyKtaPage() {
     : ''
 
   return (
-    <div className="flex-1 space-y-6 p-6">
+    <div className="flex-1 space-y-6 p-4 sm:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <CreditCard className="h-6 w-6 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <CreditCard className="h-6 w-6 text-primary shrink-0" />
             Kartu Tanda Anggota (KTA) Digital
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Identitas keanggotaan resmi standar CR80 dengan verifikasi publik QR Code
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {!user.nra ? (
-            <Button onClick={() => setShowEditModal(true)} className="bg-primary text-primary-foreground font-semibold">
+            <Button onClick={() => setShowEditModal(true)} className="bg-primary text-primary-foreground font-semibold w-full sm:w-auto">
               <Sparkles className="mr-1.5 h-4 w-4" />
               Terbitkan KTA Saya
             </Button>
           ) : (
-            <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)} className="w-full sm:w-auto">
               <Edit className="mr-1.5 h-3.5 w-3.5" />
               Edit Info Kartu
             </Button>
@@ -141,9 +141,9 @@ export default function MyKtaPage() {
       </div>
 
       {/* Main Grid: Card Viewer & Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* Left Column: Interactive 3D Card */}
-        <div className="lg:col-span-7 flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl border bg-card/60 backdrop-blur shadow-sm">
+        <div className="lg:col-span-7 flex flex-col items-center justify-center p-3 sm:p-6 lg:p-8 rounded-2xl border bg-card/60 backdrop-blur shadow-sm overflow-hidden">
           <KtaCard member={user} config={config} showControls={true} />
         </div>
 

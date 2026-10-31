@@ -119,22 +119,24 @@ export default function DashboardAlumniPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             Jejaring Alumni & Dana Abadi Organisasi
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Kelola pangkalan data alumni, sinergi karier/mentoring, serta penerimaan filantropi dana abadi.
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsDonasiModalOpen(true)}>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" onClick={() => setIsDonasiModalOpen(true)} className="flex-1 sm:flex-initial">
             <HeartHandshake className="w-4 h-4 mr-2 text-rose-600" /> Catat Donasi
           </Button>
           <Button
+            size="sm"
+            className="flex-1 sm:flex-initial"
             onClick={() => {
               setEditingAlumni(null);
               setIsAlumniModalOpen(true);
@@ -150,7 +152,7 @@ export default function DashboardAlumniPage() {
         <Card className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Total Alumni Terdata</p>
-            <p className="text-2xl font-bold">{stats.totalAlumni}</p>
+            <p className="text-2xl font-bold tabular-nums">{stats.totalAlumni}</p>
           </div>
           <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600">
             <Users className="w-5 h-5" />
@@ -160,9 +162,9 @@ export default function DashboardAlumniPage() {
         <Card className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Donatur / Kontributor Aktif</p>
-            <p className="text-2xl font-bold text-emerald-600">{stats.kontributorAktif}</p>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{stats.kontributorAktif}</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <HeartHandshake className="w-5 h-5" />
           </div>
         </Card>
@@ -170,11 +172,11 @@ export default function DashboardAlumniPage() {
         <Card className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Total Dana Abadi Terkumpul</p>
-            <p className="text-xl font-bold text-purple-600">
+            <p className="text-xl font-bold text-purple-600 dark:text-purple-400 tabular-nums">
               {formatRupiah(stats.totalDanaAbadi)}
             </p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600">
+          <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-950 flex items-center justify-center text-purple-600 dark:text-purple-400">
             <Coins className="w-5 h-5" />
           </div>
         </Card>
@@ -182,19 +184,19 @@ export default function DashboardAlumniPage() {
         <Card className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Total Transaksi Masuk</p>
-            <p className="text-2xl font-bold">{stats.totalTransaksiDonasi}</p>
+            <p className="text-2xl font-bold tabular-nums">{stats.totalTransaksiDonasi}</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600">
+          <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <TrendingUp className="w-5 h-5" />
           </div>
         </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border space-x-4">
+      <div className="flex border-b border-border space-x-4 overflow-x-auto">
         <button
           onClick={() => setActiveTab("direktori")}
-          className={`pb-2 text-sm font-semibold border-b-2 transition-colors ${
+          className={`pb-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "direktori"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -204,7 +206,7 @@ export default function DashboardAlumniPage() {
         </button>
         <button
           onClick={() => setActiveTab("donasi")}
-          className={`pb-2 text-sm font-semibold border-b-2 transition-colors ${
+          className={`pb-2 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "donasi"
               ? "border-primary text-primary"
               : "border-transparent text-muted-foreground hover:text-foreground"

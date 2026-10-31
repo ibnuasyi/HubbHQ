@@ -89,6 +89,7 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
                   href={websiteConfig.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Facebook"
                   className="w-10 h-10 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center transition-colors"
                 >
                   <Facebook className="w-5 h-5" />
@@ -99,6 +100,7 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
                   href={websiteConfig.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Instagram"
                   className="w-10 h-10 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center transition-colors"
                 >
                   <Instagram className="w-5 h-5" />
@@ -109,6 +111,7 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
                   href={websiteConfig.twitterUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="Twitter"
                   className="w-10 h-10 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center transition-colors"
                 >
                   <Twitter className="w-5 h-5" />
@@ -119,6 +122,7 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
                   href={websiteConfig.youtubeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="YouTube"
                   className="w-10 h-10 rounded-full bg-slate-800 hover:bg-green-600 flex items-center justify-center transition-colors"
                 >
                   <Youtube className="w-5 h-5" />
@@ -185,14 +189,14 @@ export default function Footer({ config, isPreview = false }: FooterProps) {
       <div className="border-t border-slate-800">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-slate-500 text-sm">
-              © {new Date().getFullYear()} {websiteConfig.appName || 'Organisasi'}. All rights reserved.
+            <p className="text-slate-400 text-sm">
+              Hak Cipta &copy; {new Date().getFullYear()} {websiteConfig.appName || 'HubbHQ'}. Seluruh hak cipta dilindungi undang-undang.
             </p>
             <div className="flex gap-6">
-              <Link href="/kebijakan-privasi" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+              <Link href="/kebijakan-privasi" className="text-slate-400 hover:text-slate-200 text-sm transition-colors">
                 Kebijakan Privasi
               </Link>
-              <Link href="/syarat-ketentuan" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+              <Link href="/syarat-ketentuan" className="text-slate-400 hover:text-slate-200 text-sm transition-colors">
                 Syarat & Ketentuan
               </Link>
             </div>

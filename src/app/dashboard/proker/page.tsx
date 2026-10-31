@@ -193,17 +193,17 @@ export default function ProkerPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Program Kerja</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Program Kerja</h1>
+          <p className="text-sm text-muted-foreground">
             Kelola program kerja organisasi ({total} program)
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={exportYear} onValueChange={setExportYear}>
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-[100px] h-9" aria-label="Pilih tahun laporan proker">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -212,15 +212,15 @@ export default function ProkerPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => handleExport('pdf')} disabled={exporting}>
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} disabled={exporting}>
             <FileText className="mr-2 h-4 w-4" />
             PDF
           </Button>
-          <Button variant="outline" onClick={() => handleExport('excel')} disabled={exporting}>
+          <Button variant="outline" size="sm" onClick={() => handleExport('excel')} disabled={exporting}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Excel
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild>
             <Link href="/dashboard/proker/baru">
               <Plus className="mr-2 h-4 w-4" />
               Tambah Proker
@@ -231,45 +231,48 @@ export default function ProkerPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 type="search"
                 placeholder="Cari program kerja..."
-                className="pl-9"
+                className="pl-9 w-full"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
                   setPage(1)
                 }}
+                aria-label="Cari program kerja"
               />
             </div>
-            <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Semua Status</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="ON_PROGRESS">On Progress</SelectItem>
-                <SelectItem value="COMPLETED">Selesai</SelectItem>
-                <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={divisiId} onValueChange={(v) => { setDivisiId(v); setPage(1); }}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Divisi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Semua Divisi</SelectItem>
-                {divisi.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
+                <SelectTrigger className="w-full sm:w-[150px]" aria-label="Filter status program kerja">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Status</SelectItem>
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                  <SelectItem value="ON_PROGRESS">On Progress</SelectItem>
+                  <SelectItem value="COMPLETED">Selesai</SelectItem>
+                  <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={divisiId} onValueChange={(v) => { setDivisiId(v); setPage(1); }}>
+                <SelectTrigger className="w-full sm:w-[180px]" aria-label="Filter divisi program kerja">
+                  <SelectValue placeholder="Divisi" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Divisi</SelectItem>
+                  {divisi.map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -296,7 +299,15 @@ export default function ProkerPage() {
                     <div
                       key={p.id}
                       onClick={() => router.push(`/dashboard/proker/${p.id}`)}
-                      className="rounded-lg border p-4 hover:border-primary/50 hover:bg-muted/40 cursor-pointer transition-all shadow-sm group"
+                      className="rounded-lg border p-4 hover:border-primary/50 hover:bg-muted/40 cursor-pointer transition-colors shadow-sm group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          router.push(`/dashboard/proker/${p.id}`)
+                        }
+                      }}
+                      aria-label={`Buka program kerja ${p.title}`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -339,10 +350,10 @@ export default function ProkerPage() {
                                 variant="outline"
                                 className={`text-[10px] ${
                                   p.proposals[0].status === 'APPROVED'
-                                    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
                                     : p.proposals[0].status === 'REJECTED'
-                                    ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800'
-                                    : 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/60 dark:text-yellow-300 dark:border-yellow-800'
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
                                 }`}
                               >
                                 Proposal: {p.proposals[0].status}
@@ -353,7 +364,7 @@ export default function ProkerPage() {
                                 variant="outline"
                                 className={`text-[10px] ${
                                   p.lpj.status === 'APPROVED'
-                                    ? 'bg-green-50 text-green-700 border-green-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
                                     : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
                                 }`}
                               >
@@ -368,7 +379,7 @@ export default function ProkerPage() {
                             </p>
                           )}
 
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-muted-foreground">
                             {p.pic && (
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-5 w-5">
@@ -381,28 +392,28 @@ export default function ProkerPage() {
                               </div>
                             )}
                             {p.anggaranEstimasi && (
-                              <div className="flex items-center gap-1 font-medium text-foreground">
+                              <div className="flex items-center gap-1 font-medium text-foreground tabular-nums">
                                 <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
                                 <span>{formatCurrency(Number(p.anggaranEstimasi))}</span>
                               </div>
                             )}
                             {p.startDate && (
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 tabular-nums">
                                 <Calendar className="h-3 w-3" />
                                 <span>
                                   {new Date(p.startDate).toLocaleDateString('id-ID')}
                                 </span>
                               </div>
                             )}
-                            <span>
+                            <span className="tabular-nums">
                               {p.completedCheckpoints}/{p.totalCheckpoints} checkpoint
                             </span>
                           </div>
 
                           <div className="mt-3">
-                            <div className="flex items-center justify-between text-sm mb-1">
+                            <div className="flex items-center justify-between text-xs sm:text-sm mb-1">
                               <span className="text-muted-foreground">Progress</span>
-                              <span className="font-medium">{p.progress}%</span>
+                              <span className="font-medium tabular-nums">{p.progress}%</span>
                             </div>
                             <Progress value={p.progress} className="h-2" />
                           </div>
@@ -423,7 +434,7 @@ export default function ProkerPage() {
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Menu aksi untuk program kerja ${p.title}`}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -452,17 +463,18 @@ export default function ProkerPage() {
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground tabular-nums">
                     Menampilkan {(page - 1) * limit + 1}-
                     {Math.min(page * limit, total)} dari {total}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPage(page - 1)}
                       disabled={page === 1}
+                      className="flex-1 sm:flex-initial"
                     >
                       Sebelumnya
                     </Button>
@@ -471,6 +483,7 @@ export default function ProkerPage() {
                       size="sm"
                       onClick={() => setPage(page + 1)}
                       disabled={page === totalPages}
+                      className="flex-1 sm:flex-initial"
                     >
                       Selanjutnya
                     </Button>

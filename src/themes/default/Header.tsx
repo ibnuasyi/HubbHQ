@@ -133,7 +133,7 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
 
   return (
     <header
-      className={`${isSticky ? 'sticky top-0 z-50' : ''} transition-all duration-300 ${
+      className={`${isSticky ? 'sticky top-0 z-50' : ''} transition-[background-color,backdrop-filter,box-shadow] duration-300 ${
         isTransparent
           ? 'absolute top-0 left-0 right-0 bg-transparent'
           : isScrolled
@@ -142,7 +142,7 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
       }`}
     >
       <div className="container mx-auto px-4">
-        <nav className="flex items-center justify-between h-16 md:h-20">
+        <nav className="flex items-center justify-between h-16 md:h-20" aria-label="Navigasi Utama">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3">
             {logoUrl ? (
@@ -170,6 +170,10 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
                     onMouseLeave={() => setOpenDropdown(null)}
                   >
                     <button
+                      type="button"
+                      aria-haspopup="true"
+                      aria-expanded={openDropdown === link.id}
+                      onClick={() => setOpenDropdown(openDropdown === link.id ? null : link.id)}
                       className={`flex items-center gap-1 px-4 py-2 font-medium transition-colors rounded-lg ${
                         isTransparent && !isScrolled
                           ? 'text-white/90 hover:text-white hover:bg-white/10'
@@ -178,7 +182,7 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
                     >
                       {link.icon && <span className="mr-1">{link.icon}</span>}
                       {link.label}
-                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
@@ -234,19 +238,22 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
 
             {/* Mobile Menu Button */}
             <button
+              type="button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className={`lg:hidden p-2 rounded-lg transition-colors ${
+              aria-label={isMenuOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+              aria-expanded={isMenuOpen}
+              className={`lg:hidden p-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 ${
                 isTransparent && !isScrolled
                   ? 'text-white hover:bg-white/10'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               {isMenuOpen ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
@@ -256,7 +263,7 @@ export default function Header({ config, isPreview = false }: HeaderProps) {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-100">
+          <div className="lg:hidden py-4 border-t border-gray-100 max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain">
             {navLinks.map((link) => (
               <div key={link.id}>
                 <Link

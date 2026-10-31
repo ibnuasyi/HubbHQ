@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, Phone, Mail, MessageCircle } from 'lucide-react'
+import { MapPin, Phone, Mail, MessageCircle, CheckCircle2 } from 'lucide-react'
 
 interface ContactProps {
   config: {
@@ -279,18 +279,18 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
 
         {config.showForm !== false && (
           <div className="max-w-2xl mx-auto mt-12">
-            <div className="bg-white rounded-2xl p-8">
+            <div className="bg-white rounded-2xl p-4 sm:p-8 shadow-sm">
               <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Kirim Pesan</h3>
 
               {submitted ? (
                 <div className="text-center py-8">
-                  <span className="text-5xl mb-4 block">✅</span>
+                  <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-4" />
                   <h4 className="text-xl font-bold text-gray-900 mb-2">Terima Kasih!</h4>
                   <p className="text-gray-600">Pesan Anda telah terkirim. Kami akan segera menghubungi Anda.</p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
                       <input
@@ -298,7 +298,7 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base md:text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent"
                       />
                     </div>
                     <div>
@@ -308,7 +308,7 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                         required
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base md:text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base md:text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -328,13 +328,13 @@ export default function Contact({ config, isPreview = false }: ContactProps) {
                       rows={5}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base md:text-sm focus:ring-2 focus:ring-green-600 focus:border-transparent"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-indigo-600 text-white py-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    className="w-full bg-green-600 text-white py-3.5 sm:py-4 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
                   >
                     {submitting ? 'Mengirim...' : 'Kirim Pesan'}
                   </button>

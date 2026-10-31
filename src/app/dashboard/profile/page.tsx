@@ -37,17 +37,17 @@ export default async function ProfilePage() {
     <>
       <Header title="Profil Saya" description="Kelola informasi profil Anda" />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-3xl space-y-6">
           {/* User Info Card */}
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <CardTitle>{user.name}</CardTitle>
-                  <CardDescription>{user.email}</CardDescription>
+                  <CardTitle className="text-xl sm:text-2xl">{user.name}</CardTitle>
+                  <CardDescription className="text-sm">{user.email}</CardDescription>
                 </div>
-                <div className="ml-auto flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {user.role && (
                     <Badge
                       style={{
@@ -63,7 +63,7 @@ export default async function ProfilePage() {
                       {user.jabatan.name}
                     </Badge>
                   )}
-                  <Button size="sm" variant="outline" asChild className="h-7 text-xs">
+                  <Button size="sm" variant="outline" asChild className="h-8 text-xs">
                     <Link href="/dashboard/kta">
                       <CreditCard className="mr-1.5 h-3.5 w-3.5 text-primary" />
                       KTA Digital

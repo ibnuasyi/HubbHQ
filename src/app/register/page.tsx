@@ -82,7 +82,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background p-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background p-4 py-8 sm:py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
@@ -171,6 +171,7 @@ export default function RegisterPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
+                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                     className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}

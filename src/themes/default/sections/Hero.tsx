@@ -167,7 +167,7 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
 
   // Default variant - Full background image (modern style)
   return (
-    <section className={`hero-section relative min-h-screen flex items-center ${isPreview ? 'py-20' : ''}`}>
+    <section className={`hero-section relative min-h-[100dvh] flex items-center py-20 ${isPreview ? 'py-12' : ''}`}>
       {config.backgroundImage && (
         <div className="absolute inset-0">
           <Image
@@ -188,40 +188,40 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
       )}
 
       <div className={`relative z-10 container mx-auto px-4 ${textAlignClass}`}>
-        <div className={`flex flex-col ${alignItemsClass} max-w-4xl`}>
+        <div className={`flex flex-col ${alignItemsClass} max-w-4xl mx-auto`}>
           {/* Badge */}
           {config.subtitle && (
-            <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-full mb-6 w-fit">
+            <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm text-white text-xs sm:text-sm font-medium rounded-full mb-6 w-fit">
               {config.subtitle}
             </span>
           )}
 
           {/* Title */}
-          <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
+          <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
             {config.title || 'Selamat Datang'}
           </h1>
 
           {/* Content */}
           {config.content && (
             <div
-              className={`text-lg text-white/90 mb-10 max-w-2xl ${isVisible ? 'animate-fade-in-up animation-delay-200' : 'opacity-0'}`}
+              className={`text-base sm:text-lg text-white/90 mb-10 max-w-2xl leading-relaxed ${isVisible ? 'animate-fade-in-up animation-delay-200' : 'opacity-0'}`}
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(config.content) }}
             />
           )}
 
           {/* CTA Buttons */}
-          <div className={`flex flex-wrap gap-4 ${isVisible ? 'animate-fade-in-up animation-delay-400' : 'opacity-0'}`}>
+          <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto justify-center ${isVisible ? 'animate-fade-in-up animation-delay-400' : 'opacity-0'}`}>
             {config.ctaText && (
-              <Link href={config.ctaLink || '#'}>
-                <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 shadow-lg font-semibold">
+              <Link href={config.ctaLink || '#'} className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-white text-green-700 hover:bg-green-50 shadow-lg font-semibold">
                   {config.ctaText}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             )}
             {config.ctaSecondaryText && (
-              <Link href={config.ctaSecondaryLink || '#'}>
-                <Button variant="outline" size="lg" className="text-white border-white hover:bg-white hover:text-green-700 font-semibold">
+              <Link href={config.ctaSecondaryLink || '#'} className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-green-700 font-semibold">
                   {config.ctaSecondaryText}
                 </Button>
               </Link>
@@ -229,17 +229,17 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
           </div>
 
           {/* Stats Row */}
-          <div className={`grid grid-cols-3 gap-8 mt-12 pt-8 border-t border-white/20 ${isVisible ? 'animate-fade-in-up animation-delay-600' : 'opacity-0'}`}>
-            <div className="text-left">
-              <div className="text-3xl font-bold text-white">500+</div>
+          <div className={`grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 mt-12 pt-8 border-t border-white/20 w-full ${isVisible ? 'animate-fade-in-up animation-delay-600' : 'opacity-0'}`}>
+            <div className="text-center sm:text-left">
+              <div className="text-3xl font-bold text-white tabular-nums">500+</div>
               <div className="text-white/70 text-sm">Anggota Aktif</div>
             </div>
-            <div className="text-left">
-              <div className="text-3xl font-bold text-white">25+</div>
+            <div className="text-center sm:text-left">
+              <div className="text-3xl font-bold text-white tabular-nums">25+</div>
               <div className="text-white/70 text-sm">Program Kerja</div>
             </div>
-            <div className="text-left">
-              <div className="text-3xl font-bold text-white">10+</div>
+            <div className="text-center sm:text-left">
+              <div className="text-3xl font-bold text-white tabular-nums">10+</div>
               <div className="text-white/70 text-sm">Tahun Berdiri</div>
             </div>
           </div>
@@ -249,10 +249,10 @@ export default function Hero({ config, isPreview = false }: HeroProps) {
       {config.showScrollIndicator !== false && !isPreview && (
         <button
           onClick={scrollToContent}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/80 hover:text-white transition-colors animate-bounce"
-          aria-label="Scroll to content"
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/80 hover:text-white transition-colors motion-safe:animate-bounce focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-full p-1"
+          aria-label="Gulir ke konten berikutnya"
         >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
         </button>

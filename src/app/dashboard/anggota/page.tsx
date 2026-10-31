@@ -187,11 +187,11 @@ export default function AnggotaPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 sm:p-6">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Data Anggota</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold">Data Anggota</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Kelola data anggota organisasi ({total} anggota)
           </p>
         </div>
@@ -246,25 +246,26 @@ export default function AnggotaPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>Daftar Anggota</CardTitle>
               <CardDescription>
                 Lihat dan kelola semua anggota organisasi
               </CardDescription>
             </div>
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-auto">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                 <Input
                   type="search"
                   placeholder="Cari anggota..."
-                  className="pl-9 w-[250px]"
+                  aria-label="Cari anggota"
+                  className="pl-9 w-full sm:w-[250px]"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <Button type="submit" variant="secondary">
+              <Button type="submit" variant="secondary" className="w-full sm:w-auto">
                 Cari
               </Button>
             </form>
@@ -312,7 +313,7 @@ export default function AnggotaPage() {
                             <p className="font-medium">{user.name || '-'}</p>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               {user.nra ? (
-                                <span className="font-mono text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                                <span className="font-mono tabular-nums text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
                                   {user.nra}
                                 </span>
                               ) : (
@@ -376,7 +377,7 @@ export default function AnggotaPage() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" aria-label={`Menu aksi untuk ${user.name || 'anggota'}`}>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>

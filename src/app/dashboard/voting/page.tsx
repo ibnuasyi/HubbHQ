@@ -129,28 +129,29 @@ export default function VotingDashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-            <Vote className="w-7 h-7 text-primary" />
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
+            <Vote className="w-6 h-6 sm:w-7 sm:h-7 text-primary shrink-0" />
             E-Voting Musyawarah & Mubes
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Sistem pemungutan suara digital berstandar LUBER-JURDIL untuk Musyawarah
             Besar, Konferensi, Kongres, dan PEMIRA.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchEvents}>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchEvents} className="w-full sm:w-auto">
             <RefreshCw className="w-4 h-4 mr-1.5" />
             Muat Ulang
           </Button>
 
           <Button
             size="sm"
+            className="w-full sm:w-auto"
             onClick={() => {
               const now = new Date()
               const tomorrow = new Date()
@@ -182,7 +183,7 @@ export default function VotingDashboardPage() {
           Memuat data musyawarah & pemilihan...
         </div>
       ) : events.length === 0 ? (
-        <div className="p-12 text-center bg-card border rounded-2xl space-y-3">
+        <div className="p-8 sm:p-12 text-center bg-card border rounded-2xl space-y-3">
           <Vote className="w-12 h-12 text-muted-foreground/40 mx-auto" />
           <h3 className="text-base font-bold text-foreground">
             Belum Ada Sesi Pemilihan
@@ -201,7 +202,7 @@ export default function VotingDashboardPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {events.map((ev) => {
             const isAktif = ev.status === 'AKTIF'
             const isSelesai = ev.status === 'SELESAI'
@@ -223,29 +224,29 @@ export default function VotingDashboardPage() {
                 />
 
                 <div className="space-y-3 pt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-semibold text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-semibold text-muted-foreground truncate">
                       /{ev.slug}
                     </span>
                     {ev.status === 'AKTIF' && (
-                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 animate-pulse">
+                      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 animate-pulse shrink-0">
                         Pemilihan Berlangsung
                       </Badge>
                     )}
                     {ev.status === 'DRAFT' && (
-                      <Badge variant="outline" className="text-amber-700 bg-amber-50 border-amber-200">
+                      <Badge variant="outline" className="text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800 shrink-0">
                         Draft Persiapan
                       </Badge>
                     )}
                     {ev.status === 'SELESAI' && (
-                      <Badge variant="outline" className="text-slate-700 bg-slate-100 border-slate-300">
+                      <Badge variant="outline" className="text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700 shrink-0">
                         Resmi Selesai
                       </Badge>
                     )}
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-lg text-foreground leading-snug">
+                    <h3 className="font-bold text-base sm:text-lg text-foreground leading-snug">
                       {ev.title}
                     </h3>
                     {ev.description && (
@@ -261,7 +262,7 @@ export default function VotingDashboardPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                         Kandidat
                       </span>
-                      <span className="font-black text-sm text-foreground">
+                      <span className="font-black text-sm text-foreground tabular-nums">
                         {ev.totalKandidat} Paslon
                       </span>
                     </div>
@@ -270,7 +271,7 @@ export default function VotingDashboardPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                         DPT
                       </span>
-                      <span className="font-black text-sm text-foreground">
+                      <span className="font-black text-sm text-foreground tabular-nums">
                         {ev.totalDpt} Jiwa
                       </span>
                     </div>
@@ -279,7 +280,7 @@ export default function VotingDashboardPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-semibold block">
                         Suara Masuk
                       </span>
-                      <span className="font-black text-sm text-emerald-700 dark:text-emerald-400">
+                      <span className="font-black text-sm text-emerald-700 dark:text-emerald-400 tabular-nums">
                         {ev.totalSuara} ({ev.partisipasi}%)
                       </span>
                     </div>
@@ -289,7 +290,7 @@ export default function VotingDashboardPage() {
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>Partisipasi DPT:</span>
-                      <span className="font-bold text-foreground">{ev.partisipasi}%</span>
+                      <span className="font-bold text-foreground tabular-nums">{ev.partisipasi}%</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div
@@ -299,9 +300,9 @@ export default function VotingDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-1">
-                    <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>
+                  <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 pt-1 tabular-nums">
+                    <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate">
                       {new Date(ev.startDate).toLocaleDateString('id-ID')} s/d{' '}
                       {new Date(ev.endDate).toLocaleDateString('id-ID')}
                     </span>

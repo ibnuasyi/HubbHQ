@@ -41,7 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { QrisConfig, DEFAULT_QRIS_CONFIG } from '@/lib/qris'
+import { QrisConfig, DEFAULT_QRIS_CONFIG } from '@/lib/qris-types'
 
 export default function QrisSettingsPage() {
   const [config, setConfig] = useState<QrisConfig>(DEFAULT_QRIS_CONFIG)

@@ -11,7 +11,9 @@ const alertVariants = cva(
         destructive:
           'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
         success:
-          'border-green-500/50 text-green-700 dark:border-green-500 [&>svg]:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950',
+          'border-emerald-500/50 text-emerald-900 dark:border-emerald-500 [&>svg]:text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50',
+        warning:
+          'border-amber-500/50 text-amber-900 dark:border-amber-500 [&>svg]:text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50',
       },
     },
     defaultVariants: {
@@ -23,10 +25,10 @@ const alertVariants = cva(
 const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
->(({ className, variant, ...props }, ref) => (
+>(({ className, variant, role, ...props }, ref) => (
   <div
     ref={ref}
-    role="alert"
+    role={role || (variant === 'destructive' ? 'alert' : 'status')}
     className={cn(alertVariants({ variant }), className)}
     {...props}
   />

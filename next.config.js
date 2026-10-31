@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   serverExternalPackages: ['@prisma/client', 'bcryptjs'],
   images: {
     unoptimized: true,

@@ -205,27 +205,27 @@ export default function KeuanganPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Keuangan</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Keuangan</h1>
+          <p className="text-sm text-muted-foreground">
             Kelola keuangan organisasi
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
             <Link href="/dashboard/keuangan/kas">
               Kas Anggota ({pendingKas} pending)
             </Link>
           </Button>
-          <Button variant="outline" asChild>
+          <Button variant="outline" size="sm" asChild className="w-full sm:w-auto">
             <Link href="/dashboard/keuangan/rekap">
               <Download className="mr-2 h-4 w-4" />
               Rekap
             </Link>
           </Button>
-          <Button onClick={() => setShowAdd(true)}>
+          <Button size="sm" onClick={() => setShowAdd(true)} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Tambah Transaksi
           </Button>
@@ -233,14 +233,14 @@ export default function KeuanganPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pemasukan Bulan Ini</CardTitle>
-            <ArrowUpRight className="h-4 w-4 text-green-500" />
+            <ArrowUpRight className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
               {formatCurrency(summary.income)}
             </div>
           </CardContent>
@@ -248,25 +248,25 @@ export default function KeuanganPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pengeluaran Bulan Ini</CardTitle>
-            <ArrowDownRight className="h-4 w-4 text-red-500" />
+            <ArrowDownRight className="h-4 w-4 text-rose-600 dark:text-rose-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-rose-600 dark:text-rose-400 tabular-nums">
               {formatCurrency(summary.expense)}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="sm:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Saldo</CardTitle>
             {summary.balance >= 0 ? (
-              <ChevronUp className="h-4 w-4 text-green-500" />
+              <ChevronUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-red-500" />
+              <ChevronDown className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-2xl font-bold tabular-nums ${summary.balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {formatCurrency(summary.balance)}
             </div>
           </CardContent>
@@ -275,40 +275,43 @@ export default function KeuanganPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 type="search"
                 placeholder="Cari transaksi..."
-                className="pl-9"
+                className="pl-9 w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                aria-label="Cari transaksi"
               />
             </div>
-            <Select value={type} onValueChange={(v) => { setType(v); setPage(1); }}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Tipe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Semua Tipe</SelectItem>
-                <SelectItem value="INCOME">Pemasukan</SelectItem>
-                <SelectItem value="EXPENSE">Pengeluaran</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Semua</SelectItem>
-                <SelectItem value="kas_anggota">Kas Anggota</SelectItem>
-                <SelectItem value="sumbangan">Sumbangan</SelectItem>
-                <SelectItem value="bisnis">Bisnis</SelectItem>
-                <SelectItem value="operasional">Operasional</SelectItem>
-                <SelectItem value="lainnya">Lainnya</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={type} onValueChange={(v) => { setType(v); setPage(1); }}>
+                <SelectTrigger className="w-full sm:w-[140px]" aria-label="Filter berdasarkan tipe transaksi">
+                  <SelectValue placeholder="Tipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Tipe</SelectItem>
+                  <SelectItem value="INCOME">Pemasukan</SelectItem>
+                  <SelectItem value="EXPENSE">Pengeluaran</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
+                <SelectTrigger className="w-full sm:w-[160px]" aria-label="Filter berdasarkan kategori">
+                  <SelectValue placeholder="Kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua</SelectItem>
+                  <SelectItem value="kas_anggota">Kas Anggota</SelectItem>
+                  <SelectItem value="sumbangan">Sumbangan</SelectItem>
+                  <SelectItem value="bisnis">Bisnis</SelectItem>
+                  <SelectItem value="operasional">Operasional</SelectItem>
+                  <SelectItem value="lainnya">Lainnya</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -329,42 +332,52 @@ export default function KeuanganPage() {
                 {transactions.map((t) => (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 cursor-pointer"
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer gap-3"
                     onClick={() => {
                       setSelectedTransaction(t)
                       setShowDetail(true)
                     }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setSelectedTransaction(t)
+                        setShowDetail(true)
+                      }
+                    }}
+                    aria-label={`Lihat detail transaksi ${categoryLabels[t.category] || t.category}`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div
-                        className={`p-2 rounded-full ${
-                          t.type === 'INCOME' ? 'bg-green-100' : 'bg-red-100'
+                        className={`p-2 rounded-full shrink-0 ${
+                          t.type === 'INCOME' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400'
                         }`}
                       >
                         {t.type === 'INCOME' ? (
-                          <ArrowUpRight className="h-4 w-4 text-green-600" />
+                          <ArrowUpRight className="h-4 w-4" />
                         ) : (
-                          <ArrowDownRight className="h-4 w-4 text-red-600" />
+                          <ArrowDownRight className="h-4 w-4" />
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium">{categoryLabels[t.category] || t.category}</p>
-                        <p className="text-sm text-muted-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm sm:text-base truncate">{categoryLabels[t.category] || t.category}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
                           {t.description || '-'}
-                          {t.kasPayment && ` - ${t.kasPayment.user?.name}`}
+                          {t.kasPayment && ` • ${t.kasPayment.user?.name}`}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p
-                        className={`font-bold ${
-                          t.type === 'INCOME' ? 'text-green-600' : 'text-red-600'
+                        className={`font-semibold text-sm sm:text-base tabular-nums ${
+                          t.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
                         {t.type === 'INCOME' ? '+' : '-'}
                         {formatCurrency(t.amount)}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground tabular-nums">
                         {new Date(t.date).toLocaleDateString('id-ID')}
                       </p>
                     </div>
@@ -373,17 +386,18 @@ export default function KeuanganPage() {
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground tabular-nums">
                     Menampilkan {(page - 1) * limit + 1}-
                     {Math.min(page * limit, total)} dari {total}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPage(page - 1)}
                       disabled={page === 1}
+                      className="flex-1 sm:flex-initial"
                     >
                       Sebelumnya
                     </Button>
@@ -392,6 +406,7 @@ export default function KeuanganPage() {
                       size="sm"
                       onClick={() => setPage(page + 1)}
                       disabled={page === totalPages}
+                      className="flex-1 sm:flex-initial"
                     >
                       Selanjutnya
                     </Button>
@@ -413,11 +428,11 @@ export default function KeuanganPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipe</Label>
                 <Select value={formType} onValueChange={(v: any) => setFormType(v)}>
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Pilih tipe transaksi">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -429,7 +444,7 @@ export default function KeuanganPage() {
               <div className="space-y-2">
                 <Label>Kategori</Label>
                 <Select value={formCategory} onValueChange={setFormCategory}>
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Pilih kategori transaksi">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -443,8 +458,9 @@ export default function KeuanganPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Jumlah (Rp)</Label>
+              <Label htmlFor="form-amount">Jumlah (Rp)</Label>
               <Input
+                id="form-amount"
                 type="number"
                 placeholder="0"
                 value={formAmount}
@@ -452,23 +468,25 @@ export default function KeuanganPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Keterangan</Label>
+              <Label htmlFor="form-desc">Keterangan</Label>
               <Input
+                id="form-desc"
                 placeholder="Deskripsi transaksi"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Tanggal</Label>
+              <Label htmlFor="form-date">Tanggal</Label>
               <Input
+                id="form-date"
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setShowAdd(false)}>
               Batal
             </Button>
@@ -488,24 +506,26 @@ export default function KeuanganPage() {
           </DialogHeader>
           {selectedTransaction && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <Badge variant={selectedTransaction.type === 'INCOME' ? 'default' : 'destructive'}
-                  className={selectedTransaction.type === 'INCOME' ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}>
+                  className={selectedTransaction.type === 'INCOME' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : ''}>
                   {selectedTransaction.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'}
                 </Badge>
-                <p className="text-2xl font-bold">
+                <p className={`text-xl sm:text-2xl font-bold tabular-nums ${
+                  selectedTransaction.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                }`}>
                   {selectedTransaction.type === 'INCOME' ? '+' : '-'}
                   {formatCurrency(selectedTransaction.amount)}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4 rounded-lg border p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-lg border p-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Kategori</p>
-                  <p className="font-medium">{categoryLabels[selectedTransaction.category] || selectedTransaction.category}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Kategori</p>
+                  <p className="font-medium text-sm sm:text-base">{categoryLabels[selectedTransaction.category] || selectedTransaction.category}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Tanggal</p>
-                  <p className="font-medium">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Tanggal</p>
+                  <p className="font-medium text-sm sm:text-base">
                     {new Date(selectedTransaction.date).toLocaleDateString('id-ID', {
                       weekday: 'long',
                       year: 'numeric',
@@ -515,18 +535,18 @@ export default function KeuanganPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Dibuat Oleh</p>
-                  <p className="font-medium">{selectedTransaction.createdBy.name || '-'}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Dibuat Oleh</p>
+                  <p className="font-medium text-sm sm:text-base">{selectedTransaction.createdBy.name || '-'}</p>
                 </div>
                 {selectedTransaction.kasPayment && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Pembayar Kas</p>
-                    <p className="font-medium">{selectedTransaction.kasPayment.user?.name || '-'}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Pembayar Kas</p>
+                    <p className="font-medium text-sm sm:text-base">{selectedTransaction.kasPayment.user?.name || '-'}</p>
                   </div>
                 )}
-                <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground">Keterangan</p>
-                  <p>{selectedTransaction.description || '-'}</p>
+                <div className="col-span-1 sm:col-span-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Keterangan</p>
+                  <p className="text-sm sm:text-base">{selectedTransaction.description || '-'}</p>
                 </div>
               </div>
             </div>

@@ -112,16 +112,17 @@ export function DynamicIcon({
   name,
   fallback = Sparkles,
   className = 'w-6 h-6',
+  'aria-hidden': ariaHidden = true,
   ...props
 }: DynamicIconProps) {
   if (!name) {
     const FallbackIcon = fallback
-    return <FallbackIcon className={className} {...props} />
+    return <FallbackIcon className={className} aria-hidden={ariaHidden} {...props} />
   }
 
   const cleanKey = name.trim().toLowerCase().replace(/[-_\s]/g, '')
   const IconComponent = iconMap[cleanKey] || iconMap[name.trim()] || fallback
 
-  return <IconComponent className={className} {...props} />
+  return <IconComponent className={className} aria-hidden={ariaHidden} {...props} />
 }
 

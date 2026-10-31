@@ -192,9 +192,9 @@ export function KtaCard({ member, config, showControls = true }: KtaCardProps) {
     : 'SEUMUR HIDUP'
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-6 w-full max-w-full">
       {/* 3D Flip Container */}
-      <div className="perspective-1000 w-[360px] sm:w-[440px] h-[228px] sm:h-[278px] relative cursor-pointer select-none">
+      <div className="perspective-1000 w-[min(340px,calc(100vw-2rem))] sm:w-[440px] h-[calc(min(340px,calc(100vw-2rem))*0.63)] sm:h-[278px] relative cursor-pointer select-none">
         <div
           onClick={() => setIsFlipped(!isFlipped)}
           className={`w-full h-full transition-transform duration-700 transform-style-3d relative ${

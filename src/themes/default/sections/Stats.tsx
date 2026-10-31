@@ -76,25 +76,25 @@ export default function Stats({ config, isPreview = false }: StatsProps) {
   }, [isVisible, animate, config.stats])
 
   const gridCols = {
-    '2': 'md:grid-cols-2',
-    '3': 'md:grid-cols-3',
-    '4': 'md:grid-cols-2 lg:grid-cols-4',
-    '6': 'md:grid-cols-3 lg:grid-cols-6'
+    '2': 'grid-cols-1 sm:grid-cols-2',
+    '3': 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
+    '4': 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+    '6': 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
   }[columns]
 
   // Cards variant
   if (variant === 'cards') {
     return (
-      <section className={`py-20 bg-white ${isPreview ? 'py-12' : ''}`} ref={sectionRef}>
+      <section className={`py-16 sm:py-20 bg-white ${isPreview ? 'py-12' : ''}`} ref={sectionRef}>
         <div className="container mx-auto px-4">
           {config.title && (
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                 {config.title}
               </h2>
             </div>
           )}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {(config.stats || []).map((stat, index) => (
               <div
                 key={index}

@@ -301,6 +301,18 @@ export function Sidebar() {
     setIsMobileOpen(false)
   }, [pathname])
 
+  // Handle Escape key to close mobile sidebar (WCAG 2.1)
+  React.useEffect(() => {
+    if (!isMobileOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMobileOpen])
+
   const toggleExpand = (title: string) => {
     setExpandedItems((prev) =>
       prev.includes(title)
@@ -318,6 +330,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Buka menu navigasi"
           onClick={() => setIsMobileOpen(true)}
         >
           <Menu className="h-5 w-5" />
@@ -335,6 +348,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Ganti mode tema"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         >
           <Sun className="h-5 w-5 dark:hidden" />
@@ -370,7 +384,8 @@ export function Sidebar() {
               size="icon"
               className={cn('h-8 w-8', isCollapsed && 'mx-auto')}
               onClick={() => setIsCollapsed(!isCollapsed)}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={isCollapsed ? 'Perluas bilah sisi' : 'Ciutkan bilah sisi'}
+              title={isCollapsed ? 'Perluas bilah sisi' : 'Ciutkan bilah sisi'}
             >
               <ChevronLeft className={cn('h-4 w-4 transition-transform', isCollapsed && 'rotate-180')} />
             </Button>
@@ -384,14 +399,15 @@ export function Sidebar() {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                aria-label={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+                title={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
               >
                 <Sun className="h-4 w-4 dark:hidden" />
                 <Moon className="h-4 w-4 hidden dark:block" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Pengaturan tema sistem">
                     <Monitor className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -479,6 +495,7 @@ export function Sidebar() {
                               isCollapsed && 'px-2 justify-center'
                             )}
                             title={isCollapsed ? item.title : undefined}
+                            aria-label={isCollapsed ? item.title : undefined}
                           >
                             <item.icon className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
                             {!isCollapsed && item.title}
@@ -499,11 +516,11 @@ export function Sidebar() {
         {/* Fixed footer */}
         <div className="flex-shrink-0 border-t p-3 flex items-center justify-between">
           <div className="text-xs text-muted-foreground">
-            {!isCollapsed && 'HubbHQ v1.1.0'}
+            {!isCollapsed && 'HubbHQ v1.3.0'}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ganti Tema">
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ganti Tema Tampilan">
                 {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               </Button>
             </DropdownMenuTrigger>
@@ -524,10 +541,11 @@ export function Sidebar() {
 
       {/* Mobile Sidebar Overlay */}
       {isMobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="lg:hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Menu navigasi mobile">
           <div
-            className="absolute inset-0 bg-black/50"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setIsMobileOpen(false)}
+            aria-hidden="true"
           />
           <aside className="absolute left-0 top-0 bottom-0 w-64 flex flex-col bg-card animate-in slide-in-from-left duration-200">
             <div className="flex-shrink-0">
@@ -545,6 +563,7 @@ export function Sidebar() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Tutup menu navigasi"
                   onClick={() => setIsMobileOpen(false)}
                 >
                   <X className="h-5 w-5" />
@@ -555,6 +574,7 @@ export function Sidebar() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
+                  aria-label="Ganti mode tema"
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 >
                   <Sun className="h-4 w-4 dark:hidden" />
@@ -562,28 +582,28 @@ export function Sidebar() {
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Pengaturan tema sistem">
                       <Monitor className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setTheme('light')}>
                       <Sun className="mr-2 h-4 w-4" />
-                      Light
+                      Mode Terang
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setTheme('dark')}>
                       <Moon className="mr-2 h-4 w-4" />
-                      Dark
+                      Mode Gelap
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setTheme('system')}>
                       <Monitor className="mr-2 h-4 w-4" />
-                      System
+                      Ikuti Sistem
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
-            <nav className="flex-1 overflow-y-auto py-2">
+            <nav className="flex-1 overflow-y-auto overscroll-contain py-2">
               <div className="space-y-1 px-2">
                 {navigationItems.map((section, sectionIndex) => (
                   <div key={section.title || sectionIndex}>
@@ -659,11 +679,11 @@ export function Sidebar() {
             </nav>
             <div className="flex-shrink-0 border-t p-3 flex items-center justify-between">
               <div className="text-xs text-muted-foreground">
-                HubbHQ v1.1.0
+                HubbHQ v1.3.0
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ganti Tema">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Ganti Tema Tampilan">
                     {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
                   </Button>
                 </DropdownMenuTrigger>

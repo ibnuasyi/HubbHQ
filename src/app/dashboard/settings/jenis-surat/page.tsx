@@ -246,12 +246,12 @@ export default function JenisSuratPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-lg">{jenis.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       <Badge variant="outline">{jenis.code}</Badge>
                       {jenis._count?.surat ? (
                         <span className="text-xs">{jenis._count.surat} surat</span>
                       ) : null}
-                    </CardDescription>
+                    </div>
                   </div>
                   <Badge variant={jenis.autoNumber ? 'default' : 'secondary'}>
                     {jenis.autoNumber ? 'Auto No.' : 'Manual'}

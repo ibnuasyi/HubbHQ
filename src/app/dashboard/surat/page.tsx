@@ -74,10 +74,10 @@ interface Surat {
 }
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
-  PENDING_APPROVAL: { label: 'Menunggu', color: 'bg-yellow-100 text-yellow-800' },
-  APPROVED: { label: 'Disetujui', color: 'bg-green-100 text-green-800' },
-  REJECTED: { label: 'Ditolak', color: 'bg-red-100 text-red-800' },
+  DRAFT: { label: 'Draft', color: 'bg-muted text-muted-foreground' },
+  PENDING_APPROVAL: { label: 'Menunggu', color: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' },
+  APPROVED: { label: 'Disetujui', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' },
+  REJECTED: { label: 'Ditolak', color: 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' },
 }
 
 export default function SuratPage() {
@@ -392,17 +392,17 @@ export default function SuratPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Surat</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Surat</h1>
+          <p className="text-sm text-muted-foreground">
             Kelola surat masuk dan keluar
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={exportYear} onValueChange={setExportYear}>
-            <SelectTrigger className="w-[100px]">
+            <SelectTrigger className="w-[100px] h-9" aria-label="Pilih tahun arsip surat">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -411,15 +411,15 @@ export default function SuratPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => handleExport('pdf')} disabled={exporting}>
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} disabled={exporting}>
             <FileText className="mr-2 h-4 w-4" />
             PDF
           </Button>
-          <Button variant="outline" onClick={() => handleExport('excel')} disabled={exporting}>
+          <Button variant="outline" size="sm" onClick={() => handleExport('excel')} disabled={exporting}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             Excel
           </Button>
-          <Button onClick={() => setShowAdd(true)}>
+          <Button size="sm" onClick={() => setShowAdd(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Tambah Surat
           </Button>
@@ -427,7 +427,7 @@ export default function SuratPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 w-full sm:w-auto flex overflow-x-auto justify-start">
           <TabsTrigger value="masuk" className="flex items-center gap-2">
             <ArrowDownLeft className="h-4 w-4" />
             Surat Masuk ({surat.filter((s) => s.type === 'MASUK').length})
@@ -442,19 +442,20 @@ export default function SuratPage() {
           <TabsContent key={tab} value={tab}>
             <Card>
               <CardHeader>
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="relative flex-1 min-w-[200px]">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                     <Input
                       type="search"
                       placeholder="Cari surat..."
-                      className="pl-9"
+                      className="pl-9 w-full"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
+                      aria-label="Cari surat"
                     />
                   </div>
                   <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-full sm:w-[140px]" aria-label="Filter status surat">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -490,39 +491,42 @@ export default function SuratPage() {
                             key={s.id}
                             className="p-4 rounded-lg border hover:bg-muted/50 transition-colors"
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-3">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                              <div className="flex items-start gap-3 min-w-0 flex-1">
                                 <button
                                   onClick={() => handleViewDetail(s)}
-                                  className="flex items-start gap-3 flex-1 text-left hover:bg-muted/50 p-2 -m-2 rounded-lg transition-colors"
+                                  className="flex items-start gap-3 flex-1 text-left hover:bg-muted/50 p-2 -m-2 rounded-lg transition-colors min-w-0"
+                                  aria-label={`Lihat detail surat: ${s.subject}`}
                                 >
-                                  <div className={`p-2 rounded-full ${
-                                    s.type === 'MASUK' ? 'bg-blue-100' : 'bg-green-100'
+                                  <div className={`p-2 rounded-full shrink-0 ${
+                                    s.type === 'MASUK'
+                                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
+                                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
                                   }`}>
                                     {s.type === 'MASUK' ? (
-                                      <ArrowDownLeft className="h-4 w-4 text-blue-600" />
+                                      <ArrowDownLeft className="h-4 w-4" />
                                     ) : (
-                                      <ArrowUpRight className="h-4 w-4 text-green-600" />
+                                      <ArrowUpRight className="h-4 w-4" />
                                     )}
                                   </div>
-                                  <div>
-                                    <p className="font-medium">{s.subject}</p>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium text-sm sm:text-base truncate">{s.subject}</p>
+                                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-0.5">
                                       {s.jenisSurat && (
                                         <Badge variant="outline">{s.jenisSurat.code}</Badge>
                                       )}
                                       {s.letterNumber && (
-                                        <span>No: {s.letterNumber}</span>
+                                        <span className="font-mono">No: {s.letterNumber}</span>
                                       )}
                                       {s.sender && <span>Pengirim: {s.sender}</span>}
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1 tabular-nums">
                                       {new Date(s.createdAt).toLocaleDateString('id-ID')}
                                     </p>
                                   </div>
                                 </button>
                               </div>
-                              <div className="flex flex-col items-end gap-2">
+                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0">
                                 {getStatusBadge(s.status)}
                                 {/* Approval buttons for pending surat */}
                                 {s.status === 'PENDING_APPROVAL' && (
@@ -530,7 +534,7 @@ export default function SuratPage() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="text-green-600 hover:text-green-700"
+                                      className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
                                       onClick={() => handleApprove(s.id)}
                                     >
                                       Setuju
@@ -538,7 +542,7 @@ export default function SuratPage() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="text-red-600 hover:text-red-700"
+                                      className="text-rose-600 hover:text-rose-700 dark:text-rose-400"
                                       onClick={() => handleReject(s.id)}
                                     >
                                       Tolak

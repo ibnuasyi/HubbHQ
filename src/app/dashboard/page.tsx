@@ -78,29 +78,29 @@ export default async function DashboardPage() {
       title: 'Total Anggota',
       value: totalMembers,
       icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-blue-700 dark:text-blue-300',
+      bgColor: 'bg-blue-100 dark:bg-blue-950/50',
     },
     {
       title: 'Divisi Aktif',
       value: totalDivisi,
       icon: FolderKanban,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-emerald-700 dark:text-emerald-300',
+      bgColor: 'bg-emerald-100 dark:bg-emerald-950/50',
     },
     {
       title: 'Program Kerja',
       value: totalProker,
       icon: Calendar,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-purple-700 dark:text-purple-300',
+      bgColor: 'bg-purple-100 dark:bg-purple-950/50',
     },
     {
       title: 'Kas Pending',
       value: pendingKas,
       icon: Clock,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
+      color: 'text-amber-800 dark:text-amber-300',
+      bgColor: 'bg-amber-100 dark:bg-amber-950/50',
     },
   ]
 
@@ -109,15 +109,15 @@ export default async function DashboardPage() {
       title: 'On Progress',
       value: prokerOnProgress,
       icon: TrendingUp,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-blue-700 dark:text-blue-300',
+      bgColor: 'bg-blue-100 dark:bg-blue-950/50',
     },
     {
       title: 'Selesai',
       value: prokerCompleted,
       icon: CheckCircle2,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-emerald-700 dark:text-emerald-300',
+      bgColor: 'bg-emerald-100 dark:bg-emerald-950/50',
     },
   ]
 
@@ -125,9 +125,9 @@ export default async function DashboardPage() {
     <>
       <Header title="Dashboard" description={`Selamat datang, ${session?.user?.name || 'User'}`} />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {/* Stats Grid */}
-        <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -139,13 +139,13 @@ export default async function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
           {/* Program Kerja Stats */}
           <Card>
             <CardHeader>
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
                       <stat.icon className={`h-4 w-4 ${stat.color}`} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold">{stat.value}</div>
+                      <div className="text-2xl font-bold tabular-nums">{stat.value}</div>
                       <div className="text-xs text-muted-foreground">
                         {stat.title}
                       </div>

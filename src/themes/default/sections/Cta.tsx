@@ -44,18 +44,18 @@ export default function Cta({ config, isPreview = false }: CtaProps) {
               {config.description}
             </p>
           )}
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 w-full sm:w-auto">
             {(config.primaryCtaText || config.ctaText) && (
-              <Link href={config.primaryCtaLink || config.ctaLink || '#'}>
-                <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 shadow-lg font-semibold">
+              <Link href={config.primaryCtaLink || config.ctaLink || '#'} className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-white text-green-700 hover:bg-green-50 shadow-lg font-semibold">
                   {config.primaryCtaText || config.ctaText}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             )}
             {config.secondaryCtaText && (
-              <Link href={config.secondaryCtaLink || '#'}>
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-green-700 font-semibold">
+              <Link href={config.secondaryCtaLink || '#'} className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-green-700 font-semibold">
                   {config.secondaryCtaText}
                 </Button>
               </Link>
@@ -104,18 +104,18 @@ export default function Cta({ config, isPreview = false }: CtaProps) {
             </p>
           )}
 
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 w-full sm:w-auto">
             {(config.primaryCtaText || config.ctaText) && (
-              <Link href={config.primaryCtaLink || config.ctaLink || '#'}>
-                <Button size="lg" className="bg-white text-green-700 hover:bg-green-50 shadow-lg font-semibold">
+              <Link href={config.primaryCtaLink || config.ctaLink || '#'} className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-white text-green-700 hover:bg-green-50 shadow-lg font-semibold">
                   {config.primaryCtaText || config.ctaText}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             )}
             {config.secondaryCtaText && (
-              <Link href={config.secondaryCtaLink || '#'}>
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-green-700 font-semibold">
+              <Link href={config.secondaryCtaLink || '#'} className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-green-700 font-semibold">
                   {config.secondaryCtaText}
                 </Button>
               </Link>
